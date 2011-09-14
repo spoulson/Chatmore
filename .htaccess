@@ -1,0 +1,6 @@
+DirectoryIndex index.php
+
+<Files ~ "config\.php|lib">
+  order deny,allow
+  deny from all
+</Files>

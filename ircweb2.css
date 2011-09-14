@@ -1,0 +1,100 @@
+BODY {
+    font: 11px sans-serif;
+}
+
+.ircChannel {
+    overflow: auto;
+    font: 12px Tahoma, Helvetica, sans-serif;
+}
+
+#commandBar {
+    padding-bottom: 3px;
+    white-space: normal;
+}
+
+#commandBar button {
+    /* Chrome has default top/bottom margins on buttons, others do not. */
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#ircTabs {
+    width: 596px;
+    height: 240px;
+}
+
+#userEntrySection {
+    padding: 3px 16px;
+    white-space: nowrap;
+}
+
+#userEntryModeLine {
+    height: 20px;
+}
+
+#nickLabel {
+    overflow: hidden;
+}
+
+#userEntry {
+    background-color: transparent;
+    border: 1px solid #666;
+    color: white;
+}
+
+#sideBar {
+    float: left;
+    width: 140px;
+    overflow: hidden;
+}
+
+.ircChannel .line {
+    clear: both;
+    padding: 0 0 0 50px;
+    text-indent: -50px;
+    word-wrap: break-word;
+}
+
+.ircChannel .timestamp {
+    color: #d0d0d0;
+    display: block;
+    float: left;
+    width: 50px;
+}
+
+.ircChannel .usage {
+    color: #7fffff;
+}
+
+.ircChannel .help {
+    color: #00cfcf;
+}
+
+.ircChannel .PRIVMSG {
+    font-weight: bold;
+}
+
+.ircChannel .line > .PRIVMSG {
+    background-color: #202010;
+}
+
+.ircChannel .channelMsg {
+    color: #dfdfdf;
+}
+
+.ircChannel .prefix {
+    font-weight: bold;
+}
+
+.ircChannel .channel {
+    color: #c0c090;
+}
+
+.ircChannel .nick {
+    color: #dfdfdf;
+}
+
+.ircChannel .nickHighlight {
+    color: #EFD43E;
+    padding-right: 3px;
+}
