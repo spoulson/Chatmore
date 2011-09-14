@@ -29,7 +29,8 @@ SYSTEM REQUIREMENTS
  - Linux/Unix OS.  Windows is not supported.
 
 ### Client
- - Tested on browsers: Firefox 5+, Chrome 13+, IE9.
+ - Browser supporting HTML5.
+ - Tested on browsers on Windows: Firefox 5+, Chrome 13+, IE9.
 
 INSTALLATION
 ------------
