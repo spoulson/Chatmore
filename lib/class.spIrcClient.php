@@ -1,6 +1,7 @@
 <?
 // http://tools.ietf.org/html/rfc2812
 
+require_once 'class.log.php';
 require_once 'class.spIrcClientState.php';
 
 class spIrcClient
@@ -12,7 +13,7 @@ class spIrcClient
 
     // Message codes associated with CLMSG_TYPE_SERVER messages.
     const CLMSG_CONNECTION_READY = 200;
-    const CLMSG_NOT_OPEN = 400;
+    const CLMSG_CONNECTION_NOT_OPEN = 400;
     const CLMSG_TIMEOUT_ON_OPEN = 500;
 
     // IRC server message codes.
@@ -28,8 +29,7 @@ class spIrcClient
     const ERR_NOSUCHCHANNEL = 403;
     const ERR_NOTREGISTERED = 451;
     
-    const WHOMODE_DISCOVERY = 1;
-    const WHOMODE_SAVENAMES = 2;
+    private $isConnected = false;
 
     // IRC socket.
 	private $socket;
@@ -38,18 +38,16 @@ class spIrcClient
     private $state;
 
     private $socketReadBuf = null;
+    public $socketReadBufSize = 1024;
     
     // Constructor.
 	public function spIrcClient($socketFile, &$state) {
         $this->state =& $state;
         $this->state->isModified = false;
 		$this->socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
-        socket_connect($this->socket, $socketFile) || die("Could not connect to socket file!\n");
-		
-        // Query for current state.
-        // If resuming an active connection, will discover current nick and joined channels.
-        // If this is really a new connection, the response will trigger a registration.
-        //$this->who(null, WHOMODE_DISCOVERY);
+        if (socket_connect($this->socket, $socketFile)) {
+            $this->isConnected = true;
+        }
 	}
     
     // Disconnect from IRC proxy domain socket.
@@ -78,18 +76,18 @@ class spIrcClient
     }
     
     private function socketReadLine() {
-        //echo "socketReadBuf size(" . strlen($this->socketReadBuf) . ")\n";
+        //log::info("socketReadBuf size(" . strlen($this->socketReadBuf) . ")");
         $line = null;
         
         while (true) {
             // check for line ending in read buffer.
             $m = null;
-            //echo 'socketReadBuf: ' . $this->socketReadBuf . "\n";
-            if (preg_match("/^[^\\n|\\r]*\\r\\n/", $this->socketReadBuf, $m)) {
+            //if (strlen($this->socketReadBuf)) log::info('socketReadBuf: ' . str_replace("\r\n", "$\r\n", $this->socketReadBuf));
+            if (preg_match("/^.*?\\r\\n/", $this->socketReadBuf, $m)) {
                 // Found a line.
                 $line = $m[0];
                 $this->socketReadBuf = substr($this->socketReadBuf, strlen($line));
-                //echo "socket, size(" . strlen($line) . "): $line\n";
+                //log::info("socket, size(" . strlen($line) . "): $line");
                 break;
             }
             
@@ -98,157 +96,37 @@ class spIrcClient
             if ($c === false) {
                 $errno = socket_last_error($this->socket);
                 if ($errno != 0 && $errno != 11) {
-                    echo "socketReadLine error during socket_select: $errno/" . socket_strerror($errno) . "\n";
+                    log::error("socketReadLine error during socket_select: $errno/" . socket_strerror($errno));
                     return false;
                 }
             }
             else if ($c === 0) {
                 // No more data.
-                //echo "socketReadLine: no data\n";
+                //log::info("socketReadLine: no data");
                 break;
             }
 
             // Read more data
             $buf = null;
-            $size = socket_recv($this->socket, $buf, 1024, 0);
+            $size = socket_recv($this->socket, $buf, $this->socketReadBufSize, 0);
             if ($size == false) {
                 // Read error.
                 $errno = socket_last_error($this->socket);
-                echo "socketReadLine error: $errno/" . socket_strerror($errno) . "\n";
+                log::error("socketReadLine error: $errno/" . socket_strerror($errno));
                 if ($errno == 0 || $errno == 11) return null;
                 return false;
             }
 
-            //echo "socketReadBuf appended: $buf\n";
+            //log::info("socketReadBuf appended: $buf");
             $this->socketReadBuf .= $buf;
             
             // Loop and attempt to read a line again.
         }
         
+        //if (strlen($line)) log::info("socketReadLine: $line");
         return $line;
     }
-    
-    // private function socketReadLine1() {
-        // // Check if data is waiting on the socket.
-        // if (!socket_select($r = array($this->socket), $w = null, $e = null, 0, 250 * 1000))
-            // return null;
 
-        // $line = socket_read($this->socket, 10240, PHP_NORMAL_READ);
-        
-        // // Last socketReadLine() may have left an EOL on the stream.  Ignore it and read again.
-        // if ($line == "\r" || $line == "\n")
-            // $line = socket_read($this->socket, 10240, PHP_NORMAL_READ);
-
-        // if ($line === false) {
-            // $errno = socket_last_error($this->socket);
-            // echo "socketReadLine error: $errno/" . socket_strerror($errno) . "\n";
-            // if ($errno == 0 || $errno == 11) return null;
-            // return false;
-        // }
-        // else
-            // echo "socket, size(" . strlen($line) . "): $line\n";
-
-        // return $line;
-    // }
-
-    // Process an incoming message with default logic.
-    public function processMsg($msg) {
-        switch ($msg['command']) {
-        case 'PING':
-            $this->pong($msg);
-            break;
-            
-        case 'MODE':
-            // Store user or channel mode string.
-            $this->state->modes[$msg['info']['target']] = $msg['info']['mode'];
-            $this->state->isModified = true;
-            break;
-            
-        case 'NICK':
-            if ($msg['prefixNick'] == $this->state->nick) {
-                // Client user changed nick.
-                $this->state->nick = $msg['info']['nick'];
-                $this->state->isNickValid = true;
-                $this->state->isModified = true;
-            }
-            break;
-
-        case 'PART':
-            // Clean up state when leaving a channel.
-            unset($this->state->modes[$msg['info']['channel']]);
-            unset($this->state->names[$msg['info']['channel']]);
-            $this->state->isModified = true;
-            break;
-        
-        case self::RPL_ENDOFWHO: // End of WHO list.
-            if ($this->state->whoMode == WHOMODE_DISCOVERY) {
-                // Discovery mode is initiated by the constructor to determine if this is
-                // a resumed connection.  If so, we get RPL_ENDOFWHO containing valid nick.
-                // Otherwise, ERR_NOTREGISTERED.
-                // Then, send a WHO with this nick to find current joined channels.
-                $this->state->nick = $msg['info']['target'];
-                $this->state->isNickValid = true;
-                $this->state->isModified = true;
-                
-                // Re-request WHO with this validated nick to get channel info.
-                // Save names list built from RPL_WHOREPLY messages.
-                $this->who($this->state->nick, WHOMODE_SAVENAMES);
-            }
-            else {
-                // mode 1: Save names list gathered from WHO replies.
-                if ($this->state->whoMode == WHOMODE_SAVENAMES) {
-                    $this->state->names = $this->state->whoReply['names'];
-                    $this->state->isModified = true;
-                }
-            }
-            
-            if ($this->state->whoReply !== null) {
-                $this->state->whoReply = null;
-                $this->state->isModified = true;
-            }
-            break;
-
-        case self::RPL_WHOREPLY:
-            if ($this->isChannel($msg['info']['channel'])) {
-                // Store channel data in $whoReply.
-                $this->state->whoReply['names'][$msg['info']['channel']][] = $msg['info']['nick'];
-                $this->state->isModified = true;
-            }
-            break;
-            
-        case self::RPL_TOPIC:
-            $this->state->topicReply['topic'] = $msg['info']['topic'];
-            $this->state->isModified = true;
-            break;
-            
-        case self::RPL_NOTOPIC:
-            $this->state->topicReply['topic'] = '';
-            $this->state->isModified = true;
-            break;
-            
-        case 333: // topic reply set by/timestamp.
-            $this->state->topicReply['setByNick'] = $msg['info']['setByNick'];
-            $this->state->topicReply['setTime'] = $msg['info']['setTime'];
-            $this->state->isModified = true;
-            break;
-            
-        case self::RPL_NAMREPLY: // NAMES list.
-            $this->state->names[$msg['info']['target']] = $msg['info']['names'];
-            $this->state->isModified = true;
-            break;
-
-        case self::ERR_NOTREGISTERED: // ERR_NOTREGISTERED.
-            // If receiving this error from WHO in discovery mode, we assume
-            // this is a new connection and must be registered.
-            // if ($msg['info']['command'] == 'who' && $this->state->whomode == whomode_discovery) {
-                // // send registration commands.
-                // $this->sendrawmsg("user " . $this->state->ident . " * irc.dsm.org :" . $this->state->realname . "\r\n");
-                // $this->setnick($this->state->nick);
-            // }
-            break;
-        }
-    }
-    
     // Parse raw message to message array.
     // array(
     //    prefix => $,
@@ -371,7 +249,7 @@ class spIrcClient
             break;
             
         case self::RPL_TOPIC:
-            if (!preg_match("/^(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\\S+\\s+(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => $msgParams[2]
@@ -388,7 +266,7 @@ class spIrcClient
             break;
 
         case self::RPL_TIME:
-            if (!preg_match("/^(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\\S+\\s+(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
             $msg['info'] = array(
                 'server' => $msgParams[1],
                 'timeString' => $msgParams[2]
@@ -415,6 +293,69 @@ class spIrcClient
         return $msg;
     }
     
+    // Process an incoming message with default logic.
+    public function processMsg($msg) {
+        switch ($msg['command']) {
+        case 'PING':
+            $this->pong($msg);
+            break;
+            
+        case 'MODE':
+            // Store user or channel mode string.
+            $this->state->modes[$msg['info']['target']] = $msg['info']['mode'];
+            $this->state->isModified = true;
+            break;
+            
+        case 'NICK':
+            if ($msg['prefixNick'] == $this->state->nick) {
+                // Client user changed nick.
+                $this->state->nick = $msg['info']['nick'];
+                $this->state->isNickValid = true;
+                $this->state->isModified = true;
+            }
+            break;
+
+        case 'PART':
+            // Clean up state when leaving a channel.
+            unset($this->state->modes[$msg['info']['channel']]);
+            unset($this->state->names[$msg['info']['channel']]);
+            $this->state->isModified = true;
+            break;
+        
+        case self::RPL_WHOREPLY:
+            if ($this->isChannel($msg['info']['channel'])) {
+                // Store channel data in $whoReply.
+                $this->state->whoReply['names'][$msg['info']['channel']][] = $msg['info']['nick'];
+                $this->state->isModified = true;
+            }
+            break;
+            
+        case self::RPL_TOPIC:
+            $this->state->topicReply['topic'] = $msg['info']['topic'];
+            $this->state->isModified = true;
+            break;
+            
+        case self::RPL_NOTOPIC:
+            $this->state->topicReply['topic'] = '';
+            $this->state->isModified = true;
+            break;
+            
+        case 333: // topic reply set by/timestamp.
+            $this->state->topicReply['setByNick'] = $msg['info']['setByNick'];
+            $this->state->topicReply['setTime'] = $msg['info']['setTime'];
+            $this->state->isModified = true;
+            break;
+            
+        case self::RPL_NAMREPLY: // NAMES list.
+            $this->state->names[$msg['info']['target']] = $msg['info']['names'];
+            $this->state->isModified = true;
+            break;
+
+        case self::ERR_NOTREGISTERED: // ERR_NOTREGISTERED.
+            break;
+        }
+    }
+        
     public function debug_write($text) {
         $text = preg_replace("/[\\r\\n]/", "", $text);
         $text = preg_replace("/\\s{2,}/", " ", $text);
@@ -467,12 +408,11 @@ class spIrcClient
         $this->sendRawMsg("NICK $nick\r\n");
     }
     
-    public function who($mask = null, $whoMode = null) {
+    public function who($mask = null) {
         $this->state->whoReply = array(
             //'modes' => array(),
             'names' => array()
         );
-        $this->state->whoMode = $whoMode;
 
         if (empty($mask))
             $this->sendRawMsg("WHO\r\n");

@@ -11,7 +11,6 @@ class spIrcClientState
     //    modes => $modesarray
     // )
     public $whoReply;
-    public $whoMode = null;
     
     // Nickname.
 	public $nick;

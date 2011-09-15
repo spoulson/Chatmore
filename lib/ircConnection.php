@@ -1,19 +1,19 @@
 <?
 // TODO: set_error_handler/set_exception_handler implementations.
 
-//ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
-include_once 'class.spSocketProxy.php';
+ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
+
+require_once 'class.log.php';
+require_once 'class.spSocketProxy.php';
 
 set_time_limit(0);
 ignore_user_abort(true);
+@ob_end_flush();
 
 // Parse command line.
 $socketFile = $argv[1];
 list($host, $port) = explode(':', $argv[2], 2);
 if (empty($port)) $port = 6667;
-
-header('Content-type: text/plain');
-@ob_end_flush();
 
 function connectToIrcServer() {
     global $ircSocket, $host, $port;
@@ -22,12 +22,12 @@ function connectToIrcServer() {
     return $ircSocket;
 }
 
-echo "Creating proxy...\r\n";
+log::info("Creating proxy...");
 umask(0);
 $proxy = new spSocketProxy($socketFile, 1);
 $proxy->setProxySocketFunc(create_function('', 'return connectToIrcServer();'));
 $proxy->idleTimeout = 300;
-echo "Done.\r\n";
+log::info("Done.");
 
 // Poll loop.
 while ($proxy->poll() !== false) {
@@ -36,14 +36,16 @@ while ($proxy->poll() !== false) {
 }
 
 // Shut down.
-echo "Proxy shut down.\r\n";
+log::info("Proxy shut down.");
 
 if (!empty($ircSocket)) {
-    echo "Closing IRC connection...\r\n";
+    log::info("Closing IRC connection...");
     socket_shutdown($ircSocket, 2);
     socket_close($ircSocket);
-    echo "Closed.\r\n";
+    log::info("Closed.");
 }
 
 unlink($socketFile);
+exit;
+
 ?>

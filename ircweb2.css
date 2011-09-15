@@ -5,6 +5,7 @@ BODY {
 .ircChannel {
     overflow: auto;
     font: 12px Tahoma, Helvetica, sans-serif;
+    white-space: pre-wrap;
 }
 
 #commandBar {

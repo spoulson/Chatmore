@@ -3,6 +3,9 @@
 // proxies its connection with a given proxy socket handle.
 // Proxy socket I/O is buffered in event domain socket connection is dropped.
 // Flushes buffers when domain socket is reconnected.
+
+require_once 'class.log.php';
+
 class spSocketProxy {
     private $domainSocketFile;
     private $domainSocket = null;
@@ -40,7 +43,7 @@ class spSocketProxy {
     // Returns false if domain socket is disconnected.
     public function poll() {
         if (!$this->isDomainSocketConnected()) {
-            echo "Domain socket is disconnected!\n";
+            log::error("Domain socket is disconnected!");
             usleep(250 * 1000);
             return false;
         }
@@ -61,18 +64,13 @@ class spSocketProxy {
         }
         
         // Wait for a socket to become available.
-        //echo '.';
         $newClientSocket = null;
-        //usleep(100*1000);
         $select = socket_select($rSelect, $wSelect, $eSelect, 0, 1000 * 1000);
         
         if ($select === false) {
             $errno = socket_last_error();
             if ($errno != 11) {
-                echo "Error $errno during socket_select().\n";
-            }
-            else {
-                echo '!';
+                log::error("Error $errno during socket_select().");
             }
             usleep(250 * 1000);
         }
@@ -83,10 +81,10 @@ class spSocketProxy {
                 $errstr = socket_strerror($errno);
                 
                 if ($socket === $this->proxySocket) {
-                    echo "Exception on proxy socket: $errno/$errstr\n";
+                    log::error("Exception on proxy socket: $errno/$errstr");
                 }
                 else if ($socket === $this->clientSocket) {
-                    echo "Exception on client Socket: $errno/$errstr.\n";
+                    log::error("Exception on client Socket: $errno/$errstr.");
                 }
             }
         
@@ -107,13 +105,13 @@ class spSocketProxy {
                         //echo "rP";
                         $size = @socket_recv($this->proxySocket, $buf, 10240, 0);
                         if ($size) {
-                            echo "proxy: $buf\n";
-                            echo "Buffering to client, size(" . strlen($buf) . ").\n";
+                            log::info("proxy: $buf");
+                            log::info("Buffering to client, size(" . strlen($buf) . ")");
                             $this->clientBuffer .= $buf;
                         }
                         else {
                             // Got 0 bytes; assume connection was closed.
-                            echo "Proxy connection was closed.\n";
+                            log::info("Proxy connection was closed.");
                             socket_shutdown($this->proxySocket, 2);
                             socket_close($this->proxySocket);
                             $this->proxySocket = null;
@@ -130,15 +128,15 @@ class spSocketProxy {
                             // 11 = no data available.
                             if ($errno != 11) {
                                 // Error with client, close its connection.
-                                echo "Error $errno receiving from client, closing client connection: " . socket_strerror($errno) . "\n";
+                                log::error("Error $errno receiving from client, closing client connection: " . socket_strerror($errno));
                                 socket_shutdown($this->clientSocket, 2);
                                 socket_close($this->clientSocket);
                                 $this->clientSocket = null;
                             }
                         }
                         else if ($size) {
-                            echo "client: $buf\n";
-                            echo "Buffering to proxy, size(" . strlen($buf) . ").\n";
+                            log::info("client: $buf");
+                            log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                             $this->proxyBuffer .= $buf;
                         }
                         else {
@@ -152,7 +150,7 @@ class spSocketProxy {
                 }
                 else {
                     // Unknown socket?
-                    echo "Error: unknown socket found in rSelect: $socket\n";
+                    log::error("Error: unknown socket found in rSelect: $socket");
                 }
             }
 
@@ -162,25 +160,25 @@ class spSocketProxy {
                     if ($this->isProxySocketConnected()) {
                         // Proxy socket ready for writing.
                         //echo "wP";
-                        echo "Sending " . strlen($this->proxyBuffer) . " to proxy... ";
+                        log::info("Sending " . strlen($this->proxyBuffer) . " to proxy...");
                         $size = @socket_send($this->proxySocket, $this->proxyBuffer, strlen($this->proxyBuffer), 0);
                         if ($size === false) {
                             // Error with proxy socket!
                             $errno = socket_last_error($this->proxySocket);
-                            echo "Error $errno sending to proxy socket: " . socket_strerror($errno) . "\n";
+                            log::error("Error $errno sending to proxy socket: " . socket_strerror($errno));
                             //$this->disconnect();
                             return false;
                         }
                         else {
                             if ($size < strlen($this->proxyBuffer)) {
                                 // Not all bytes were sent.  Buffer the remainder.
-                                echo "sent($size) buffered(" . (strlen($this->proxyBuffer) - $size) . ") ";
+                                log::info("sent($size) buffered(" . (strlen($this->proxyBuffer) - $size) . ") ");
                                 $this->proxyBuffer = substr($this->proxyBuffer, $size);
                             }
                             else {
                                 $this->proxyBuffer = null;
                             }
-                            echo "done\n";
+                            log::info("done");
                         }
                     }
                 }
@@ -188,12 +186,12 @@ class spSocketProxy {
                     if ($this->isClientSocketConnected()) {
                         // Client socket ready for writing.
                         //echo "wC";
-                        echo "Sending " . strlen($this->clientBuffer) . " to client... ";
+                        log::info("Sending " . strlen($this->clientBuffer) . " to client... ");
                         $size = @socket_send($this->clientSocket, $this->clientBuffer, strlen($this->clientBuffer), 0);
                         if ($size === false) {
                             // Error with client, close its connection.
                             $errno = socket_last_error($this->clientSocket);
-                            echo "Error $errno sending to client, closing client connection: " . socket_strerror($errno) . "\n";
+                            log::error("Error $errno sending to client, closing client connection: " . socket_strerror($errno));
                             socket_shutdown($this->clientSocket, 2);
                             socket_close($this->clientSocket);
                             $this->clientSocket = null;
@@ -201,19 +199,19 @@ class spSocketProxy {
                         else {
                             if ($size < strlen($this->clientBuffer)) {
                                 // Not all bytes were sent.  Buffer the remainder.
-                                echo "sent($size) buffered(" . (strlen($this->clientBuffer) - $size) . ") ";
+                                log::info("sent($size) buffered(" . (strlen($this->clientBuffer) - $size) . ") ");
                                 $this->clientBuffer = substr($this->clientBuffer, $size);
                             }
                             else {
                                 $this->clientBuffer = null;
                             }
-                            echo "done\n";
+                            log::info("done");
                         }
                     }
                 }
                 else {
                     // Unknown socket?
-                    echo "Error: unknown socket found in wSelect: $socket\n";
+                    log::error("Error: unknown socket found in wSelect: $socket");
                 }
             }
         }
@@ -238,7 +236,7 @@ class spSocketProxy {
             $this->idleTime = time();
         }
         else if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
-            echo "Idle timeout.  Disconnecting client!\n";
+            log::error("Idle timeout.  Disconnecting client!");
             $this->disconnect();
         }
     }
@@ -258,11 +256,11 @@ class spSocketProxy {
     private function connectProxySocket() {
         // Only connect socket once.
         if (!empty($this->proxySocketFunc)) {
-            echo "Connecting proxy socket...\n";
+            log::info("Connecting proxy socket...");
             $func = $this->proxySocketFunc;
             $this->proxySocket = $func();
             $this->proxySocketFunc = null;
-            echo "Connected.\n";
+            log::info("Connected.");
         }
     }
     

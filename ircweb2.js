@@ -785,6 +785,7 @@
                             'server': msg.info.server,
                             'timeString': msg.info.timeString
                         });
+                        break;
                         
                     default:
                         if (/^\d{3}$/.test(msg.command)) {
