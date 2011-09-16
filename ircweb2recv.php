@@ -33,7 +33,7 @@ if (isset($_SESSION['irc'])) {
             if ($line !== null && $line !== false) {
                 // Got a message.
                 $msg = $ircbot->parseMsg($line);
-                log::info('msg = ' . var_export($msg, true));
+                //log::info('msg = ' . var_export($msg, true));
                 
                 if ($msg !== false) {
                     $prevState = clone $state;

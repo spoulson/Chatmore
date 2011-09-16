@@ -61,6 +61,7 @@ if ($connectMode == 2) {
 // Initialize client state if invalid.
 if (!validateSession()) {
     log::info('Initializing session.');
+    unset($_SESSION['irc']);
     $state =& initializeSession(
         $_POST['nick'],
         uniqid(),
@@ -139,36 +140,37 @@ function validateSession() {
     $socketFile = $state->getSocketFilename();
     log::info("Socket file: $socketFile");
     
-    if (!file_exists($socketFile)) {
-        // If socket file is missing, clear client state and reinitialize.
-        log::info("Uh oh, socket file is missing, reinitializing session.");
+    // Check if we can connect to domain socket.
+    if (!validateSocketFile($socketFile, 5)) {
+        // No answer.  Assume listening process is dead and reinitialize.
         // TODO: Reconnect and attempt to restore joined channels.
-        unset($_SESSION['irc']);
+        log::info("Uh oh, socket file isn't connecting, reinitializing session.");
+        return false;
     }
-    else {
-        // Check if we can connect to domain socket.
-        if (!validateSocketFile($socketFile, 5)) {
-            // No answer.  Assume listening process is dead and reinitialize.
-            // TODO: Reconnect and attempt to restore joined channels.
-            log::info("Uh oh, socket file isn't connecting, reinitializing session.");
-            unset($_SESSION['irc']);
-        }
-    }
+
+    return true;
 }
 
 // Validate domain socket by knocking.
 // Return true if connection is possible.
 function validateSocketFile($socketFile, $timeout_sec, $timeout_usec = 0) {
+    if (!file_exists($socketFile)) {
+        log::info('Socket connection invalid: socket file is missing.');
+        return false;
+    }
+    
     $socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
     socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, array('sec' => $timeout_sec, 'usec' => $timeout_usec)); 
     
     if (socket_connect($socket, $socketFile)) {
         // Success.
+        log::info('Socket connection valid.');
         socket_shutdown($socket, 2);
         socket_close($socket);
         return true;
     }
     
+    log::info('Socket connection invalid: Connection time out.');
     socket_close($socket);
     return false;
 }

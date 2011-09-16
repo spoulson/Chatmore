@@ -105,7 +105,7 @@ class spSocketProxy {
                         //echo "rP";
                         $size = @socket_recv($this->proxySocket, $buf, 10240, 0);
                         if ($size) {
-                            log::info("proxy: $buf");
+                            //log::info("proxy: $buf");
                             log::info("Buffering to client, size(" . strlen($buf) . ")");
                             $this->clientBuffer .= $buf;
                         }
@@ -135,7 +135,7 @@ class spSocketProxy {
                             }
                         }
                         else if ($size) {
-                            log::info("client: $buf");
+                            //log::info("client: $buf");
                             log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                             $this->proxyBuffer .= $buf;
                         }
@@ -238,6 +238,7 @@ class spSocketProxy {
         else if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
             log::error("Idle timeout.  Disconnecting client!");
             $this->disconnect();
+            return false;
         }
     }
     
@@ -257,14 +258,18 @@ class spSocketProxy {
         // Only connect socket once.
         if (!empty($this->proxySocketFunc)) {
             log::info("Connecting proxy socket...");
+
             $func = $this->proxySocketFunc;
             $this->proxySocket = $func();
             $this->proxySocketFunc = null;
+
             log::info("Connected.");
         }
     }
     
     public function disconnect() {
+        log::info('Disconnecting...');
+
         // Close client connection.
         socket_shutdown($this->clientSocket);
         socket_close($this->clientSocket);
@@ -275,6 +280,8 @@ class spSocketProxy {
         socket_close($this->domainSocket);
         if (file_exists($this->domainSocketFile)) unlink($this->domainSocketFile);
         $this->domainSocket = null;
+        
+        log::info('Disconnected.');
     }
 }
 ?>

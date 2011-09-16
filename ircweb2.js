@@ -89,8 +89,8 @@
                     ' me - Send an action message',
                     ' motd - Get the server message of the day',
                     ' msg - Send a private message',
-                    ' notice - Send a notice to a nick or channel',
                     ' nick - Change your nick',
+                    ' notice - Send a notice to a nick or channel',
                     ' query - Select a target for messaging',
                     ' time - Get the server time',
                     ' topic - Get or set the selected channel\'s topic',
@@ -100,14 +100,14 @@
                     if (param === undefined) param = 'help';
                     
                     if (irc.cmdDefs[param] === undefined) {
-                        meta['error'] = 'Error: Cannot get help on unknown command "' + param + '".';
+                        meta.error = 'Error: Cannot get help on unknown command "' + param + '".';
                         return false;
                     }
 
-                    meta['cmd'] = param;
+                    meta.cmd = param;
                 },
                 exec: function (meta) {
-                    var cmdDef = irc.cmdDefs[meta['cmd']];
+                    var cmdDef = irc.cmdDefs[meta.cmd];
                     irc.writeTmpl('usage', { 'message': cmdDef.helpUsage });
                     var write = function (text) {
                         irc.writeTmpl('help', { 'message': text });
@@ -119,6 +119,21 @@
                         });
                     else
                         write(cmdDef.helpText);
+                }
+            },
+            'raw': {
+                helpUsage: 'Usage: /raw &gt;IRC request message&lt;',
+                helpText: 'Send a raw IRC request based on RFC2812.',
+                parseParam: function (param, meta) {
+                    meta.param = param;
+                    
+                    if (!irc.isConnected) {
+                        meta.error = 'Error: Must be connected to send a raw IRC request.';
+                        return false;
+                    }
+                },
+                exec: function (meta) {
+                    irc.sendMsg(meta.param);
                 }
             },
             'time': {
@@ -176,20 +191,20 @@
                 helpText: 'Select a nick or channel to send messages.',
                 parseParam: function (param, meta) {
                     if (param === undefined) {
-                        meta['error'] = irc.cmdDefs['query'].helpUsage;
+                        meta.error = irc.cmdDefs['query'].helpUsage;
                         return false;
                     }
                     
                     var params = param.split(' ', 1);
-                    meta['target'] = params[0];
+                    meta.target = params[0];
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to query a target.';
+                        meta.error = 'Error: Must be connected to query a target.';
                         return false;
                     }
                 },
                 exec: function (meta) {
-                    irc.queryTarget(meta['target']);
+                    irc.queryTarget(meta.target);
                 }
             },
             'me': {
@@ -199,15 +214,15 @@
                     var usage = irc.cmdDefs['msg'].helpUsage;
                     
                     if (param === undefined) {
-                        meta['error'] = usage;
+                        meta.error = usage;
                         return false;
                     }
                     
-                    meta['target'] = irc.target;
-                    meta['message'] = param;
+                    meta.target = irc.target;
+                    meta.message = param;
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to send an action message.';
+                        meta.error = 'Error: Must be connected to send an action message.';
                         return false;
                     }
                 },
@@ -225,20 +240,20 @@
                     var usage = irc.cmdDefs['msg'].helpUsage;
                     
                     if (param === undefined) {
-                        meta['error'] = usage;
+                        meta.error = usage;
                         return false;
                     }
                     
                     var m = /^(\S+)\s+(.+)$/.exec(param);
                     if (m === null || m.length != 3) {
-                        meta['error'] = usage;
+                        meta.error = usage;
                         return false;
                     }
-                    meta['target'] = m[1];
-                    meta['message'] = m[2];
+                    meta.target = m[1];
+                    meta.message = m[2];
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to send a message.';
+                        meta.error = 'Error: Must be connected to send a message.';
                         return false;
                     }
                 },
@@ -256,20 +271,20 @@
                     var usage = irc.cmdDefs['msg'].helpUsage;
                     
                     if (param === undefined) {
-                        meta['error'] = usage;
+                        meta.error = usage;
                         return false;
                     }
                     
                     var m = /^(\S+)\s+(.+)$/.exec(param);
                     if (m === null || m.length != 3) {
-                        meta['error'] = usage;
+                        meta.error = usage;
                         return false;
                     }
-                    meta['target'] = m[1];
-                    meta['message'] = m[2];
+                    meta.target = m[1];
+                    meta.message = m[2];
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to send a notice.';
+                        meta.error = 'Error: Must be connected to send a notice.';
                         return false;
                     }
                 },
@@ -285,23 +300,23 @@
                 helpText: 'Get or set the selected channel\'s topic',
                 parseParam: function (param, meta) {
                     if (irc.target === undefined) {
-                        meta['error'] = 'Error: No target selected.  Use: /query &lt;nick|#channel&gt;.';
+                        meta.error = 'Error: No target selected.  Use: /query &lt;nick|#channel&gt;.';
                         return false;
                     }
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to get or set the topic.';
+                        meta.error = 'Error: Must be connected to get or set the topic.';
                         return false;
                     }
                     
-                    meta['topic'] = param;
+                    meta.topic = param;
                 },
                 exec: function (meta) {
-                    if (meta['topic'] === undefined) {
+                    if (meta.topic === undefined) {
                         irc.sendMsg('TOPIC ' + irc.target);
                     }
                     else {
-                        irc.sendMsg('TOPIC ' + irc.target + ' :' + meta['topic']);
+                        irc.sendMsg('TOPIC ' + irc.target + ' :' + meta.topic);
                     }
                 }
             },
@@ -310,7 +325,7 @@
                 helpText: 'Clear the selected channel\'s topic',
                 parseParam: function (param, meta) {
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to clear the topic.';
+                        meta.error = 'Error: Must be connected to clear the topic.';
                         return false;
                     }
                 },
@@ -330,15 +345,15 @@
                 helpText: 'Join a channel.',
                 parseParam: function (param, meta) {
                     if (param === undefined) {
-                        meta['error'] = irc.cmdDefs['join'].helpUsage;
+                        meta.error = irc.cmdDefs['join'].helpUsage;
                         return false;
                     }
                     
                     var params = param.split(' ', 1);
-                    meta['channel'] = params[0].replace(/^([^#])/, '#$1');
+                    meta.channel = params[0].replace(/^([^#])/, '#$1');
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to join a channel.';
+                        meta.error = 'Error: Must be connected to join a channel.';
                         return false;
                     }
                 },
@@ -357,20 +372,20 @@
                 parseParam: function (param, meta) {
                     if (param === undefined) {
                         if (irc.target === undefined) {
-                            meta['error'] = irc.cmdDefs['leave'].helpUsage;
+                            meta.error = irc.cmdDefs['leave'].helpUsage;
                             return false;
                         }
                         else {
-                            meta['channel'] = irc.target;
+                            meta.channel = irc.target;
                         }
                     }
                     else {
                         var params = param.split(' ', 1);
-                        meta['channel'] = params[0].replace(/^([^#])/, '#$1');
+                        meta.channel = params[0].replace(/^([^#])/, '#$1');
                     }
                     
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to leave a channel.';
+                        meta.error = 'Error: Must be connected to leave a channel.';
                         return false;
                     }
                 },
@@ -385,15 +400,15 @@
                 helpText: 'Change your nick.',
                 parseParam: function (param, meta) {
                     if (param === undefined) {
-                        meta['error'] = irc.cmdDefs['nick'].helpUsage;
+                        meta.error = irc.cmdDefs['nick'].helpUsage;
                         return false;
                     }
                     
                     var params = param.split(' ', 1);
-                    meta['nick'] = params[0];
+                    meta.nick = params[0];
 
                     if (!irc.isConnected) {
-                        meta['error'] = 'Error: Must be connected to change your nickname.';
+                        meta.error = 'Error: Must be connected to change your nickname.';
                         return false;
                     }
                 },
@@ -823,7 +838,9 @@
                         irc.writeTmpl('error', { 'message': msg.message });
                     }
                     else {
-                        irc.writeTmpl('serverMsg', { 'message': msg.message });
+                        if (msg.code != 200) {
+                            irc.writeTmpl('serverMsg', { 'message': msg.message });
+                        }
                     }
                     break;
                 }

@@ -20,7 +20,7 @@ BODY {
 }
 
 #ircTabs {
-    width: 596px;
+    width: 680px;
     height: 240px;
 }
 
@@ -98,4 +98,14 @@ BODY {
 .ircChannel .nickHighlight {
     color: #EFD43E;
     padding-right: 3px;
+}
+
+.ircChannel .serverMsg .message {
+    font-family: monospace;
+}
+
+.ircChannel .clientMsg .message {
+    font-family: monospace;
+    font-style: italic;
+    color: white;
 }
