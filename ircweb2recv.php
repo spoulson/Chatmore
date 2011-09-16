@@ -1,5 +1,6 @@
 <?
-ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
+// TODO: Handle when domain socket doesn't connect.
+
 ini_set('display_errors', false);
 
 require_once 'config.php';
@@ -61,6 +62,18 @@ if (isset($_SESSION['irc'])) {
 
         $ircbot->disconnect();
     }
+}
+else {
+    // No session.
+    $data = array(
+        'msgs' => array(
+            array(
+                'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                'message' => 'Connection not open.',
+                'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+            )
+        )
+    );
 }
 
 // Send received messages data as JSON.

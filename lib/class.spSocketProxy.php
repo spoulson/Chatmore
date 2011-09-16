@@ -16,7 +16,8 @@ class spSocketProxy {
     private $proxyBuffer = null;
     private $clientBuffer = null;
     
-    public $idleTimeout = 60;
+    public $idleTimeout = 60;   // in seconds
+    public $pollTimeout = 1000; // in milliseconds
     
     public function spSocketProxy($domainSocketFile) {
         $this->domainSocketFile = $domainSocketFile;
@@ -65,7 +66,7 @@ class spSocketProxy {
         
         // Wait for a socket to become available.
         $newClientSocket = null;
-        $select = socket_select($rSelect, $wSelect, $eSelect, 0, 1000 * 1000);
+        $select = socket_select($rSelect, $wSelect, $eSelect, 0, $this->pollTimeout * 1000);
         
         if ($select === false) {
             $errno = socket_last_error();

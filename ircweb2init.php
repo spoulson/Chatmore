@@ -1,5 +1,4 @@
 <?
-ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
 ini_set('display_errors', false);
 
 require_once 'config.php';

@@ -20,8 +20,8 @@ BODY {
 }
 
 #ircTabs {
-    width: 680px;
-    height: 240px;
+    width: 740px;
+    height: 360px;
 }
 
 #userEntrySection {
@@ -49,11 +49,18 @@ BODY {
     overflow: hidden;
 }
 
+.ircChannel {
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 3px;
+    margin: -3px;
+}
+
 .ircChannel .line {
     clear: both;
     padding: 0 0 0 50px;
     text-indent: -50px;
     word-wrap: break-word;
+    margin-bottom: 0.1em;
 }
 
 .ircChannel .timestamp {

@@ -62,6 +62,7 @@
                     '<span class="nick">${prevNick}</span> is now known as <span class="nick">${nick}</span>' +
                 '{{/if}}' +
                 '</span></span>',
+            'nickInUse': '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
             'notopic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
             'topic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
             'changeTopic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
@@ -457,14 +458,18 @@
                         irc.processMessages(data);
                         
                         // Check for connection ready message.
-                        if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }))
-                            newCopnnectionFlag = false;
+                        if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
+                            newConnectionFlag = false;
+                        }
                     },
                     error: errorFunc
                 }
             );
             
-            if (errorFlag) return;
+            if (errorFlag) {
+                $('#activateButton').button('enable');
+                return;
+            }
             
             // Create/resume a connection.
             irc.writeTmpl('clientMsg', {
@@ -488,7 +493,7 @@
                         if (console) console.log(data);
                         irc.processMessages(data);
                         
-                        if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; })) {
+                        if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                             // Activated.
                             irc.writeTmpl('clientMsg', { 'message': 'Activated' });
                             irc.isConnected = true;
@@ -661,9 +666,9 @@
                 .replace('>', '&gt;');
         },
 
+        linkifyRegex: /(https?:\/\/([^\.\/\:]+(\.[^\.\/\:]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?([^=&<>]+=[^=&<>]*(&[^=&<>]+=[^=&<>]*)*)?)?(#[\w_\-]+)?)/g,
         linkifyText: function (text) {
-            // TODO: Better parsing to handle things like exclude trailing period.
-            return text.replace(/(https?:\/\/\S+?)/g, '<a href="$1">$1</a>');
+            return text.replace(irc.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
         },
 
         // Show a line of html in irc client.
@@ -673,6 +678,7 @@
 
             var write = function (html) {
                 var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+                html = irc.linkifyText(html);
                 $('<div class="line"/>')
                     .append(html)
                     .appendTo(ircEl);
@@ -718,7 +724,7 @@
                 switch (msg.type) {
                 case 'recv':
                     if (console) {
-                        console.log(msg.raw);
+                        if (msg.raw !== undefined) console.log(msg.raw);
                         console.log(msg);
                     }
                     
@@ -802,6 +808,12 @@
                         });
                         break;
                         
+                    case '433': // ERR_NICKNAMEINUSE
+                        irc.writeTmpl('nickInUse', {
+                            'nick': msg.info.nick
+                        });
+                        break;
+                        
                     default:
                         if (/^\d{3}$/.test(msg.command)) {
                             // Any other server message.
@@ -835,9 +847,18 @@
 
                 case 'servermsg':
                     if (msg.code >= 400) {
-                        irc.writeTmpl('error', { 'message': msg.message });
+                        // Don't show "Connection not open" when already disconnected.
+                        // Normally this happens during activation when a new connection must be made.
+                        if (irc.isConnected || msg.code != 400) {
+                            irc.writeTmpl('error', { 'message': msg.message });
+                        }
+                        
+                        if (irc.isConnected && msg.code == 400) {
+                            irc.deactivateClient();
+                        }
                     }
                     else {
+                        // Disregard 200 connection ready message.  Not important for display.
                         if (msg.code != 200) {
                             irc.writeTmpl('serverMsg', { 'message': msg.message });
                         }

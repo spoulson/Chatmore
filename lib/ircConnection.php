@@ -1,5 +1,6 @@
 <?
 // TODO: set_error_handler/set_exception_handler implementations.
+// Clean up sockets on error/exception.
 
 ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
 
@@ -27,6 +28,7 @@ umask(0);
 $proxy = new spSocketProxy($socketFile, 1);
 $proxy->setProxySocketFunc(create_function('', 'return connectToIrcServer();'));
 $proxy->idleTimeout = 300;
+$proxy->pollTimeout = 5000;
 log::info("Done.");
 
 // Poll loop.
@@ -35,17 +37,21 @@ while ($proxy->poll() !== false) {
     usleep(0);
 }
 
-// Shut down.
-log::info("Proxy shut down.");
-
-if (!empty($ircSocket)) {
-    log::info("Closing IRC connection...");
-    socket_shutdown($ircSocket, 2);
-    socket_close($ircSocket);
-    log::info("Closed.");
-}
-
-unlink($socketFile);
+cleanup();
 exit;
+
+function cleanup() {
+    // Shut down.
+    log::info("Proxy shut down.");
+
+    if (!empty($ircSocket)) {
+        log::info("Closing IRC connection...");
+        socket_shutdown($ircSocket, 2);
+        socket_close($ircSocket);
+        log::info("Closed.");
+    }
+
+    unlink($socketFile);
+}
 
 ?>

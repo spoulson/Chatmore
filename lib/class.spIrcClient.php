@@ -27,6 +27,7 @@ class spIrcClient
     const RPL_TIME = 391;
 
     const ERR_NOSUCHCHANNEL = 403;
+    const ERR_NICKNAMEINUSE = 433;
     const ERR_NOTREGISTERED = 451;
     
     private $isConnected = false;
@@ -136,24 +137,26 @@ class spIrcClient
     // )
     // returns false if parse failed.
     public function parseMsg($line) {
-        $matches = array();
+        global $ircConfig;
+        $m = array();
         $msg = null;
         
         // Parse raw message for prefix, command, and params.
-        if (!preg_match("/^(:(\\S+) )?(\\w+)( (.+?))?\\r\\n$/", $line, $matches)) return false;
+        if (!preg_match("/^(:(\\S+) )?(\\w+)( (.+?))?\\r\\n$/", $line, $m)) return false;
         $msg = array(
-            'raw' => $line,
-            'prefix' => isset($matches[2]) ? $matches[2] : null,
-            'command' => $matches[3],
-            'params' => $matches[5]
+            'prefix' => isset($m[2]) ? $m[2] : null,
+            'command' => $m[3],
+            'params' => $m[5]
         );
+        
+        if ($ircConfig['debug']['recv_send_raw']) $msg['raw'] = $line;
 
         // Parse prefix.
-        $matches = array();
-        if (preg_match("/^([\\w-\.]+)((!([\\w-\.]+))?@([\\w-\.]+))?$/", $msg['prefix'], $matches)) {
-            $msg['prefixNick'] = $matches[1];
-            if (isset($matches[4])) $msg['prefixUser'] = $matches[4];
-            if (isset($matches[5])) $msg['prefixHost'] = $matches[5];
+        $m = array();
+        if (preg_match("/^(.+?)((!([\\w-\.]+))?@([\\w-\.]+))?$/", $msg['prefix'], $m)) {
+            $msg['prefixNick'] = $m[1];
+            if (isset($m[4])) $msg['prefixUser'] = $m[4];
+            if (isset($m[5])) $msg['prefixHost'] = $m[5];
         }
         
         // Parse params depending on command.
@@ -277,6 +280,14 @@ class spIrcClient
             if (!preg_match("/(\\S+) :(.+)/", $msg['params'], $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
+                'error' => $msgParams[2]
+            );
+            break;
+            
+        case self::ERR_NICKNAMEINUSE:
+            if (!preg_match("/(\\S+) :(.+)/", $msg['params'], $msgParams)) return false;
+            $msg['info'] = array(
+                'nick' => $msgParams[1],
                 'error' => $msgParams[2]
             );
             break;
