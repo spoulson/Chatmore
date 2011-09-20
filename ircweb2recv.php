@@ -58,7 +58,7 @@ if (isset($_SESSION['irc'])) {
             
             $messageCount++;
             usleep(0);
-        } while ($line !== null && $line !== false && $messageCount < 50);
+        } while ($line !== null && $line !== false && $messageCount < 200);
 
         $ircbot->disconnect();
     }

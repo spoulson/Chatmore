@@ -84,7 +84,7 @@ class spIrcClient
             // check for line ending in read buffer.
             $m = null;
             //if (strlen($this->socketReadBuf)) log::info('socketReadBuf: ' . str_replace("\r\n", "$\r\n", $this->socketReadBuf));
-            if (preg_match("/^.*?\\r\\n/", $this->socketReadBuf, $m)) {
+            if (preg_match("/^.*?\r\n/", $this->socketReadBuf, $m)) {
                 // Found a line.
                 $line = $m[0];
                 $this->socketReadBuf = substr($this->socketReadBuf, strlen($line));
@@ -142,18 +142,21 @@ class spIrcClient
         $msg = null;
         
         // Parse raw message for prefix, command, and params.
-        if (!preg_match("/^(:(\\S+) )?(\\w+)( (.+?))?\\r\\n$/", $line, $m)) return false;
+        if (!preg_match("/^(:(\S+) )?(\w+)( (.+?))?\r\n$/", $line, $m)) return false;
+        $params = $m[5];
         $msg = array(
             'prefix' => isset($m[2]) ? $m[2] : null,
-            'command' => $m[3],
-            'params' => $m[5]
+            'command' => $m[3]
         );
         
-        if ($ircConfig['debug']['recv_send_raw']) $msg['raw'] = $line;
-
+        if ($ircConfig['debug']['recv_send_raw']) {
+            $msg['raw'] = $line;
+            $msg['params'] = $params;
+        }
+        
         // Parse prefix.
         $m = array();
-        if (preg_match("/^(.+?)((!([\\w-\.]+))?@([\\w-\.]+))?$/", $msg['prefix'], $m)) {
+        if (preg_match("/^(.+?)((!([\w-\.]+))?@([\w-\.]+))?$/", $msg['prefix'], $m)) {
             $msg['prefixNick'] = $m[1];
             if (isset($m[4])) $msg['prefixUser'] = $m[4];
             if (isset($m[5])) $msg['prefixHost'] = $m[5];
@@ -163,7 +166,7 @@ class spIrcClient
         $msgParams = array();
         switch ($msg['command']) {
         case 'PRIVMSG':
-            if (!preg_match("/^(\\S+) :(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             if (preg_match("/^\x{01}ACTION\s+([^\x{01}]+)\x{01}$/", $msgParams[2], $msgParams['action'])) {
                 $msg['info'] = array(
                     'target' => $msgParams[1],
@@ -178,9 +181,17 @@ class spIrcClient
                 );
             }
             break;
+            
+        case 'NOTICE':
+            if (!preg_match("/^(\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'target' => $msgParams[1],
+                'text' => $msgParams[2]
+            );
+            break;
         
         case 'MODE':
-            if (!preg_match("/(\S+) :([+|-]\w+)( (.+))?/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/(\S+) :([+|-]\w+)( (.+))?/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
                 'mode' => $msgParams[2]
@@ -189,14 +200,14 @@ class spIrcClient
             break;
             
         case 'NICK':
-            if (!preg_match("/:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'nick' => $msgParams[1]
             );
             break;
             
         case 'JOIN':
-            if (!preg_match("/:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1]
             );
@@ -204,26 +215,34 @@ class spIrcClient
             
         case 'PART':
             $msg['info'] = array(
-                'channel' => $msg['params']
+                'channel' => $params
             );
             break;
             
         case 'TOPIC':
-            if (!preg_match("/:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
-                'topic' => $msgParams[1]
+                'channel' => $msgParams[1],
+                'topic' => $msgParams[2]
+            );
+            break;
+            
+        case 'PING':
+            preg_match("/^:(.+)/", $params, $msgParams);
+            $msg['info'] = array(
+                'ping' => isset($msgParams[1]) ? $msgParams[1] : $this->state->host
             );
             break;
             
         case self::RPL_ENDOFWHO: // End of WHO list.
-            if (!preg_match("/^(\\S+) +\\S+ +:.+/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^(\S+) +\S+ +:.+/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1]
             );
             break;
 
         case self::RPL_WHOREPLY:
-            if (!preg_match("/^(\\S+) +(\\S+) +(\\S+) +(\\S+) +(\\S+) +(\\S+) +(\\S+) +:(\\d+) +(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^(\S+) +(\S+) +(\S+) +(\S+) +(\S+) +(\S+) +(\S+) +:(\d+) +(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[2],
                 'user' => $msgParams[3],
@@ -237,7 +256,7 @@ class spIrcClient
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
-            if (!preg_match("/\\S+ +\\S +(#\\w+) +(.+)$/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/\S+ +\S +(#\w+) +(.+)$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
                 'names' => explode(' ', rtrim($msgParams[2]))
@@ -245,14 +264,14 @@ class spIrcClient
             break;
             
         case self::RPL_NOTOPIC:
-            if (!preg_match("/^\\S+\\s+(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\S+\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'topic' => null
             );
             break;
             
         case self::RPL_TOPIC:
-            if (!preg_match("/^\\S+\\s+(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\S+\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => $msgParams[2]
@@ -260,7 +279,7 @@ class spIrcClient
             break;
             
         case 333: // Topic set by
-            if (!preg_match("/^\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)$/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\S+\s+(\S+)\s+(\S+)\s+(\d+)$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'nick' => $msgParams[2],
@@ -269,7 +288,7 @@ class spIrcClient
             break;
 
         case self::RPL_TIME:
-            if (!preg_match("/^\\S+\\s+(\\S+)\\s+:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/^\S+\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'server' => $msgParams[1],
                 'timeString' => $msgParams[2]
@@ -277,7 +296,7 @@ class spIrcClient
             break;
             
         case self::ERR_NOSUCHCHANNEL:
-            if (!preg_match("/(\\S+) :(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/(\S+) :(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
                 'error' => $msgParams[2]
@@ -285,7 +304,7 @@ class spIrcClient
             break;
             
         case self::ERR_NICKNAMEINUSE:
-            if (!preg_match("/(\\S+) :(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/(\S+) :(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'nick' => $msgParams[1],
                 'error' => $msgParams[2]
@@ -293,7 +312,7 @@ class spIrcClient
             break;
 
         case self::ERR_NOTREGISTERED:
-            if (!preg_match("/(\\S+) +:(.+)/", $msg['params'], $msgParams)) return false;
+            if (!preg_match("/(\S+) +:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'command' => $msgParams[1],
                 'error' => $msgParams[2]
@@ -328,17 +347,18 @@ class spIrcClient
 
         case 'PART':
             // Clean up state when leaving a channel.
-            unset($this->state->modes[$msg['info']['channel']]);
-            unset($this->state->names[$msg['info']['channel']]);
+            $channel = $msg['info']['channel'];
+            unset($this->state->channels[$channel]);
             $this->state->isModified = true;
             break;
         
         case self::RPL_WHOREPLY:
-            if ($this->isChannel($msg['info']['channel'])) {
-                // Store channel data in $whoReply.
-                $this->state->whoReply['names'][$msg['info']['channel']][] = $msg['info']['nick'];
-                $this->state->isModified = true;
-            }
+            $channel = $msg['info']['channel'];
+            // if ($this->isChannel($msg['info']['channel'])) {
+                // // Store channel data in $whoReply.
+                // $this->state->whoReply['names'][$msg['info']['channel']][] = $msg['info']['nick'];
+                // $this->state->isModified = true;
+            // }
             break;
             
         case self::RPL_TOPIC:
@@ -358,7 +378,32 @@ class spIrcClient
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
-            $this->state->names[$msg['info']['target']] = $msg['info']['names'];
+            //$this->state->names[$msg['info']['target']] = $msg['info']['names'];
+            $channel = $msg['info']['target'];
+            if (!isset($this->state->channels[$channel])) {
+                $this->state->channels[$channel] = new spIrcChannelDesc();
+            }
+            
+            foreach ($msg['info']['names'] as $name) {
+                $m = array();
+                preg_match("/^(.)(.+)/", $name, $m);
+                $prefix = $m[1];
+                $nick = $m[2];
+                
+                if (!isset($this->state->channels[$channel]->members[$nick])) {
+                    $member = new spIrcChannelMemberDesc();
+                    $member->mode = $prefix;
+                    // TODO: Populate class with member metadata.
+                    $this->state->channels[$channel]->members[$nick] = $member;
+                }
+            
+                if (!isset($this->state->users[$nick])) {
+                    $user = new spIrcUserDesc();
+                    // TODO: Populate class with user metadata.
+                    $this->state->users[$nick] = $user;
+                }
+            }
+            
             $this->state->isModified = true;
             break;
 
@@ -368,8 +413,8 @@ class spIrcClient
     }
         
     public function debug_write($text) {
-        $text = preg_replace("/[\\r\\n]/", "", $text);
-        $text = preg_replace("/\\s{2,}/", " ", $text);
+        $text = preg_replace("/[\r\n]/", "", $text);
+        $text = preg_replace("/\s{2,}/", " ", $text);
         $this->msg('#sp', $text);
     }
 
@@ -453,9 +498,10 @@ class spIrcClient
     }
 
     // Response to a PING message.
+    // Expects $msg['info']['ping'] to contain ping parameter.
 	public function pong($msg) {
-        $param = empty($msg['params']) ? (':' . $this->state->host) : $msg['params'];
-        $this->sendRawMsg("PONG $param\r\n");
+        $param = $msg['info']['ping'];
+        $this->sendRawMsg("PONG :$param\r\n");
     }
     
 	public function quit($quitMsg = "") {

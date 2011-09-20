@@ -2,83 +2,98 @@
 
     var irc;
     irc = {
+        parentElement: undefined,
         intervalPollHandle: undefined,
+        pollInterval: 500,
+        lastRecvTime: undefined,
+        statusInterval: 1000,
+        statusPollHandle: undefined,
+        statusTimeout: 5,
         state : undefined,
-        tab_counter: 1000,
         isConnected: false,
-        target: undefined,
+
+        localState: {
+            nick: 'lamer' + Math.floor(Math.random() * 10000),
+            realname: 'lame user',
+            server: 'irc.dsm.org',
+            port: 6667,
+            target: undefined, // Selected target nick or channel, set via /query.
+            lastMsgSender: undefined,
+            autoCompleteString: undefined,
+            autoCompleteSuggest: undefined
+        },
 
         // IRC client message templates.
         tmpls: {
-            'timestamp': '<span class="timestamp">[${irc.getTimestamp()}]&nbsp;</span>',
-            'error': '{{tmpl "timestamp"}}<span class="error"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            'usage': '{{tmpl "timestamp"}}<span class="usage"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            'help': '{{tmpl "timestamp"}}<span class="help"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            'serverMsg': '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            'clientMsg': '{{tmpl "timestamp"}}<span class="clientMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            'outgoingChannelMsg': '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> <span class="message">${message}</span></span>',
-            'outgoingPrivateMsg': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-            'outgoingChannelAction': '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
-            'outgoingPrivateAction': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
-            'outgoingChannelNotice': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>-</span> <span class="message">${message}</span></span>',
-            'outgoingPrivateNotice': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-            'incomingChannelMsg':
+            timestamp: '<span class="timestamp">[${irc.getTimestamp()}]&nbsp;</span>',
+            error: '{{tmpl "timestamp"}}<span class="error"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            usage: '{{tmpl "timestamp"}}<span class="usage"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            help: '{{tmpl "timestamp"}}<span class="help"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> <span class="message">${message}</span></span>',
+            outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
+            outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
+            outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
+            outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>-</span> <span class="message">${message}</span></span>',
+            outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
+            incomingChannelMsg:
                 '{{tmpl "timestamp"}}' +
                 '<span class="channelMsg' +
-                    '{{if message.indexOf(clientNick) != -1}} nickHighlight{{/if}}' + '">' +
+                    '{{if message.toLowerCase().indexOf(clientNick.toLowerCase()) != -1}} nickHighlight{{/if}}' + '">' +
                     '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> ' +
                     '<span class="message">${message}</span></span>',
-            'incomingPrivateMsg': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-            'incomingChannelAction': '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
-            'incomingPrivateAction': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span></span> <span class="message">${message}</span></span>',
-            'incomingPrivateNotice': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-            'incomingChannelNotice': '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-            'queryOff': '{{tmpl "timestamp"}}' +
-                '<span class="queryMessage"><span class="prefix">***</span> <span class="message">' +
+            incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
+            incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
+            incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span></span> <span class="message">${message}</span></span>',
+            incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
+            incomingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
+            queryOff: '{{tmpl "timestamp"}}' +
+                '<span class="queryMsg"><span class="prefix">***</span> <span class="message">' +
                 '{{if /^#/.test(prevTarget)}}' +
                     'You are no longer talking to channel <span class="channel">${prevTarget}</span>' +
                 '{{else}}' +
                     'Ending conversation with <span class="nick">${prevTarget}</span>' +
                 '{{/if}}' +
                 '</span>',
-            'query': '{{tmpl "timestamp"}}' +
-                '<span class="queryMessage"><span class="prefix">***</span> <span class="message">' +
+            query: '{{tmpl "timestamp"}}' +
+                '<span class="queryMsg"><span class="prefix">***</span> <span class="message">' +
                 '{{if /^#/.test(target)}}' +
                     'You are now talking to channel <span class="channel">${target}</span>' +
                 '{{else}}' +
                     'Starting conversation with <span class="nick">${target}</span>' +
                 '{{/if}}' +
                 '</span>',
-            'queryOffChannel': '{{tmpl "timestamp"}}<span class="queryMessage"><span class="prefix">***</span> <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span></span>',
-            'queryOffNick': '{{tmpl "timestamp"}}<span class="queryMessage"><span class="prefix">***</span> <span class="message">Ending conversation with <span class="nick">${nick}</span></span></span>',
-            'queryChannel': '{{tmpl "timestamp"}}<span class="queryMessage"><span class="prefix">***</span> <span class="message">You are now talking to channel <span class="channel">${channel}</span></span></span>',
-            'queryNick': '{{tmpl "timestamp"}}<span class="queryMessage"><span class="prefix">***</span> <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
-            'join': '{{tmpl "timestamp"}}<span class="JOIN"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
-            'leave': '{{tmpl "timestamp"}}<span class="PART"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
-            'nick': '{{tmpl "timestamp"}}<span class="prefix">***</span> <span class="NICK"><span class="message">' +
-                '{{if clientNick == prevNick}}' +
+            queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span></span>',
+            queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">Ending conversation with <span class="nick">${nick}</span></span></span>',
+            queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">You are now talking to channel <span class="channel">${channel}</span></span></span>',
+            queryNick: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
+            join: '{{tmpl "timestamp"}}<span class="JOIN"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
+            leave: '{{tmpl "timestamp"}}<span class="PART"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
+            nick: '{{tmpl "timestamp"}}<span class="prefix">***</span> <span class="NICK"><span class="message">' +
+                '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                     'Nick changed to <span class="nick">${nick}</span>' +
                 '{{else}}' +
                     '<span class="nick">${prevNick}</span> is now known as <span class="nick">${nick}</span>' +
                 '{{/if}}' +
                 '</span></span>',
-            'nickInUse': '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
-            'notopic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
-            'topic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
-            'changeTopic': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
+            nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
+            notopic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
+            topic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
+            changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
                 '{{if topic == ""}}' +
                     'has cleared the topic' +
                 '{{else}}' +
                     'has changed the topic to: <span class="topicMessage">${topic}</span>' +
                 '{{/if}}' +
                 '</span></span>',
-            'topicSetBy': '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${irc.formatTime(time)}</span></span></span>',
-            'serverTime': '{{tmpl "timestamp"}}<span class="TIME"><span class="prefix">***</span> <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span></span>'
+            topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${irc.formatTime(time)}</span></span></span>',
+            serverTime: '{{tmpl "timestamp"}}<span class="TIME"><span class="prefix">***</span> <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span></span>'
         },
 
         // Client /command definitions.
         cmdDefs: {
-            'help': {
+            help: {
                 helpUsage: 'Usage: /help &lt;command&gt;',
                 helpText: [
                     'Show help for client commands.',
@@ -109,9 +124,9 @@
                 },
                 exec: function (meta) {
                     var cmdDef = irc.cmdDefs[meta.cmd];
-                    irc.writeTmpl('usage', { 'message': cmdDef.helpUsage });
+                    irc.writeTmpl('usage', { message: cmdDef.helpUsage });
                     var write = function (text) {
-                        irc.writeTmpl('help', { 'message': text });
+                        irc.writeTmpl('help', { message: text });
                     };
                     
                     if (typeof(cmdDef.helpText) === 'object')
@@ -122,7 +137,7 @@
                         write(cmdDef.helpText);
                 }
             },
-            'raw': {
+            raw: {
                 helpUsage: 'Usage: /raw &gt;IRC request message&lt;',
                 helpText: 'Send a raw IRC request based on RFC2812.',
                 parseParam: function (param, meta) {
@@ -137,7 +152,7 @@
                     irc.sendMsg(meta.param);
                 }
             },
-            'time': {
+            time: {
                 helpUsage: 'Usage: /time [server]',
                 helpText: [
                     'Get the server time.',
@@ -158,7 +173,7 @@
                         irc.sendMsg('TIME');
                 }
             },
-            'motd': {
+            motd: {
                 helpUsage: 'Usage: /motd [server]',
                 helpText: [
                     'Get the server message of the day.',
@@ -179,15 +194,15 @@
                         irc.sendMsg('MOTD');
                 }
             },
-            'clear': {
+            clear: {
                 helpUsage: 'Usage: /clear',
                 helpText: 'Clear the chat console.',
                 parseParam: function () { },
                 exec: function (meta) {
-                    $('#ircTabs .ircChannel').html('');
+                    $(irc.parentElement).find('.ircChannel').html('');
                 }
             },
-            'query': {
+            query: {
                 helpUsage: 'Usage: /query &lt;nick|#channel&gt;',
                 helpText: 'Select a nick or channel to send messages.',
                 parseParam: function (param, meta) {
@@ -208,7 +223,7 @@
                     irc.queryTarget(meta.target);
                 }
             },
-            'me': {
+            me: {
                 helpUsage: 'Usage: /me &lt;message&gt;',
                 helpText: 'Send an action message to currently selected channel or nick.',
                 parseParam: function (param, meta) {
@@ -219,7 +234,7 @@
                         return false;
                     }
                     
-                    meta.target = irc.target;
+                    meta.target = irc.localState.target;
                     meta.message = param;
                     
                     if (!irc.isConnected) {
@@ -234,7 +249,7 @@
                         irc.sendPrivateAction(meta.target, meta.message);
                 }
             },
-            'msg': {
+            msg: {
                 helpUsage: 'Usage: /msg &lt;nick|#channel&gt; &lt;message&gt;',
                 helpText: 'Send a private message to a nick.',
                 parseParam: function (param, meta) {
@@ -265,7 +280,7 @@
                         irc.sendPrivateMsg(meta.target, meta.message);
                 }
             },
-            'notice': {
+            notice: {
                 helpUsage: 'Usage: /notice &lt;nick|#channel&gt; &lt;message&gt;',
                 helpText: 'Send a notice to a nick or channel.',
                 parseParam: function (param, meta) {
@@ -296,11 +311,11 @@
                         irc.sendPrivateNotice(meta.target, meta.message);
                 }
             },
-            'topic': {
+            topic: {
                 helpUsage: 'Usage: /topic [message]',
                 helpText: 'Get or set the selected channel\'s topic',
                 parseParam: function (param, meta) {
-                    if (irc.target === undefined) {
+                    if (irc.localState.target === undefined) {
                         meta.error = 'Error: No target selected.  Use: /query &lt;nick|#channel&gt;.';
                         return false;
                     }
@@ -314,14 +329,14 @@
                 },
                 exec: function (meta) {
                     if (meta.topic === undefined) {
-                        irc.sendMsg('TOPIC ' + irc.target);
+                        irc.sendMsg('TOPIC ' + irc.localState.target);
                     }
                     else {
-                        irc.sendMsg('TOPIC ' + irc.target + ' :' + meta.topic);
+                        irc.sendMsg('TOPIC ' + irc.localState.target + ' :' + meta.topic);
                     }
                 }
             },
-            'cleartopic': {
+            cleartopic: {
                 helpUsage: 'Usage: /cleartopic',
                 helpText: 'Clear the selected channel\'s topic',
                 parseParam: function (param, meta) {
@@ -331,17 +346,17 @@
                     }
                 },
                 exec: function (meta) {
-                    irc.sendMsg('TOPIC ' + irc.target + ' :');
+                    irc.sendMsg('TOPIC ' + irc.localState.target + ' :');
                 }
             },
-            'who': {
+            who: {
                 helpUsage: 'Usage: /who',
                 helpText: 'Get info on a nick.',
                 exec: function () {
                     irc.sendMsg('WHO');
                 }
             },
-            'join': {
+            join: {
                 helpUsage: 'Usage: /join &lt;#channel&gt;',
                 helpText: 'Join a channel.',
                 parseParam: function (param, meta) {
@@ -364,7 +379,7 @@
                     });
                 }
             },
-            'leave': {
+            leave: {
                 helpUsage: 'Usage: /leave [#channel]',
                 helpText: [
                     'Leave a channel.',
@@ -372,12 +387,12 @@
                 ],
                 parseParam: function (param, meta) {
                     if (param === undefined) {
-                        if (irc.target === undefined) {
+                        if (irc.localState.target === undefined) {
                             meta.error = irc.cmdDefs['leave'].helpUsage;
                             return false;
                         }
                         else {
-                            meta.channel = irc.target;
+                            meta.channel = irc.localState.target;
                         }
                     }
                     else {
@@ -392,11 +407,11 @@
                 },
                 exec: function (meta) {
                     irc.sendMsg('PART ' + meta.channel, function () {
-                        if (irc.target == meta.channel) irc.queryTarget();
+                        if (irc.localState.target == meta.channel) irc.queryTarget();
                     });
                 }
             },
-            'nick': {
+            nick: {
                 helpUsage: 'Usage: /nick &lt;nickname&gt;',
                 helpText: 'Change your nick.',
                 parseParam: function (param, meta) {
@@ -421,25 +436,22 @@
 
         activateClient: function () {
             irc.isConnected = false;
-            $('#activateButton').button('disable').removeClass('ui-state-hover');
-            $('#deactivateButton').button('disable').removeClass('ui-state-hover');
+            irc.lastRecvTime = undefined;
+            var parent = $(irc.parentElement);
+            parent.find('.activateButton').button('disable').removeClass('ui-state-hover');
+            parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
             
             var newConnectionFlag = true;
             var errorFlag = false;
             var errorFunc = function (xhr, status, error) {
                 irc.writeTmpl('error', {
-                    'message': 'Error during activation: ' + status + ', ' + error
+                    message: 'Error during activation: ' + status + ', ' + error
                 });
-                $('#activateButton').button('enable');
+                parent.find('.activateButton').button('enable');
                 errorFlag = true;
             };
             
             // Initialize web client.
-            var nick = 'lamer' + Math.floor(Math.random() * 10000);
-            var realname = nick + ' user';
-            var server = 'irc.dsm.org';
-            var port = 6667;
-            
             // Check for open connection.
             var newConnectionFlag = true;
             
@@ -453,8 +465,10 @@
                         connect: 0
                     },
                     success: function (data) {
-                        if (console) console.log('data from init check:');
-                        if (console) console.log(data);
+                        if (console) {
+                            console.log('data from init check:');
+                            console.log(data);
+                        }
                         irc.processMessages(data);
                         
                         // Check for connection ready message.
@@ -467,13 +481,13 @@
             );
             
             if (errorFlag) {
-                $('#activateButton').button('enable');
+                parent.find('.activateButton').button('enable');
                 return;
             }
             
             // Create/resume a connection.
             irc.writeTmpl('clientMsg', {
-                'message': (newConnectionFlag ? 'Connecting to IRC server' : 'Resuming existing IRC connection')
+                message: (newConnectionFlag ? 'Connecting to IRC server' : 'Resuming existing IRC connection')
             });
             
             $.ajax(
@@ -483,35 +497,44 @@
                     dataType: 'json',
                     data: {
                         connect: 1,
-                        nick: nick,
-                        realname: realname,
-                        server: server,
-                        port: port
+                        nick: irc.localState.nick,
+                        realname: irc.localState.realname,
+                        server: irc.localState.server,
+                        port: irc.localState.port
                     },
                     success: function (data) {
-                        if (console) console.log('data from init:');
-                        if (console) console.log(data);
+                        if (console) {
+                            console.log('data from init:');
+                            console.log(data);
+                        }
                         irc.processMessages(data);
                         
                         if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                             // Activated.
-                            irc.writeTmpl('clientMsg', { 'message': 'Activated' });
+                            irc.writeTmpl('clientMsg', { message: 'Activated' });
                             irc.isConnected = true;
-                            $('#deactivateButton').button('enable');
+                            parent.find('.deactivateButton').button('enable');
                         
                             // Periodically poll for IRC activity.
                             irc.intervalPollHandle = setInterval(function () {
-                                $.getJSON(
-                                    'ircweb2recv.php',
-                                    null,
-                                    irc.processMessages
-                                );
-                            }, 500);
+                                $.getJSON('ircweb2recv.php', null, irc.processMessages);
+                            }, irc.pollInterval);
+                            
+                            // Periodically check that polls to ircweb2recv are still occurring within reasonable time.
+                            irc.statusPollHandle = setInterval(function() {
+                                time = new Date().getTime();
+                                if (irc.lastRecvTime !== undefined && time - irc.lastRecvTime > (irc.statusTimeout * 1000)) {
+                                    // Status check timeout.
+                                    if (console) console.log('Status timeout!');
+                                    irc.deactivateClient();
+                                    // TODO: try to auto-reactivate up to a few times.
+                                }
+                            }, irc.statusInterval);
                         }
                         else {
                             // Error on activation.
-                            irc.writeTmpl('clientMsg', { 'message': 'Error during activation' });
-                            $('#activateButton').button('enable');
+                            irc.writeTmpl('clientMsg', { message: 'Error during activation' });
+                            parent.find('.activateButton').button('enable');
                         }
                     },
                     error: errorFunc
@@ -520,17 +543,22 @@
 
         deactivateClient: function () {
             irc.isConnected = false;
-            $('#deactivateButton').button('disable').removeClass('ui-state-hover');
+            var parent = $(irc.parentElement);
+            parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
             clearInterval(irc.intervalPollHandle);
-            $('#activateButton').button('enable');
-            irc.writeTmpl('clientMsg', { 'message': 'Deactivated' });
+            clearInterval(irc.statusPollHandle);
+            parent
+                .removeClass('activated')
+                .addClass('deactivated');
+            parent.find('.activateButton').button('enable');
+            irc.writeTmpl('clientMsg', { message: 'Deactivated' });
         },
 
         // Send raw message to server.
         sendMsg: function (rawMsg, postCallback) {
             $.post(
                 'ircweb2send.php',
-                { 'msg': rawMsg },
+                { msg: rawMsg },
                 function () {
                     if (console) console.log('Sent: ' + rawMsg);
                     if (postCallback) postCallback(rawMsg);
@@ -540,27 +568,27 @@
 
         sendChannelMsg: function (channel, message) {
             irc.writeTmpl('outgoingChannelMsg', {
-                'clientNick': irc.state.nick,
-                'channel': channel,
-                'message': message
+                clientNick: irc.state.nick,
+                channel: channel,
+                message: message
             });
             irc.sendMsg('PRIVMSG ' + channel + ' ' + message);
         },
 
         sendPrivateMsg: function (nick, message) {
             irc.writeTmpl('outgoingPrivateMsg', {
-                'clientNick': irc.state.nick,
-                'nick': nick,
-                'message': message
+                clientNick: irc.state.nick,
+                nick: nick,
+                message: message
             });
             irc.sendMsg('PRIVMSG ' + nick + ' ' + message);
         },
         
         sendChannelAction: function (channel, message) {
             irc.writeTmpl('outgoingChannelAction', {
-                'clientNick': irc.state.nick,
-                'channel': channel,
-                'message': message
+                clientNick: irc.state.nick,
+                channel: channel,
+                message: message
             });
             var quote = String.fromCharCode(1);
             irc.sendMsg('PRIVMSG ' + channel + ' ' + quote + 'ACTION ' + message + quote);
@@ -568,9 +596,9 @@
 
         sendPrivateAction: function (nick, message) {
             irc.writeTmpl('outgoingPrivateAction', {
-                'clientNick': irc.state.nick,
-                'nick': nick,
-                'message': message
+                clientNick: irc.state.nick,
+                nick: nick,
+                message: message
             });
             var quote = String.fromCharCode(1);
             irc.sendMsg('PRIVMSG ' + nick + ' ' + quote + 'ACTION ' + message + quote);
@@ -578,18 +606,18 @@
         
         sendChannelNotice: function (channel, message) {
             irc.writeTmpl('outgoingChannelNotice', {
-                'clientNick': irc.state.nick,
-                'channel': channel,
-                'message': message
+                clientNick: irc.state.nick,
+                channel: channel,
+                message: message
             });
             irc.sendMsg('NOTICE ' + channel + ' ' + message);
         },
 
         sendPrivateNotice: function (nick, message) {
             irc.writeTmpl('outgoingPrivateNotice', {
-                'clientNick': irc.state.nick,
-                'nick': nick,
-                'message': message
+                clientNick: irc.state.nick,
+                nick: nick,
+                message: message
             });
             irc.sendMsg('NOTICE ' + nick + ' ' + message);
         },
@@ -605,13 +633,13 @@
                 var param = m[3];
                 
                 if (irc.cmdDefs[cmd] === undefined) {
-                    irc.writeTmpl('error', { 'message': 'Error: Unknown client command "' + cmd + '".' });
+                    irc.writeTmpl('error', { message: 'Error: Unknown client command "' + cmd + '".' });
                 }
                 else {
                     var meta = {};
                     var cmdDef = irc.cmdDefs[cmd];
                     if (cmdDef.parseParam && cmdDef.parseParam(param, meta) === false) {
-                        if (meta.error) irc.writeLine(meta.error);
+                        if (meta.error) irc.writeTmpl('error', { message: meta.error });
                     }
                     else {
                         cmdDef.exec(meta);
@@ -621,24 +649,24 @@
             // Send text to selected target.
             else if (irc.isConnected) {
                 // Sanitize input.
-                if (irc.target !== undefined) {
+                if (irc.localState.target !== undefined) {
                     text = text.replace(/([\n\r])/gm, '');
                     if (text.length > 0) {
-                        if (/^#/.test(irc.target))
-                            irc.sendChannelMsg(irc.target, text);
+                        if (/^#/.test(irc.localState.target))
+                            irc.sendChannelMsg(irc.localState.target, text);
                         else
-                            irc.sendPrivateMsg(irc.target, text);
+                            irc.sendPrivateMsg(irc.localState.target, text);
                     }
                 }
                 else {
-                    irc.writeTmpl('error', { 'message': 'Error: No target selected.  Use: /query <nick|#channel>.' });
+                    irc.writeTmpl('error', { message: 'Error: No target selected.  Use: /query <nick|#channel>.' });
                 }
             }
             else {
-                irc.writeTmpl('error', { 'message': 'Error: Cannot send message, client not activated.' });
+                irc.writeTmpl('error', { message: 'Error: Cannot send message, client not activated.' });
             }
             
-            $('#userEntry').val('');
+            $(irc.parentElement).find('.userEntry').val('');
         },
 
         getTimestamp: function () {
@@ -658,30 +686,23 @@
             return pn.substring(pn.length - digits);
         },
 
-        escapeHtml: function (text) {
-            if (text === undefined || text === null) return text;
-            return text.toString()
-                .replace('&', '&amp;')
-                .replace('<', '&lt;')
-                .replace('>', '&gt;');
-        },
-
-        linkifyRegex: /(https?:\/\/([^\.\/\:]+(\.[^\.\/\:]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?([^=&<>]+=[^=&<>]*(&[^=&<>]+=[^=&<>]*)*)?)?(#[\w_\-]+)?)/g,
+        // Convert URL patterns into HTML links.
         linkifyText: function (text) {
             return text.replace(irc.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
         },
+        linkifyRegex: /(https?:\/\/([^\.\/\:]+(\.[^\.\/\:]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?([^=&<>]+=[^=&<>]*(&[^=&<>]+=[^=&<>]*)*)?)?(#[\w_\-]+)?)/g,
 
         // Show a line of html in irc client.
         writeLine: function (html) {
-            var ircEl = $('#tabConsole .ircChannel');
-            var el = ircEl.get(0);
+            var ircChannel = $(irc.parentElement).find('#tabConsole .ircChannel');
+            var el = ircChannel.get(0);
 
             var write = function (html) {
                 var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
                 html = irc.linkifyText(html);
                 $('<div class="line"/>')
                     .append(html)
-                    .appendTo(ircEl);
+                    .appendTo(ircChannel);
                 if (atBottom) el.scrollTop = el.scrollHeight;
             };
             
@@ -704,15 +725,16 @@
 
         queryTarget: function (newTarget) {
             irc.writeTmpl((newTarget === undefined) ? 'queryOff' : 'query', {
-                'target': newTarget,
-                'prevTarget': irc.target
+                target: newTarget,
+                prevTarget: irc.localState.target
             });
             
-            irc.target = newTarget;
-            $('#targetFragment').fadeOut(null, function () {
-                $('#targetLabel').text(irc.target);
-                if (irc.target !== undefined && irc.target !== null) {
-                    $('#targetFragment').fadeIn();
+            irc.localState.target = newTarget;
+            var parent = $(irc.parentElement);
+            parent.find('.targetFragment').fadeOut(null, function () {
+                parent.find('.targetLabel').text(irc.localState.target);
+                if (irc.localState.target !== undefined && irc.localState.target !== null) {
+                    parent.find('.targetFragment').fadeIn();
                 }
             });
         },
@@ -720,6 +742,10 @@
         // Process incoming messages.
         processMessages: function (data) {
             if (data === undefined) return false;
+            
+            // Timestamp when last received message processing occurs.
+            irc.lastRecvTime = new Date().getTime();
+            
             $.each(data.msgs, function (key, msg) {
                 switch (msg.type) {
                 case 'recv':
@@ -730,87 +756,107 @@
                     
                     switch (msg.command) {
                     case 'PRIVMSG':
-                        if (msg.info.target == irc.state.nick)
+                        if (msg.info.target.toLowerCase() == irc.state.nick.toLowerCase()) {
                             irc.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', {
-                                'clientNick': irc.state.nick,
-                                'nick': msg.prefixNick,
-                                'message': msg.info.text
+                                clientNick: irc.state.nick,
+                                nick: msg.prefixNick,
+                                message: msg.info.text
                             });
+                            if (!msg.info.isAction) irc.localState.lastMsgSender = msg.prefixNick;
+                        }
                         else
                             irc.writeTmpl(msg.info.isAction ? 'incomingChannelAction' : 'incomingChannelMsg', {
-                                'clientNick': irc.state.nick,
-                                'nick': msg.prefixNick,
-                                'channel': msg.info.target,
-                                'message': msg.info.text
+                                clientNick: irc.state.nick,
+                                nick: msg.prefixNick,
+                                channel: msg.info.target,
+                                message: msg.info.text
+                            });
+                        break;
+                        
+                    case 'NOTICE':
+                        if (msg.info.target.toLowerCase() == irc.state.nick.toLowerCase()) {
+                            irc.writeTmpl('incomingPrivateNotice', {
+                                clientNick: irc.state.nick,
+                                nick: msg.prefixNick,
+                                message: msg.info.text
+                            });
+                            irc.localState.lastMsgSender = msg.prefixNick;
+                        }
+                        else
+                            irc.writeTmpl('incomingChannelNotice', {
+                                clientNick: irc.state.nick,
+                                nick: msg.prefixNick,
+                                channel: msg.info.target,
+                                message: msg.info.text
                             });
                         break;
                         
                     case 'JOIN':
                         irc.writeTmpl('join', {
-                            'nick': msg.prefixNick,
-                            'ident': msg.prefixUser,
-                            'host': msg.prefixHost,
-                            'channel': msg.info.channel
+                            nick: msg.prefixNick,
+                            ident: msg.prefixUser,
+                            host: msg.prefixHost,
+                            channel: msg.info.channel
                         });
                         break;
                         
                     case 'PART':
                         irc.writeTmpl('leave', {
-                            'nick': msg.prefixNick,
-                            'ident': msg.prefixUser,
-                            'host': msg.prefixHost,
-                            'channel': msg.info.channel
+                            nick: msg.prefixNick,
+                            ident: msg.prefixUser,
+                            host: msg.prefixHost,
+                            channel: msg.info.channel
                         });
                         break;
                     
                     case 'NICK':
                         irc.writeTmpl('nick', {
-                            'clientNick': irc.state.nick,
-                            'nick': msg.info.nick,
-                            'prevNick': msg.prefixNick
+                            clientNick: irc.state.nick,
+                            nick: msg.info.nick,
+                            prevNick: msg.prefixNick
                         });
                         break;
                         
                     case 'TOPIC':
                         irc.writeTmpl('changeTopic', {
-                            'clientNick': irc.state.nick,
-                            'channel': msg.info.channel,
-                            'nick': msg.prefixNick,
-                            'topic': msg.info.topic
+                            clientNick: irc.state.nick,
+                            channel: msg.info.channel,
+                            nick: msg.prefixNick,
+                            topic: msg.info.topic
                         });
                         break;
 
                     case '331': // RPL_NOTOPIC
                         irc.writeTmpl('notopic', {
-                            'channel': msg.info.channel
+                            channel: msg.info.channel
                         });
                         break;
                         
                     case '332': // RPL_TOPIC
                         irc.writeTmpl('topic', {
-                            'channel': msg.info.channel,
-                            'topic': msg.info.topic
+                            channel: msg.info.channel,
+                            topic: msg.info.topic
                         });
                         break;
                         
                     case '333': // Topic set by
                         irc.writeTmpl('topicSetBy', {
-                            'channel': msg.info.channel,
-                            'nick': msg.info.nick,
-                            'time': msg.info.time
+                            channel: msg.info.channel,
+                            nick: msg.info.nick,
+                            time: msg.info.time
                         });
                         break;
                         
                     case '391': // RPL_TIME
                         irc.writeTmpl('serverTime', {
-                            'server': msg.info.server,
-                            'timeString': msg.info.timeString
+                            server: msg.info.server,
+                            timeString: msg.info.timeString
                         });
                         break;
                         
                     case '433': // ERR_NICKNAMEINUSE
                         irc.writeTmpl('nickInUse', {
-                            'nick': msg.info.nick
+                            nick: msg.info.nick
                         });
                         break;
                         
@@ -819,7 +865,7 @@
                             // Any other server message.
                             var m;
                             if (m = /:(.+)/.exec(msg.params)) {
-                                irc.writeTmpl('serverMsg', { 'message': m[1] });
+                                irc.writeTmpl('serverMsg', { message: m[1] });
                             }
                         }
                         
@@ -837,20 +883,23 @@
                         
                         if (prevState === undefined || irc.state.nick != prevState.nick) {
                             // Nick changed.
-                            $('#nickLabel').fadeOut(null, function () {
-                                $('#nickLabel').text(irc.state.nick);
-                                $('#nickLabel').fadeIn();
+                            var nickLabel = $(irc.parentElement).find('.nickLabel');
+                            nickLabel.fadeOut(null, function () {
+                                nickLabel.text(irc.state.nick);
+                                nickLabel.fadeIn();
                             });
                         }
                     }
                     break;
 
                 case 'servermsg':
+                    if (console) console.log('servermsg: ' + msg.code + ' ' + msg.message);
+                    
                     if (msg.code >= 400) {
                         // Don't show "Connection not open" when already disconnected.
                         // Normally this happens during activation when a new connection must be made.
                         if (irc.isConnected || msg.code != 400) {
-                            irc.writeTmpl('error', { 'message': msg.message });
+                            irc.writeTmpl('error', { message: msg.message });
                         }
                         
                         if (irc.isConnected && msg.code == 400) {
@@ -858,9 +907,15 @@
                         }
                     }
                     else {
-                        // Disregard 200 connection ready message.  Not important for display.
-                        if (msg.code != 200) {
-                            irc.writeTmpl('serverMsg', { 'message': msg.message });
+                        if (msg.code == 200) {
+                            // Disregard 200 connection ready message.  Not important for display.
+                            // Ensure status indicator is activated.
+                            $(irc.parentElement)
+                                .removeClass('deactivated')
+                                .addClass('activated');
+                        }
+                        else {
+                            irc.writeTmpl('serverMsg', { message: msg.message });
                         }
                     }
                     break;
@@ -870,24 +925,36 @@
 
         // Resize elements to proper alignment based on #ircTabs dimensions.
         alignUI: function () {
-            $('#tabConsole')
-                .outerWidth($('#ircTabs').width())
-                .outerHeight($('#ircTabs').height() - $('#ircTabs > .ui-tabs-nav').outerHeight());
-            $('.ircChannel')
-                .width($('#tabConsole').width())
-                .height($('#tabConsole').height());
-            $('#userEntrySection').outerWidth($('#ircTabs').outerWidth());
-            $('#userEntryLine')
-                .width($('#userEntrySection').width())
-                .innerHeight($('#userEntry').outerHeight() + 4 /* margin not included in outerHeight? */);
-            $('#userEntry').width($('#userEntryLine').width());
-            $('#commandBar').outerWidth($('#ircTabs').outerWidth());
-            $('#sideBar').outerHeight($('#ircTabs').outerHeight() + $('#userEntrySection').outerHeight());
+            var parent = $(irc.parentElement);
+            var ircTabs = parent.find('.ircTabs');
+            var tabConsole = parent.find('#tabConsole');
+            var ircChannel = parent.find('.ircChannel');
+            var userEntrySection = parent.find('.userEntrySection');
+            var userEntryLine = parent.find('.userEntryLine');
+            var userEntry = parent.find('.userEntry');
+            var commandBar = parent.find('.commandBar');
+            var sideBar = parent.find('.sideBar');
+            tabConsole
+                .outerWidth(ircTabs.width())
+                .outerHeight(ircTabs.height() - ircTabs.children('.ui-tabs-nav').outerHeight());
+            ircChannel
+                .width(tabConsole.width())
+                .height(tabConsole.height());
+            userEntrySection.outerWidth(ircTabs.outerWidth());
+            userEntryLine
+                .width(userEntrySection.width())
+                .innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
+            userEntry.width(userEntryLine.width());
+            commandBar.outerWidth(ircTabs.outerWidth());
+            sideBar.outerHeight(ircTabs.outerHeight() + userEntrySection.outerHeight());
         }
     };
 
     // Initialization.
     $(function () {
+        irc.parentElement = $('.ircweb2').get(0);
+        var parent = $(irc.parentElement);
+    
         // Compile templates.
         $.each(irc.tmpls, function (name, tmpl) {
             $.template(name, tmpl);
@@ -900,23 +967,60 @@
         irc.cmdDefs['n'] = irc.cmdDefs['notice'];
         irc.cmdDefs['q'] = irc.cmdDefs['query'];
 
-        $('#userEntry')
+        parent.find('.userEntry')
             .keydown(function (e) {
                 if (e.keyCode == '13') {
-                    irc.sendLine($('#userEntry').val());
+                    // Enter.
+                    irc.sendLine(parent.find('.userEntry').val());
                     return false;
+                }
+                else if (e.keyCode == '9') {
+                    // Tab.
+                    if (e.preventDefault) e.preventDefault();
+                    
+                    if (irc.isConnected) {
+                        var userEntry = parent.find('.userEntry').val();
+                        
+                        if (userEntry == '') {
+                            if (irc.localState.lastMsgSender !== undefined) {
+                                // Quick send message to last sender.
+                                parent.find('.userEntry').val('/msg ' + irc.localState.lastMsgSender + ' ');
+                            }
+                        }
+                        else {
+                            // Autocomplete nick.
+                            if (irc.localState.autoCompleteString === undefined) {
+                                // Get last word of user entry;
+                                var m = /(\S+)$/.exec(userEntry);
+                                if (m !== null) {
+                                    irc.localState.autoCompleteString = m[1];
+                                }
+                            }
+                            
+                            if (irc.localState.autoCompleteString !== undefined) {
+                                if (console) console.log('autocomplete on: ' + irc.localState.autoCompleteString);
+                                
+                                // TODO: Iterate over channel members and get next alphabetic match after autoCompleteSuggest.
+                            }
+                        }
+                    }
+                    
+                    return false;
+                }
+                else {
+                    irc.localState.autoCompleteString = undefined;
                 }
             })
             .focus();
         
         // Create console tab from template.
-        $('#channelTmpl')
+        parent.find('.channelTmpl')
             .clone()
             .attr('id', 'tabConsole')
-            .appendTo($('#ircTabs'));
+            .appendTo(parent.find('.ircTabs'));
 
         // Setup tabs.
-        $('#ircTabs')
+        parent.find('.ircTabs')
             .tabs({
                 // tabTemplate: "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close'>Remove Tab</span></li>"
             })
@@ -925,21 +1029,21 @@
             .tabs('add', '#tabConsole', 'Console');
 
         //  Setup buttons.
-        $('#activateButton').button({
+        parent.find('.activateButton').button({
             icons: { primary: 'ui-icon-star' }
         });
-        $('#deactivateButton').button({
+        parent.find('.deactivateButton').button({
             icons: { primary: 'ui-icon-close' },
             disabled: true
         });
-        $('#connectionButtonset').buttonset();
+        parent.find('.connectionButtonset').buttonset();
 
         // Setup event handlers.
-        $('#activateButton').click(irc.activateClient);
-        $('#deactivateButton').click(irc.deactivateClient);
+        parent.find('.activateButton').click(irc.activateClient);
+        parent.find('.deactivateButton').click(irc.deactivateClient);
         
         // Setup resizable console.
-        $('#ircTabs').resizable({
+        parent.find('.ircTabs').resizable({
             handles: 'se',
             minWidth: 400,
             minHeight: 175,

@@ -32,16 +32,16 @@ class spIrcClientState
     //    $nick => $,
     //    $channel => $
     // )
-    public $modes = array();
+    //public $modes = array();
     
     // Names array by channel.
     // array(
     //    $channel => array($nick, $nick, ...)
     // )
-    public $names = array();
+    //public $names = array();
 
-    // Array of spIrcChannelDesc objects.
-    public $channels = array();
+    public $channels = array(); // Array of $channel => spIrcChannelDesc objects.
+    public $users = array();    // Array of $nick => spIrcUserDesc objects.
     
     public function spIrcClientState() {
         $this->sessionId = uniqid('', true);
@@ -53,10 +53,27 @@ class spIrcClientState
     }
 }
 
+// Describes a channel on the IRC network.
 class spIrcChannelDesc {
     public $mode;
     public $topic;
     public $topicSetByNick;
-    public $topicSetTime;
+    public $topicSetTime;       // Epoch timestamp
+    public $members = array();  // Array of $nick => spIrcChannelMemberDesc objects
+    public $joinTime;
+    public $lastMsgTime;
 }
+
+// Describes a member in a channel.
+class spIrcChannelMemberDesc {
+    public $mode;
+}
+
+// Describes a user on the IRC network.
+class spIrcUserDesc {
+    public $realname;
+    public $host;
+    public $mode;
+}
+
 ?>

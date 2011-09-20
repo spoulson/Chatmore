@@ -9,7 +9,7 @@ if (array_key_exists('x', $_GET)) {
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="ircweb2.css" />
     <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
@@ -20,39 +20,40 @@ if (array_key_exists('x', $_GET)) {
 <body>
 
     <div class="ircweb2">
-        <div id="commandBar">
-            <span id="connectionButtonset">
-                <button id="activateButton">Activate</button>
-                <button id="deactivateButton">Deactivate</button>
+        <div class="commandBar">
+            <span class="connectionButtonset">
+                <button class="activateButton">Activate</button>
+                <button class="deactivateButton">Deactivate</button>
             </span>
         </div>
 
         <div style="float:left;overflow:hidden">
         
-            <div id="ircTabs">
+            <div class="ircTabs">
                 <ul></ul>
             </div>
 
-            <div id="userEntrySection" class="ui-widget ui-widget-content ui-corner-bl">
-                <div id="userEntryModeLine">
-                    <span id="nickLabel"></span>
-                    <span id="targetFragment" style="display:none">
+            <div class="userEntrySection ui-widget ui-widget-content ui-corner-bl">
+                <div class="userEntryModeLine">
+                    <div class="activationIndicator"></div>
+                    <span class="nickLabel"></span>
+                    <span class="targetFragment" style="display:none">
                         &rarr;
-                        <span id="targetLabel"></span>
+                        <span class="targetLabel"></span>
                     </span>
                 </div>
-                <div id="userEntryLine">
-                    <input type="textbox" id="userEntry" />
+                <div class="userEntryLine">
+                    <input type="textbox" class="userEntry" />
                 </div>
             </div>
 
         </div>
         
-        <div id="sideBar" class="ui-widget ui-widget-content ui-corner-right">
+        <div class="sideBar ui-widget ui-widget-content ui-corner-right">
         </div>
         
         <div id="templates" style="display:none">
-            <div id="channelTmpl">
+            <div class="channelTmpl">
                 <div class="ircChannel"></div>
             </div>
         </div>

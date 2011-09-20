@@ -2,60 +2,76 @@ BODY {
     font: 11px sans-serif;
 }
 
-.ircChannel {
+.ircweb2 .ircChannel {
     overflow: auto;
     font: 12px Tahoma, Helvetica, sans-serif;
     white-space: pre-wrap;
 }
 
-#commandBar {
+.ircweb2 .commandBar {
     padding-bottom: 3px;
     white-space: normal;
 }
 
-#commandBar button {
+.ircweb2 .commandBar button {
     /* Chrome has default top/bottom margins on buttons, others do not. */
     margin-top: 0;
     margin-bottom: 0;
 }
 
-#ircTabs {
+.ircweb2 .ircTabs {
     width: 740px;
     height: 360px;
 }
 
-#userEntrySection {
+.ircweb2 .activationIndicator {
+    width: 16px;
+    height: 16px;
+    padding-right: 3px;
+    display: block;
+    float: left;
+}
+
+.ircweb2.activated .activationIndicator {
+    background: transparent url(bullet_green.png) no-repeat top left;
+}
+
+.ircweb2.deactivated .activationIndicator {
+    background: transparent url(stop.png) no-repeat top left;
+}
+
+.ircweb2 .userEntrySection {
     padding: 3px 16px;
     white-space: nowrap;
 }
 
-#userEntryModeLine {
+.ircweb2 .userEntryModeLine {
     height: 20px;
 }
 
-#nickLabel {
+.ircweb2 .nickLabel {
     overflow: hidden;
 }
 
-#userEntry {
+.ircweb2 .userEntry {
     background-color: transparent;
     border: 1px solid #666;
     color: white;
 }
 
-#sideBar {
+.ircweb2 .sideBar {
     float: left;
     width: 140px;
     overflow: hidden;
 }
 
-.ircChannel {
+.ircweb2 .ircChannel {
     background-color: rgba(0, 0, 0, 0.5);
     padding: 3px;
     margin: -3px;
 }
 
-.ircChannel .line {
+.ircweb2 .ircChannel .line {
     clear: both;
     padding: 0 0 0 50px;
     text-indent: -50px;
@@ -63,56 +79,61 @@ BODY {
     margin-bottom: 0.1em;
 }
 
-.ircChannel .timestamp {
+.ircweb2 .ircChannel .timestamp {
     color: #d0d0d0;
     display: block;
     float: left;
     width: 50px;
 }
 
-.ircChannel .usage {
+.ircweb2 .ircChannel .usage {
     color: #7fffff;
 }
 
-.ircChannel .help {
+.ircweb2 .ircChannel .help {
     color: #00cfcf;
 }
 
-.ircChannel .PRIVMSG {
+.ircweb2 .ircChannel .PRIVMSG {
     font-weight: bold;
 }
 
-.ircChannel .line > .PRIVMSG {
+.ircweb2 .ircChannel .line > .PRIVMSG {
     background-color: #202010;
 }
 
-.ircChannel .channelMsg {
+.ircweb2 .ircChannel .channelMsg {
     color: #dfdfdf;
 }
 
-.ircChannel .prefix {
+.ircweb2 .ircChannel .prefix {
     font-weight: bold;
 }
 
-.ircChannel .channel {
+.ircweb2 .ircChannel .channel {
     color: #c0c090;
 }
 
-.ircChannel .nick {
+.ircweb2 .ircChannel .nick {
     color: #dfdfdf;
 }
 
-.ircChannel .nickHighlight {
-    color: #EFD43E;
+.ircweb2 .ircChannel .nickHighlight .nick {
+    color: #F58400;
+}
+
+.ircweb2 .ircChannel .nickHighlight .message {
+    color: #FFAF0F;
     padding-right: 3px;
 }
 
-.ircChannel .serverMsg .message {
+.ircweb2 .ircChannel .serverMsg .message {
     font-family: monospace;
 }
 
-.ircChannel .clientMsg .message {
-    font-family: monospace;
+.ircweb2 .ircChannel .clientMsg .message,
+.ircweb2 .ircChannel .queryMsg .message
+ {
     font-style: italic;
     color: white;
 }
