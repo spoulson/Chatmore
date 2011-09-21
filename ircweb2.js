@@ -544,9 +544,15 @@
                                 // Basic locking to attempt to prevent overlapping requests.
                                 if (!pollLock) {
                                     pollLock = true;
-                                    $.getJSON('ircweb2recv.php', null, function (data) {
-                                        irc.processMessages(data);
-                                        pollLock = false;
+                                    $.ajax('ircweb2recv.php', {
+                                        dataType: 'json',
+                                        success: function (data) {
+                                            irc.processMessages(data);
+                                            pollLock = false;
+                                        },
+                                        error: function () {
+                                            pollLock = false;
+                                        }
                                     });
                                 }
                             }, irc.pollInterval);
@@ -554,6 +560,10 @@
                             // Periodically check that polls to ircweb2recv are still occurring within reasonable time.
                             irc.statusPollHandle = setInterval(function() {
                                 time = new Date().getTime();
+                                if (irc.lastRecvTime !== undefined && time - irc.lastRecvTime > (irc.statusTimeout * 1000 / 2)) {
+                                    // Status check warning.
+                                    if (console) console.log('Warning! Status will timeout in ' + (irc.statusTimeout / 2) + ' seconds!');
+                                }
                                 if (irc.lastRecvTime !== undefined && time - irc.lastRecvTime > (irc.statusTimeout * 1000)) {
                                     // Status check timeout.
                                     if (console) console.log('Status timeout!');

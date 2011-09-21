@@ -280,6 +280,7 @@ class spIrcClient
         case self::RPL_NOTOPIC:
             if (!preg_match("/^\S+\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
+                'channel' => $msgParams[1],
                 'topic' => null
             );
             break;
