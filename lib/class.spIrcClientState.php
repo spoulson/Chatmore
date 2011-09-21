@@ -27,19 +27,6 @@ class spIrcClientState
     // Real name.
     public $realname;
     
-    // User/channel modes array.
-    // array(
-    //    $nick => $,
-    //    $channel => $
-    // )
-    //public $modes = array();
-    
-    // Names array by channel.
-    // array(
-    //    $channel => array($nick, $nick, ...)
-    // )
-    //public $names = array();
-
     public $channels = array(); // Array of $channel => spIrcChannelDesc objects.
     public $users = array();    // Array of $nick => spIrcUserDesc objects.
     

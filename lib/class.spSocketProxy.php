@@ -4,6 +4,9 @@
 // Proxy socket I/O is buffered in event domain socket connection is dropped.
 // Flushes buffers when domain socket is reconnected.
 
+// TODO: manage multiple client connections so that simultaneous domain socket
+// connections for reads and/or writes don't block each other.
+
 require_once 'class.log.php';
 
 class spSocketProxy {
@@ -11,13 +14,15 @@ class spSocketProxy {
     private $domainSocket = null;
     private $proxySocket = null;
     private $proxySocketFunc = null;
-    private $clientSocket = null;
+    private $clientSockets = array();
     private $idleTime;
     private $proxyBuffer = null;
     private $clientBuffer = null;
     
     public $idleTimeout = 60;   // in seconds
     public $pollTimeout = 1000; // in milliseconds
+    public $proxyReadBufSize = 10240;
+    public $clientReadBufSize = 10240;
     
     public function spSocketProxy($domainSocketFile) {
         $this->domainSocketFile = $domainSocketFile;
@@ -63,8 +68,8 @@ class spSocketProxy {
             $eSelect[] = $this->proxySocket;
         }
         if ($this->isClientSocketConnected()) {
-            $rSelect[] = $this->clientSocket;
-            if (!empty($this->clientBuffer)) $wSelect[] = $this->clientSocket;
+            $rSelect = array_merge($rSelect, $this->clientSockets);
+            if (!empty($this->clientBuffer)) $wSelect = array_merge($wSelect, $this->clientSockets);
             $eSelect[] = $this->proxySocket;
         }
         
@@ -88,7 +93,7 @@ class spSocketProxy {
                 if ($socket === $this->proxySocket) {
                     log::error("Exception on proxy socket: $errno/$errstr");
                 }
-                else if ($socket === $this->clientSocket) {
+                else if (in_array($socket, $this->clientSockets)) {
                     log::error("Exception on client Socket: $errno/$errstr.");
                 }
             }
@@ -108,7 +113,7 @@ class spSocketProxy {
                     if ($this->isProxySocketConnected()) {
                         // Data waiting in proxy socket.
                         //echo "rP";
-                        $size = @socket_recv($this->proxySocket, $buf, 10240, 0);
+                        $size = @socket_recv($this->proxySocket, $buf, $this->proxyReadBufSize, 0);
                         if ($size) {
                             //log::info("proxy: $buf");
                             log::info("Buffering to client, size(" . strlen($buf) . ")");
@@ -123,20 +128,20 @@ class spSocketProxy {
                         }
                     }
                 }
-                else if ($socket === $this->clientSocket) {
+                else if (in_array($socket, $this->clientSockets)) {
                     if ($this->isClientSocketConnected()) {
                         // Data waiting in client socket.
                         //echo "rC";
-                        $size = @socket_recv($this->clientSocket, $buf, 10240, 0);
+                        $size = @socket_recv($socket, $buf, $this->clientReadBufSize, 0);
                         if ($size === false) {
-                            $errno = socket_last_error($this->clientSocket);
+                            $errno = socket_last_error($socket);
                             // 11 = no data available.
                             if ($errno != 11) {
                                 // Error with client, close its connection.
                                 log::error("Error $errno receiving from client, closing client connection: " . socket_strerror($errno));
-                                socket_shutdown($this->clientSocket, 2);
-                                socket_close($this->clientSocket);
-                                $this->clientSocket = null;
+                                socket_shutdown($socket, 2);
+                                socket_close($socket);
+                                $this->clientSockets = array_diff($this->clientSockets, array($socket));
                             }
                         }
                         else if ($size) {
@@ -146,10 +151,10 @@ class spSocketProxy {
                         }
                         else {
                             // Got 0 bytes; assume connection was closed.
-                            //echo "Client connection was closed.\n";
-                            socket_shutdown($this->clientSocket, 2);
-                            socket_close($this->clientSocket);
-                            $this->clientSocket = null;
+                            //log::info("Client connection was closed.  Client connection count: " . count($this->clientSockets));
+                            socket_shutdown($socket, 2);
+                            socket_close($socket);
+                            $this->clientSockets = array_diff($this->clientSockets, array($socket));
                         }
                     }
                 }
@@ -187,19 +192,19 @@ class spSocketProxy {
                         }
                     }
                 }
-                else if ($socket === $this->clientSocket) {
-                    if ($this->isClientSocketConnected()) {
+                else if (in_array($socket, $this->clientSockets)) {
+                    //if ($this->isClientSocketConnected()) {
                         // Client socket ready for writing.
                         //echo "wC";
                         log::info("Sending " . strlen($this->clientBuffer) . " to client... ");
-                        $size = @socket_send($this->clientSocket, $this->clientBuffer, strlen($this->clientBuffer), 0);
+                        $size = @socket_send($socket, $this->clientBuffer, strlen($this->clientBuffer), 0);
                         if ($size === false) {
                             // Error with client, close its connection.
-                            $errno = socket_last_error($this->clientSocket);
+                            $errno = socket_last_error($socket);
                             log::error("Error $errno sending to client, closing client connection: " . socket_strerror($errno));
-                            socket_shutdown($this->clientSocket, 2);
-                            socket_close($this->clientSocket);
-                            $this->clientSocket = null;
+                            socket_shutdown($socket, 2);
+                            socket_close($socket);
+                            $this->clientSockets = array_diff($this->clientSockets, array($socket));
                         }
                         else {
                             if ($size < strlen($this->clientBuffer)) {
@@ -212,7 +217,7 @@ class spSocketProxy {
                             }
                             log::info("done");
                         }
-                    }
+                    //}
                 }
                 else {
                     // Unknown socket?
@@ -223,12 +228,13 @@ class spSocketProxy {
 
         // Respond to newly accepted client socket.
         if (!empty($newClientSocket)) {
-            if ($this->isClientSocketConnected()) {
-                socket_shutdown($this->clientSocket, 2);
-                socket_close($this->clientSocket);
-            }
+            // if ($this->isClientSocketConnected()) {
+                // socket_shutdown($this->clientSocket, 2);
+                // socket_close($this->clientSocket);
+            // }
 
-            $this->clientSocket = $newClientSocket;
+            $this->clientSockets[] = $newClientSocket;
+            //log::info('Client connection count: ' . count($this->clientSockets));
 
             // Connect proxy socket on initial client connection.
             if (!$this->isProxySocketConnected()) {
@@ -252,7 +258,7 @@ class spSocketProxy {
     }
     
     private function isClientSocketConnected() {
-        return !empty($this->clientSocket);
+        return !empty($this->clientSockets);
     }
 
     private function isProxySocketConnected() {
@@ -276,10 +282,10 @@ class spSocketProxy {
         log::info('Disconnecting...');
 
         // Close client connection.
-        if ($this->isClientSocketConnected()) {
-            socket_shutdown($this->clientSocket);
-            socket_close($this->clientSocket);
-            $this->clientSocket = null;
+        foreach ($this->clientSockets as $socket) {
+            socket_shutdown($socket);
+            socket_close($socket);
+            $this->clientSockets = array_diff($this->clientSockets, array($socket));
         }
         
         // Close domain socket.
