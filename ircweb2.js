@@ -548,16 +548,19 @@
                                         dataType: 'json',
                                         success: function (data) {
                                             // Validate data.
-                                            if (typeof(data) == 'object' &&
-                                                typeof(data.msgs) == 'object') {
-                                                irc.processMessages(data);
-                                            }
-                                            else {
-                                                if (console) {
-                                                    console.log('Got invalid data:');
-                                                    console.log(data);
+                                            if (typeof(data) == 'object') {
+                                                if (typeof(data.msgs) == 'object') {
+                                                    irc.processMessages(data);
+                                                    pollLock = false;
+                                                    return;
                                                 }
                                             }
+
+                                            if (console) {
+                                                console.log('Got invalid data:');
+                                                console.log(data);
+                                            }
+                                            
                                             pollLock = false;
                                         },
                                         error: function () {
