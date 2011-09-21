@@ -23,6 +23,24 @@ function connectToIrcServer() {
     return $ircSocket;
 }
 
+function cleanup() {
+    global $ircSocket, $proxy;
+    
+    // Shut down.
+    log::info("Proxy shut down.");
+    $proxy->disconnect();
+
+    if (!empty($ircSocket)) {
+        log::info("Closing IRC connection...");
+        socket_shutdown($ircSocket, 2);
+        socket_close($ircSocket);
+        $ircSocket = null;
+        log::info("Closed.");
+    }
+
+    if (file_exists($socketFile)) unlink($socketFile);
+}
+
 log::info("Creating proxy...");
 umask(0);
 $proxy = new spSocketProxy($socketFile, 1);
@@ -39,19 +57,4 @@ while ($proxy->poll() !== false) {
 
 cleanup();
 exit;
-
-function cleanup() {
-    // Shut down.
-    log::info("Proxy shut down.");
-
-    if (!empty($ircSocket)) {
-        log::info("Closing IRC connection...");
-        socket_shutdown($ircSocket, 2);
-        socket_close($ircSocket);
-        log::info("Closed.");
-    }
-
-    unlink($socketFile);
-}
-
 ?>

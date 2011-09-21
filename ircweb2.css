@@ -137,3 +137,7 @@ BODY {
     font-style: italic;
     color: white;
 }
+
+.ircweb2 .ircChannel .MODE .userMode {
+    font-family: monospace;
+}

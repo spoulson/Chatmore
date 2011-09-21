@@ -45,10 +45,14 @@ class spSocketProxy {
     public function poll() {
         if (!$this->isDomainSocketConnected()) {
             log::error("Domain socket is disconnected!");
-            usleep(250 * 1000);
             return false;
         }
         
+        if ($this->isClientSocketConnected() && !$this->isProxySocketConnected()) {
+            log::error("Proxy socket is disconnected!");
+            return false;
+        }
+
         // Check all sockets for activity.
         $rSelect = array($this->domainSocket);
         $wSelect = array();
@@ -272,15 +276,19 @@ class spSocketProxy {
         log::info('Disconnecting...');
 
         // Close client connection.
-        socket_shutdown($this->clientSocket);
-        socket_close($this->clientSocket);
-        $this->clientSocket = null;
+        if ($this->isClientSocketConnected()) {
+            socket_shutdown($this->clientSocket);
+            socket_close($this->clientSocket);
+            $this->clientSocket = null;
+        }
         
         // Close domain socket.
-        socket_shutdown($this->domainSocket);
-        socket_close($this->domainSocket);
-        if (file_exists($this->domainSocketFile)) unlink($this->domainSocketFile);
-        $this->domainSocket = null;
+        if ($this->isDomainSocketConnected()) {
+            socket_shutdown($this->domainSocket);
+            socket_close($this->domainSocket);
+            if (file_exists($this->domainSocketFile)) unlink($this->domainSocketFile);
+            $this->domainSocket = null;
+        }
         
         log::info('Disconnected.');
     }

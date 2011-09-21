@@ -10,8 +10,9 @@
         statusPollHandle: undefined,
         statusTimeout: 5,
         state : undefined,
-        isConnected: false,
-
+        isActivated: false,
+        quitMessage: 'Chatmore IRC client',
+        
         localState: {
             nick: 'lamer' + Math.floor(Math.random() * 10000),
             realname: 'lame user',
@@ -26,11 +27,12 @@
         // IRC client message templates.
         tmpls: {
             timestamp: '<span class="timestamp">[${irc.getTimestamp()}]&nbsp;</span>',
-            error: '{{tmpl "timestamp"}}<span class="error"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            usage: '{{tmpl "timestamp"}}<span class="usage"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            help: '{{tmpl "timestamp"}}<span class="help"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
-            clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg"><span class="prefix">***</span> <span class="message">${message}</span></span>',
+            notePrefix: '<span class="prefix">***</span>',
+            error: '{{tmpl "timestamp"}}<span class="error">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
+            usage: '{{tmpl "timestamp"}}<span class="usage">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
+            help: '{{tmpl "timestamp"}}<span class="help">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
+            serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
+            clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
             outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> <span class="message">${message}</span></span>',
             outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
             outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
@@ -49,7 +51,7 @@
             incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
             incomingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
             queryOff: '{{tmpl "timestamp"}}' +
-                '<span class="queryMsg"><span class="prefix">***</span> <span class="message">' +
+                '<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">' +
                 '{{if /^#/.test(prevTarget)}}' +
                     'You are no longer talking to channel <span class="channel">${prevTarget}</span>' +
                 '{{else}}' +
@@ -57,38 +59,41 @@
                 '{{/if}}' +
                 '</span>',
             query: '{{tmpl "timestamp"}}' +
-                '<span class="queryMsg"><span class="prefix">***</span> <span class="message">' +
+                '<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">' +
                 '{{if /^#/.test(target)}}' +
                     'You are now talking to channel <span class="channel">${target}</span>' +
                 '{{else}}' +
                     'Starting conversation with <span class="nick">${target}</span>' +
                 '{{/if}}' +
                 '</span>',
-            queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span></span>',
-            queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">Ending conversation with <span class="nick">${nick}</span></span></span>',
-            queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">You are now talking to channel <span class="channel">${channel}</span></span></span>',
-            queryNick: '{{tmpl "timestamp"}}<span class="queryMsg"><span class="prefix">***</span> <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
-            join: '{{tmpl "timestamp"}}<span class="JOIN"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
-            leave: '{{tmpl "timestamp"}}<span class="PART"><span class="prefix">***</span> <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
-            nick: '{{tmpl "timestamp"}}<span class="prefix">***</span> <span class="NICK"><span class="message">' +
+            queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span></span>',
+            queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">Ending conversation with <span class="nick">${nick}</span></span></span>',
+            queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">You are now talking to channel <span class="channel">${channel}</span></span></span>',
+            queryNick: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
+            join: '{{tmpl "timestamp"}}<span class="JOIN">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
+            leave: '{{tmpl "timestamp"}}<span class="PART">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
+            nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <span class="NICK"><span class="message">' +
                 '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                     'Nick changed to <span class="nick">${nick}</span>' +
                 '{{else}}' +
                     '<span class="nick">${prevNick}</span> is now known as <span class="nick">${nick}</span>' +
                 '{{/if}}' +
                 '</span></span>',
-            nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg"><span class="prefix">***</span> <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
-            notopic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
-            topic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
-            changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
+            nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg">{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
+            notopic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
+            topic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
+            changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
                 '{{if topic == ""}}' +
                     'has cleared the topic' +
                 '{{else}}' +
                     'has changed the topic to: <span class="topicMessage">${topic}</span>' +
                 '{{/if}}' +
                 '</span></span>',
-            topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">***</span> &lt;<span class="channel">${channel}</span>&gt; <span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${irc.formatTime(time)}</span></span></span>',
-            serverTime: '{{tmpl "timestamp"}}<span class="TIME"><span class="prefix">***</span> <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span></span>'
+            topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${irc.formatTime(time)}</span></span></span>',
+            serverTime: '{{tmpl "timestamp"}}<span class="TIME">{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span></span>',
+            quit: '{{tmpl "timestamp"}}<span class="QUIT">{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${nick}</span> (${message})</span></span>',
+            error: '{{tmpl "timestamp"}}<span class="ERROR">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
+            userMode: '{{tmpl "timestamp"}}<span class="MODE">{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="userMode">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span></span>'
         },
 
         // Client /command definitions.
@@ -108,6 +113,7 @@
                     ' nick - Change your nick',
                     ' notice - Send a notice to a nick or channel',
                     ' query - Select a target for messaging',
+                    ' quit - Quit IRC session',
                     ' time - Get the server time',
                     ' topic - Get or set the selected channel\'s topic',
                     ' who - Get info on a nick'
@@ -143,7 +149,7 @@
                 parseParam: function (param, meta) {
                     meta.param = param;
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to send a raw IRC request.';
                         return false;
                     }
@@ -161,7 +167,7 @@
                 parseParam: function (param, meta) {
                     meta.server = param;
                 
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to get server time.';
                         return false;
                     }
@@ -182,7 +188,7 @@
                 parseParam: function (param, meta) {
                     meta.server = param;
                 
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to get server motd.';
                         return false;
                     }
@@ -214,7 +220,7 @@
                     var params = param.split(' ', 1);
                     meta.target = params[0];
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to query a target.';
                         return false;
                     }
@@ -237,7 +243,7 @@
                     meta.target = irc.localState.target;
                     meta.message = param;
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to send an action message.';
                         return false;
                     }
@@ -268,7 +274,7 @@
                     meta.target = m[1];
                     meta.message = m[2];
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to send a message.';
                         return false;
                     }
@@ -299,7 +305,7 @@
                     meta.target = m[1];
                     meta.message = m[2];
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to send a notice.';
                         return false;
                     }
@@ -320,7 +326,7 @@
                         return false;
                     }
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to get or set the topic.';
                         return false;
                     }
@@ -340,7 +346,7 @@
                 helpUsage: 'Usage: /cleartopic',
                 helpText: 'Clear the selected channel\'s topic',
                 parseParam: function (param, meta) {
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to clear the topic.';
                         return false;
                     }
@@ -368,7 +374,7 @@
                     var params = param.split(' ', 1);
                     meta.channel = params[0].replace(/^([^#])/, '#$1');
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to join a channel.';
                         return false;
                     }
@@ -400,7 +406,7 @@
                         meta.channel = params[0].replace(/^([^#])/, '#$1');
                     }
                     
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to leave a channel.';
                         return false;
                     }
@@ -423,7 +429,7 @@
                     var params = param.split(' ', 1);
                     meta.nick = params[0];
 
-                    if (!irc.isConnected) {
+                    if (!irc.isActivated) {
                         meta.error = 'Error: Must be connected to change your nickname.';
                         return false;
                     }
@@ -431,11 +437,28 @@
                 exec: function (meta) {
                     irc.sendMsg('NICK ' + meta.nick);
                 }
+            },
+            quit: {
+                helpUsage: 'Usage: /quit [message]',
+                helpText: 'Quit IRC session.',
+                parseParam: function (param, meta) {
+                    meta.message = param;
+                
+                    if (!irc.isActivated) {
+                        meta.error = 'Error: Must be connected to quit.';
+                        return false;
+                    }
+                },
+                exec: function (meta) {
+                    var message = meta.message;
+                    if (message == '') message = irc.quitMessage;
+                    irc.sendMsg('QUIT :' + message);
+                }
             }
         },
 
         activateClient: function () {
-            irc.isConnected = false;
+            irc.isActivated = false;
             irc.lastRecvTime = undefined;
             var parent = $(irc.parentElement);
             parent.find('.activateButton').button('disable').removeClass('ui-state-hover');
@@ -512,12 +535,20 @@
                         if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                             // Activated.
                             irc.writeTmpl('clientMsg', { message: 'Activated' });
-                            irc.isConnected = true;
+                            irc.isActivated = true;
                             parent.find('.deactivateButton').button('enable');
                         
                             // Periodically poll for IRC activity.
+                            var pollLock = false;
                             irc.intervalPollHandle = setInterval(function () {
-                                $.getJSON('ircweb2recv.php', null, irc.processMessages);
+                                // Basic locking to attempt to prevent overlapping requests.
+                                if (!pollLock) {
+                                    pollLock = true;
+                                    $.getJSON('ircweb2recv.php', null, function (data) {
+                                        irc.processMessages(data);
+                                        pollLock = false;
+                                    });
+                                }
                             }, irc.pollInterval);
                             
                             // Periodically check that polls to ircweb2recv are still occurring within reasonable time.
@@ -542,7 +573,7 @@
         },
 
         deactivateClient: function () {
-            irc.isConnected = false;
+            irc.isActivated = false;
             var parent = $(irc.parentElement);
             parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
             clearInterval(irc.intervalPollHandle);
@@ -647,7 +678,7 @@
                 }
             }
             // Send text to selected target.
-            else if (irc.isConnected) {
+            else if (irc.isActivated) {
                 // Sanitize input.
                 if (irc.localState.target !== undefined) {
                     text = text.replace(/([\n\r])/gm, '');
@@ -808,6 +839,14 @@
                             channel: msg.info.channel
                         });
                         break;
+                        
+                    case 'MODE':
+                        irc.writeTmpl('userMode', {
+                            nick: msg.prefixNick,
+                            target: msg.info.target,
+                            mode: msg.info.mode
+                        });
+                        break;
                     
                     case 'NICK':
                         irc.writeTmpl('nick', {
@@ -823,6 +862,19 @@
                             channel: msg.info.channel,
                             nick: msg.prefixNick,
                             topic: msg.info.topic
+                        });
+                        break;
+                        
+                    case 'QUIT':
+                        irc.writeTmpl('quit', {
+                            nick: msg.prefixNick,
+                            message: msg.info.message
+                        });
+                        break;
+                        
+                    case 'ERROR':
+                        irc.writeTmpl('error', {
+                            message: msg.info.message
                         });
                         break;
 
@@ -898,11 +950,11 @@
                     if (msg.code >= 400) {
                         // Don't show "Connection not open" when already disconnected.
                         // Normally this happens during activation when a new connection must be made.
-                        if (irc.isConnected || msg.code != 400) {
+                        if (irc.isActivated || msg.code != 400) {
                             irc.writeTmpl('error', { message: msg.message });
                         }
                         
-                        if (irc.isConnected && msg.code == 400) {
+                        if (irc.isActivated && msg.code == 400) {
                             irc.deactivateClient();
                         }
                     }
@@ -978,7 +1030,7 @@
                     // Tab.
                     if (e.preventDefault) e.preventDefault();
                     
-                    if (irc.isConnected) {
+                    if (irc.isActivated) {
                         var userEntry = parent.find('.userEntry').val();
                         
                         if (userEntry == '') {

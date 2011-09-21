@@ -191,7 +191,7 @@ class spIrcClient
             break;
         
         case 'MODE':
-            if (!preg_match("/(\S+) :([+|-]\w+)( (.+))?/", $params, $msgParams)) return false;
+            if (!preg_match("/(\S+) :(([+-][iwoOr]+)+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
                 'mode' => $msgParams[2]
@@ -205,7 +205,7 @@ class spIrcClient
                 'nick' => $msgParams[1]
             );
             break;
-            
+        
         case 'JOIN':
             if (!preg_match("/:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
@@ -231,6 +231,20 @@ class spIrcClient
             preg_match("/^:(.+)/", $params, $msgParams);
             $msg['info'] = array(
                 'ping' => isset($msgParams[1]) ? $msgParams[1] : $this->state->host
+            );
+            break;
+            
+        case 'QUIT':
+            preg_match("/^:?(.+)/", $params, $msgParams);
+            $msg['info'] = array(
+                'message' => $msgParams[1]
+            );
+            break;
+            
+        case 'ERROR':
+            if (!preg_match("/^:(.+)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'message' => $msgParams[1]
             );
             break;
             
@@ -351,7 +365,7 @@ class spIrcClient
             unset($this->state->channels[$channel]);
             $this->state->isModified = true;
             break;
-        
+            
         case self::RPL_WHOREPLY:
             $channel = $msg['info']['channel'];
             // if ($this->isChannel($msg['info']['channel'])) {
