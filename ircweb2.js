@@ -753,7 +753,13 @@
                 $('<div class="line"/>')
                     .append(html)
                     .appendTo(ircChannel);
-                if (atBottom) el.scrollTop = el.scrollHeight;
+                if (atBottom || irc.isScrolling) {
+                    //el.scrollTop = el.scrollHeight;
+                    irc.isScrolling = true;
+                    ircChannel.clearQueue().animate({
+                        scrollTop: el.scrollHeight
+                    }, 2000, 'swing', function () { irc.isScrolling = false; });
+                }
             };
             
             if (typeof(html) === 'object')
@@ -763,6 +769,7 @@
             else
                 write(html);
         },
+        isScrolling: false,
 
         writeTmpl: function (templateName, data) {
             data['irc'] = irc;
