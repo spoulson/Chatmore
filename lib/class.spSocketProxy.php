@@ -19,8 +19,8 @@ class spSocketProxy {
     private $proxyBuffer = null;
     private $clientBuffer = null;
     
-    public $idleTimeout = 60;   // in seconds
-    public $pollTimeout = 1000; // in milliseconds
+    public $idleTimeout = 300;  // in seconds
+    public $pollTimeout = 100;  // in milliseconds
     public $proxyReadBufSize = 10240;
     public $clientReadBufSize = 10240;
     
@@ -47,6 +47,7 @@ class spSocketProxy {
     
     // Poll socket for activity.
     // Returns false if domain socket is disconnected.
+    // Returns false if client is connected and proxy disconnected.
     public function poll() {
         if (!$this->isDomainSocketConnected()) {
             log::error("Domain socket is disconnected!");
@@ -80,7 +81,7 @@ class spSocketProxy {
         if ($select === false) {
             $errno = socket_last_error();
             if ($errno != 11) {
-                log::error("Error $errno during socket_select().");
+                log::error("Error during socket_select(): $errno/" . socket_strerror($errno));
             }
             usleep(250 * 1000);
         }
@@ -225,7 +226,7 @@ class spSocketProxy {
         // Respond to newly accepted client socket.
         if (!empty($newClientSocket)) {
             $this->clientSockets[] = $newClientSocket;
-            //log::info('Client connection count: ' . count($this->clientSockets));
+            log::info('Client connected.  Connection count: ' . count($this->clientSockets));
 
             // Connect proxy socket on initial client connection.
             if (!$this->isProxySocketConnected()) {
@@ -238,7 +239,7 @@ class spSocketProxy {
             $this->idleTime = time();
         }
         else if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
-            log::error("Idle timeout.  Disconnecting client!");
+            log::error("Idle timeout.  Disconnecting!");
             $this->disconnect();
             return false;
         }

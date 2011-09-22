@@ -18,8 +18,12 @@ if (isset($_SESSION['irc'])) {
         $ircbot = new spIrcClient($socketFile, $state);
         
         $raw = $_POST['msg'];
-        if (!empty($raw))
+        if (!empty($raw)) {
             $ircbot->sendRawMsg("$raw\r\n");
+            $ircbot->flushSendBuffer();
+        }
+        
+        $ircbot->disconnect();
     }
 }
 

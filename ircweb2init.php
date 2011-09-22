@@ -26,12 +26,10 @@ if ($connectMode == 0) {
         log::info("Connection ready.");
         @ob_clean();
         echo json_encode(array(
-            'msgs' => array(
-                array(
-                    'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                    'message' => 'Connection ready.',
-                    'code' => spIrcClient::CLMSG_CONNECTION_READY
-                )
+            array(
+                'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                'message' => 'Connection ready.',
+                'code' => spIrcClient::CLMSG_CONNECTION_READY
             )
         ));
     }
@@ -40,12 +38,10 @@ if ($connectMode == 0) {
         log::info("Connection not open.");
         @ob_clean();
         echo json_encode(array(
-            'msgs' => array(
-                array(
-                    'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                    'message' => 'Connection not open.',
-                    'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
-                )
+            array(
+                'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                'message' => 'Connection not open.',
+                'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
             )
         ));
     }
@@ -89,12 +85,10 @@ if (!validateSession()) {
             log::error("Timeout waiting for IRC connection to open.");
             @ob_clean();
             echo json_encode(array(
-                'msgs' => array(
-                    array(
-                        'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                        'message' => 'Timeout waiting for IRC connection to open.',
-                        'code' => spIrcClient::CLMSG_TIMEOUT_ON_OPEN
-                    )
+                array(
+                    'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                    'message' => 'Timeout waiting for IRC connection to open.',
+                    'code' => spIrcClient::CLMSG_TIMEOUT_ON_OPEN
                 )
             ));
             exit;
@@ -112,16 +106,14 @@ if (!validateSession()) {
 log::info("Connection ready.");
 @ob_clean();
 echo json_encode(array(
-    'msgs' => array(
-        array(
-            'type' => spIrcClient::CLMSG_TYPE_STATE,
-            'state' => $_SESSION['irc']
-        ),
-        array(
-            'type' => spIrcClient::CLMSG_TYPE_SERVER,
-            'message' => 'Connection ready.',
-            'code' => spIrcClient::CLMSG_CONNECTION_READY
-        )
+    array(
+        'type' => spIrcClient::CLMSG_TYPE_STATE,
+        'state' => $_SESSION['irc']
+    ),
+    array(
+        'type' => spIrcClient::CLMSG_TYPE_SERVER,
+        'message' => 'Connection ready.',
+        'code' => spIrcClient::CLMSG_CONNECTION_READY
     )
 ));
 

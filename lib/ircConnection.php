@@ -45,8 +45,6 @@ log::info("Creating proxy...");
 umask(0);
 $proxy = new spSocketProxy($socketFile, 1);
 $proxy->setProxySocketFunc(create_function('', 'return connectToIrcServer();'));
-$proxy->idleTimeout = 300;
-$proxy->pollTimeout = 5000;
 log::info("Done.");
 
 // Poll loop.

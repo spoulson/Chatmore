@@ -6,8 +6,6 @@
         intervalPollHandle: undefined,
         pollInterval: 500,
         lastRecvTime: undefined,
-        statusInterval: 1000,
-        statusPollHandle: undefined,
         statusTimeout: 5,
         state : undefined,
         isActivated: false,
@@ -495,7 +493,7 @@
                         irc.processMessages(data);
                         
                         // Check for connection ready message.
-                        if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
+                        if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                             newConnectionFlag = false;
                         }
                     },
@@ -532,54 +530,34 @@
                         }
                         irc.processMessages(data);
                         
-                        if ($.grep(data.msgs, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
+                        if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                             // Activated.
                             irc.writeTmpl('clientMsg', { message: 'Activated' });
                             irc.isActivated = true;
                             parent.find('.deactivateButton').button('enable');
                         
-                            // Periodically poll for IRC activity.
-                            var pollLock = false;
-                            irc.intervalPollHandle = setInterval(function () {
-                                // Basic locking to attempt to prevent overlapping requests.
-                                if (!pollLock) {
-                                    pollLock = true;
-                                    $.ajax('ircweb2recv.php', {
-                                        dataType: 'json',
-                                        success: function (data) {
-                                            // Validate data.
-                                            if (typeof(data) == 'object') {
-                                                if (typeof(data.msgs) == 'object') {
-                                                    irc.processMessages(data);
-                                                    pollLock = false;
-                                                    return;
-                                                }
-                                            }
-
-                                            if (console) {
-                                                console.log('Got invalid data:');
-                                                console.log(data);
-                                            }
-                                            
-                                            pollLock = false;
-                                        },
-                                        error: function () {
-                                            pollLock = false;
+                            // Repeatedly poll for IRC activity.
+                            var pollFunc = function () {
+                                $.ajax('ircweb2recv.php', {
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        // Validate data is an array.
+                                        if (typeof(data) == 'object') {
+                                            irc.processMessages(data);
+                                            return;
                                         }
-                                    });
-                                }
-                            }, irc.pollInterval);
-                            
-                            // Periodically check that polls to ircweb2recv are still occurring within reasonable time.
-                            irc.statusPollHandle = setInterval(function() {
-                                time = new Date().getTime();
-                                if (irc.lastRecvTime !== undefined && time - irc.lastRecvTime > (irc.statusTimeout * 1000)) {
-                                    // Status check timeout.
-                                    if (console) console.log('Status timeout!');
-                                    irc.deactivateClient();
-                                    // TODO: try to auto-reactivate up to a few times.
-                                }
-                            }, irc.statusInterval);
+
+                                        if (console) {
+                                            console.log('Got invalid data:');
+                                            console.log(data);
+                                        }
+                                    },
+                                    complete: function () {
+                                       irc.intervalPollHandle = setTimeout(pollFunc, 0);
+                                    }
+                                });
+                            };
+                            irc.intervalPollHandle = setTimeout(pollFunc, 0);
                         }
                         else {
                             // Error on activation.
@@ -595,8 +573,8 @@
             irc.isActivated = false;
             var parent = $(irc.parentElement);
             parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
-            clearInterval(irc.intervalPollHandle);
-            clearInterval(irc.statusPollHandle);
+            clearTimeout(irc.intervalPollHandle);
+            irc.intervalPollHandle = undefined;
             parent
                 .removeClass('activated')
                 .addClass('deactivated');
@@ -606,14 +584,15 @@
 
         // Send raw message to server.
         sendMsg: function (rawMsg, postCallback) {
-            $.post(
-                'ircweb2send.php',
-                { msg: rawMsg },
-                function () {
+            $.ajax('ircweb2send.php', {
+                async: true,
+                type: 'POST',
+                data: { msg: rawMsg },
+                success: function () {
                     if (console) console.log('Sent: ' + rawMsg);
                     if (postCallback) postCallback(rawMsg);
                 }
-            );
+            });
         },
 
         sendChannelMsg: function (channel, message) {
@@ -753,13 +732,7 @@
                 $('<div class="line"/>')
                     .append(html)
                     .appendTo(ircChannel);
-                if (atBottom || irc.isScrolling) {
-                    //el.scrollTop = el.scrollHeight;
-                    irc.isScrolling = true;
-                    ircChannel.clearQueue().animate({
-                        scrollTop: el.scrollHeight
-                    }, 2000, 'swing', function () { irc.isScrolling = false; });
-                }
+                if (atBottom || irc.isScrolling) el.scrollTop = el.scrollHeight;
             };
             
             if (typeof(html) === 'object')
@@ -803,7 +776,7 @@
             // Timestamp when last received message processing occurs.
             irc.lastRecvTime = new Date().getTime();
             
-            $.each(data.msgs, function (key, msg) {
+            $.each(data, function (key, msg) {
                 switch (msg.type) {
                 case 'recv':
                     if (console) {

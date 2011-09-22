@@ -7,6 +7,10 @@ require_once 'config.php';
 require_once 'class.log.php';
 require_once 'class.spIrcClient.php';
 
+// Timeout waiting for data to read.
+$timeout = 90 * 1000;
+
+set_time_limit($timeout/1000 + 5);
 session_start();
 
 header('Content-type: application/json');
@@ -21,15 +25,13 @@ if (isset($_SESSION['irc'])) {
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile, $state);
         
-        $data = array(
-            'msgs' => array()
-        );
+        $data = array();
         
         // Read all messages waiting in queue.
         $messageCount = 0;
         do {
-            // TODO: Separate socket reads from buffer reads.
-            $line = $ircbot->checkIncomingMsg();
+            // TODO: Separate socket reads from buffer reads.(?)
+            $line = $ircbot->checkIncomingMsg($timeout);
 
             if ($line !== null && $line !== false) {
                 // Got a message.
@@ -40,7 +42,7 @@ if (isset($_SESSION['irc'])) {
                     $prevState = clone $state;
                     
                     $msg['type'] = spIrcClient::CLMSG_TYPE_RECV;
-                    $data['msgs'][] = $msg;
+                    $data[] = $msg;
                     
                     // Do default processing on the message.
                     $ircbot->processMsg($msg);
@@ -48,7 +50,7 @@ if (isset($_SESSION['irc'])) {
                     // Check for change in state.
                     if ($state->isModified) {
                         // Send client state.
-                        $data['msgs'][] = array(
+                        $data[] = array(
                             'type' => spIrcClient::CLMSG_TYPE_STATE,
                             'state' => $state
                         );
@@ -56,22 +58,22 @@ if (isset($_SESSION['irc'])) {
                 }
             }
             
+            $timeout = 0;   // Only block socket_select for the first iteration.
             $messageCount++;
             usleep(0);
         } while ($line !== null && $line !== false && $messageCount < 200);
 
         $ircbot->disconnect();
+
     }
 }
 else {
     // No session.
     $data = array(
-        'msgs' => array(
-            array(
-                'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                'message' => 'Connection not open.',
-                'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
-            )
+        array(
+            'type' => spIrcClient::CLMSG_TYPE_SERVER,
+            'message' => 'Connection not open.',
+            'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
         )
     );
 }

@@ -38,8 +38,11 @@ class spIrcClient
     // spIrcClientState object.
     private $state;
 
-    private $socketReadBuf = null;
-    public $socketReadBufSize = 1024;
+    private $socketReadBuffer = null;
+    private $socketSendBuffer = null;
+    
+    public $socketReadBufferSize = 1024;
+    public $socketSendTimeout = 2000;   // in milliseconds
     
     // Constructor.
 	public function spIrcClient($socketFile, &$state) {
@@ -54,21 +57,22 @@ class spIrcClient
     // Disconnect from IRC proxy domain socket.
     public function disconnect() {
         if (!empty($this->socket)) {
-            echo "Disconnecting from IRC socket...\n";
+            //log::info("Disconnecting from IRC socket.");
             socket_shutdown($this->socket, 2);
             socket_close($this->socket);
+            $this->socket = null;
         }
-        else {
-            echo "Already disconnected from IRC socket...\n";
-        }
+        // else {
+            // log::info("Already disconnected from IRC socket.");
+        // }
     }
 
     // Check if incoming message is found, returns:
     // raw message string.
     // null if no message waiting.
     // false if connection is closed.
-    public function checkIncomingMsg() {
-        $line = $this->socketReadLine();
+    public function checkIncomingMsg($timeout) {
+        $line = $this->socketReadLine($timeout);
         if ($line === false) return false;
         if ($line === null) return null;
         $this->parseMsg($line);
@@ -76,24 +80,24 @@ class spIrcClient
         return $line;
     }
     
-    private function socketReadLine() {
-        //log::info("socketReadBuf size(" . strlen($this->socketReadBuf) . ")");
+    private function socketReadLine($timeout = 0) {
+        //log::info("socketReadBuffer size(" . strlen($this->socketReadBuffer) . ")");
         $line = null;
         
         while (true) {
             // check for line ending in read buffer.
             $m = null;
-            //if (strlen($this->socketReadBuf)) log::info('socketReadBuf: ' . str_replace("\r\n", "$\r\n", $this->socketReadBuf));
-            if (preg_match("/^.*?\r\n/", $this->socketReadBuf, $m)) {
-                // Found a line.
+            //if (strlen($this->socketReadBuffer)) log::info('socketReadBuffer: ' . str_replace("\r\n", "$\r\n", $this->socketReadBuffer));
+            if (preg_match("/^.*?\r\n/", $this->socketReadBuffer, $m)) {
+                // Found a line in the buffer.
                 $line = $m[0];
-                $this->socketReadBuf = substr($this->socketReadBuf, strlen($line));
+                $this->socketReadBuffer = substr($this->socketReadBuffer, strlen($line));
                 //log::info("socket, size(" . strlen($line) . "): $line");
                 break;
             }
             
             // Check for data available for read.
-            $c = socket_select($r = array($this->socket), $w = null, $e = null, 0, 250 * 1000);
+            $c = socket_select($r = array($this->socket), $w = null, $e = null, 0, $timeout * 1000);
             if ($c === false) {
                 $errno = socket_last_error($this->socket);
                 if ($errno != 0 && $errno != 11) {
@@ -109,7 +113,7 @@ class spIrcClient
 
             // Read more data
             $buf = null;
-            $size = socket_recv($this->socket, $buf, $this->socketReadBufSize, 0);
+            $size = socket_recv($this->socket, $buf, $this->socketReadBufferSize, 0);
             if ($size == false) {
                 // Read error.
                 $errno = socket_last_error($this->socket);
@@ -118,8 +122,8 @@ class spIrcClient
                 return false;
             }
 
-            //log::info("socketReadBuf appended: $buf");
-            $this->socketReadBuf .= $buf;
+            //log::info("socketReadBuffer appended: $buf");
+            $this->socketReadBuffer .= $buf;
             
             // Loop and attempt to read a line again.
         }
@@ -425,39 +429,78 @@ class spIrcClient
         case self::ERR_NOTREGISTERED: // ERR_NOTREGISTERED.
             break;
         }
+        
+        $this->flushSendBuffer();
+    }
+    
+    public function flushSendBuffer() {
+        // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
+        $size = null;
+        $errorCount = 0;
+        $sendCount = 0;
+        
+        do {
+            $size = $this->socketSendBuffer();
+            if ($size === false) $errorCount++;
+            $sendCount++;
+        } while ($sendCount < 50 && $errorCount < 5 && ($size === false || $size > 0));
+        
+        if ($size === false) {
+            log::error("Error while flushing send buffer.  Cannot send.");
+        }
+        else if ($size > 0) {
+            log::error("Error while flushing send buffer.  Some data may have been dropped.");
+        }
     }
         
-    public function debug_write($text) {
-        $text = preg_replace("/[\r\n]/", "", $text);
-        $text = preg_replace("/\s{2,}/", " ", $text);
-        $this->msg('#sp', $text);
+    // Send buffered data to socket.
+    // Returns buffer bytes remaining after send attempt.
+    public function socketSendBuffer() {
+        $c = socket_select($r = null, $w = array($this->socket), $e = null, 0, $this->socketSendTimeout);
+        if ($c === false) {
+            $errno = socket_last_error($this->socket);
+            log::error("Error during socket_select: $errno/" . socket_strerror($errno));
+            return false;
+        }
+        else if ($c == 0) {
+            // Timeout waiting for socket to be writable.
+            log::error("Error: timeout on socket_select trying to send buffer.");
+            return false;
+        }
+        
+        $size = socket_write($this->socket, $this->socketSendBuffer);
+        if ($size === false) {
+            $errno = socket_last_error($this->socket);
+            log::error("Error during socket_write: $errno/" . socket_strerror($errno) . " trying to send message: $line");
+            return false;
+        }
+        else if ($size != strlen($this->socketSendBuffer)) {
+            // Not all bytes were sent.
+            log::info("sent($size) buffered(" . (strlen($this->socketSendBuffer) - $size) . ") ");
+            $this->socketSendBuffer = substr($this->socketSendBuffer, $size);
+        }
+        else {
+            log::info("sent($size)");
+            $this->socketSendBuffer = null;
+        }
+        
+        log::info("done");
+        @flush();
+        
+        return strlen($this->socketSendBuffer);
     }
 
 	// Send raw message.
     // Message line must end with \r\n.
 	public function sendRawMsg($line)
 	{
-        //socket_set_block($this->socket);
-        $c = socket_select($r = null, $w = array($this->socket), $e = null, 2, 0);
-        if ($c == false) {
-            $errno = socket_last_error($this->socket);
-            echo "sendRawMsg error: $errno/" . socket_strerror($errno) . " trying to send message: $line";
-            return false;
-        }
-        else if ($c == 0) {
-            // Timeout waiting for socket to be writable.
-            echo "sendRawMsg timeout on socket_select trying to send message: $line";
-            return false;
-        }
-        
-        socket_write($this->socket, $line);
-        @flush();
+        $this->socketSendBuffer .= $line;
         
         echo "sent: " . $line;
 	}
     
     public function isChannel($target) {
-        return !!preg_match("/^#/", $target);
+        return preg_match("/^[^#]/", $target);
     }
 	
     //
@@ -472,6 +515,7 @@ class spIrcClient
         
         $this->sendRawMsg("USER " . $this->state->ident . " 0 * :" . $this->state->realname . "\r\n");
         $this->setNick($this->state->nick);
+        $this->flushSendBuffer();
     }
 
 	public function setNick($nick) {
