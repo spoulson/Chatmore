@@ -8,7 +8,7 @@ require_once 'class.log.php';
 require_once 'class.spIrcClient.php';
 
 // Timeout waiting for data to read.
-$timeout = 90 * 1000;
+$timeout = 120 * 1000;
 
 set_time_limit($timeout/1000 + 5);
 session_start();
@@ -64,7 +64,6 @@ if (isset($_SESSION['irc'])) {
         } while ($line !== null && $line !== false && $messageCount < 200);
 
         $ircbot->disconnect();
-
     }
 }
 else {

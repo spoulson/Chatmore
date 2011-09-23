@@ -1,4 +1,5 @@
 <?
+require_once 'config.php';
 
 session_start();
 if (array_key_exists('x', $_GET)) {
@@ -10,12 +11,14 @@ if (array_key_exists('x', $_GET)) {
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Experimental IRC chat client</title>
     <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="ircweb2.css" />
     <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
-    <script type="text/javascript" src="ircweb2.js"></script>
+    <script type="text/javascript" src="chatmore.js"></script>
+    <script type="text/javascript" src="ircClientUI.js"></script>
 </head>
 <body>
 
@@ -60,6 +63,5 @@ if (array_key_exists('x', $_GET)) {
     </div>
     
     <div id="connectionDialog"></div>
-    
 </body>
 </html>

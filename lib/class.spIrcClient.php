@@ -496,7 +496,7 @@ class spIrcClient
 	{
         $this->socketSendBuffer .= $line;
         
-        echo "sent: " . $line;
+        //log::info("sent: " . $line);
 	}
     
     public function isChannel($target) {

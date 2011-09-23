@@ -449,7 +449,7 @@
                 },
                 exec: function (meta) {
                     var message = meta.message;
-                    if (message == '') message = irc.quitMessage;
+                    if (message === undefined) message = irc.quitMessage;
                     irc.sendMsg('QUIT :' + message);
                 }
             }
@@ -459,6 +459,9 @@
             irc.isActivated = false;
             irc.lastRecvTime = undefined;
             var parent = $(irc.parentElement);
+            
+            parent.trigger('activatingClient');
+            
             parent.find('.activateButton').button('disable').removeClass('ui-state-hover');
             parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
             
@@ -557,12 +560,14 @@
                                     }
                                 });
                             };
+                            parent.trigger('activatedClient');
                             irc.intervalPollHandle = setTimeout(pollFunc, 0);
                         }
                         else {
                             // Error on activation.
                             irc.writeTmpl('clientMsg', { message: 'Error during activation' });
                             parent.find('.activateButton').button('enable');
+                            parent.trigger('activateClientFailed');
                         }
                     },
                     error: errorFunc
@@ -570,8 +575,11 @@
         },
 
         deactivateClient: function () {
-            irc.isActivated = false;
             var parent = $(irc.parentElement);
+
+            parent.trigger('deactivatingClient');
+            
+            irc.isActivated = false;
             parent.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
             clearTimeout(irc.intervalPollHandle);
             irc.intervalPollHandle = undefined;
@@ -580,10 +588,15 @@
                 .addClass('deactivated');
             parent.find('.activateButton').button('enable');
             irc.writeTmpl('clientMsg', { message: 'Deactivated' });
+            
+            parent.trigger('deactivatedClient');
         },
 
         // Send raw message to server.
+        // TODO: Consider if postCallback can be implemented as a JQuery Deferred action.
         sendMsg: function (rawMsg, postCallback) {
+            $(irc.parentElement).trigger('sendMsg', [ rawMsg ]);
+            
             $.ajax('ircweb2send.php', {
                 async: true,
                 type: 'POST',
@@ -591,6 +604,7 @@
                 success: function () {
                     if (console) console.log('Sent: ' + rawMsg);
                     if (postCallback) postCallback(rawMsg);
+                    $(irc.parentElement).trigger('sentMsg', [ rawMsg ]);
                 }
             });
         },
@@ -719,30 +733,37 @@
         linkifyText: function (text) {
             return text.replace(irc.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
         },
-        linkifyRegex: /(https?:\/\/([^\.\/\:]+(\.[^\.\/\:]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?([^=&<>]+=[^=&<>]*(&[^=&<>]+=[^=&<>]*)*)?)?(#[\w_\-]+)?)/g,
+        linkifyRegex: /(https?:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/g,
 
         // Show a line of html in irc client.
         writeLine: function (html) {
-            var ircChannel = $(irc.parentElement).find('#tabConsole .ircChannel');
+            var parent = $(irc.parentElement);
+            var ircChannel = parent.find('#tabConsole .ircChannel');
             var el = ircChannel.get(0);
 
-            var write = function (html) {
+            var write = function (element) {
                 var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
                 html = irc.linkifyText(html);
                 $('<div class="line"/>')
-                    .append(html)
+                    .append(element)
                     .appendTo(ircChannel);
-                if (atBottom || irc.isScrolling) el.scrollTop = el.scrollHeight;
+                if (atBottom) el.scrollTop = el.scrollHeight;
             };
             
-            if (typeof(html) === 'object')
+            // TODO: How to allow the event handler to modify the html parameter?
+            if (typeof(html) === 'object') {
                 $.each(html, function (i, html) {
-                    write(html);
+                    var element = $('<div/>').append(html);
+                    parent.trigger('writeLine', [ element ]);
+                    write(element.contents());
                 });
-            else
-                write(html);
+            }
+            else {
+                var element = $('<div/>').append(html);
+                parent.trigger('writeLine', [ element ]);
+                write(element.contents());
+            }
         },
-        isScrolling: false,
 
         writeTmpl: function (templateName, data) {
             data['irc'] = irc;
@@ -777,6 +798,8 @@
             irc.lastRecvTime = new Date().getTime();
             
             $.each(data, function (key, msg) {
+                $(irc.parentElement).trigger('processingMessage', [ msg ]);
+                
                 switch (msg.type) {
                 case 'recv':
                     if (console) {
@@ -972,6 +995,8 @@
                     break;
                 }
             });
+            
+            $(irc.parentElement).trigger('processedMessage', [ msg ]);
         },
 
         // Resize elements to proper alignment based on #ircTabs dimensions.
