@@ -34,12 +34,7 @@ $(function () {
         outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
         outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>-</span> <span class="message">${message}</span></span>',
         outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-        incomingChannelMsg:
-            '{{tmpl "timestamp"}}' +
-            '<span class="channelMsg' +
-                '{{if message.toLowerCase().indexOf(clientNick.toLowerCase()) != -1}} nickHighlight{{/if}}' + '">' +
-                '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> ' +
-                '<span class="message">${message}</span></span>',
+        incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> <span class="message">${message}</span></span>',
         incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
         incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
         incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span></span> <span class="message">${message}</span></span>',
@@ -555,14 +550,11 @@ $(function () {
     var decorateNicks = function (html, nicks) {
         var nickExpr = nicks.join('|');
         var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
-        var s = html.replace(re, '<span class="nick">$1</span>');
-        return s;
+        return html.replace(re, '<span class="nick">$1</span>');
     };
     
     var decorateChannels = function (html) {
-        var s = html.replace(/(^|\W)(#\w+)\b/g, '$1<span class="channel">$2</span>');
-        if (console) console.log(s);
-        return s;
+        return html.replace(/(^|\W)(#\w+)\b/g, '$1<span class="channel">$2</span>');
     };
     
     var clearSelection = function () {
@@ -581,6 +573,7 @@ $(function () {
         var write = function (element) {
             var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
             
+            // Auto decorate nicks and channels in message.
             element.find('.message')
                 .not('.nick')
                 .not('.channel')
@@ -594,36 +587,54 @@ $(function () {
                     return html;
                 });
             
+            // Add doubleclick handler on nick and channel to auto-query.
             element.find('.nick,.channel')
                 .dblclick(function () {
                     var target = $(this).text();
-                    if (target != irc.state.nick) {
+                    if (irc.state() !== undefined && target != irc.state().nick) {
                         queryTarget(target);
                         
-                        // Remove selected text.
+                        // Unselect doubleclicked text.
                         clearSelection();
                         
                         ircElement.find('.userEntry').focus();
                     }
                 });
-        
+                
+            // Detect if my nick was mentioned in a channel message.
+            element.closest('.channelMsg').find('.message .nick')
+                .filter(function () {
+                    return irc.state() !== undefined &&
+                        $(this).text().toLowerCase() == irc.state().nick.toLowerCase();
+                })
+                .first()
+                .filter(function () {
+                    // Check if this message is written by me.  If I wrote it, skip highlighting.
+                    var prefixNick = element.find('.prefix .nick').text();
+                    return irc.state() !== undefined &&
+                        prefixNick.toLowerCase() != irc.state().nick.toLowerCase();
+                })
+                .each(function () {
+                    element.closest('.channelMsg').addClass('nickHighlight');
+                });
+
+            // Add line to console.
             $('<div class="line"/>')
                 .append(element)
                 .appendTo(ircChannel);
+                
+            // Auto scroll to bottom if currently at bottom.
             if (atBottom) el.scrollTop = el.scrollHeight;
         };
         
-        // TODO: How to allow the event handler to modify the html parameter?
         if (typeof(html) === 'object') {
             $.each(html, function (i, html) {
                 var element = $('<div/>').append(html);
-                //ircElement.trigger('writeLine', [ element ]);
                 write(element.contents());
             });
         }
         else {
             var element = $('<div/>').append(html);
-            //ircElement.trigger('writeLine', [ element ]);
             write(element.contents());
         }
     };
