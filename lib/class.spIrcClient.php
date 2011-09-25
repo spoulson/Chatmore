@@ -206,7 +206,8 @@ class spIrcClient
         case 'NICK':
             if (!preg_match("/:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
-                'nick' => $msgParams[1]
+                'nick' => $msgParams[1],
+                'oldNick' => $msg['prefixNick']
             );
             break;
         
@@ -274,7 +275,7 @@ class spIrcClient
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
-            if (!preg_match("/\S+ +\S +(#\w+) +(.+)$/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+\S\s+(#\w+)\s+:(.+)$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
                 'names' => explode(' ', rtrim($msgParams[2]))
@@ -351,7 +352,21 @@ class spIrcClient
             
         case 'MODE':
             // Store user or channel mode string.
-            $this->state->modes[$msg['info']['target']] = $msg['info']['mode'];
+            $target = $msg['info']['target'];
+            if (preg_match('/^#/', $target)) {
+                // Channel mode.
+                if (!isset($this->state->channels[$target])) {
+                    $this->state->channels[$target] = new spIrcChannelDesc();
+                }
+                $this->state->channels[$target]->mode = $msg['info']['mode'];
+            }
+            else {
+                // User mode.
+                if (!isset($this->state->users[$target])) {
+                    $this->state->users[$target] = new spIrcUserDesc();
+                }
+                $this->state->users[$target]->mode = $msg['info']['mode'];
+            }
             $this->state->isModified = true;
             break;
             
@@ -360,8 +375,23 @@ class spIrcClient
                 // Client user changed nick.
                 $this->state->nick = $msg['info']['nick'];
                 $this->state->isNickValid = true;
-                $this->state->isModified = true;
             }
+            
+            // Adjust user list.
+            $nick = $msg['info']['nick'];
+            $oldNick = $msg['info']['oldNick'];
+            $this->state->users[$nick] = $this->state->users[$oldNick];
+            unset($this->state->users[$oldNick]);
+            
+            // Adjust channel members.
+            foreach ($this->state->channels as $channel) {
+                if (isset($channel->members[$oldNick])) {
+                    $channel->members[$nick] = $channel->members[$oldNick];
+                    unset($channel->members[$oldNick]);
+                }
+            }
+            
+            $this->state->isModified = true;
             break;
 
         case 'PART':
@@ -371,33 +401,27 @@ class spIrcClient
             $this->state->isModified = true;
             break;
             
-        case self::RPL_WHOREPLY:
-            $channel = $msg['info']['channel'];
-            // if ($this->isChannel($msg['info']['channel'])) {
-                // // Store channel data in $whoReply.
-                // $this->state->whoReply['names'][$msg['info']['channel']][] = $msg['info']['nick'];
-                // $this->state->isModified = true;
-            // }
-            break;
+        // case self::RPL_WHOREPLY:
+            // break;
             
         case self::RPL_TOPIC:
-            $this->state->topicReply['topic'] = $msg['info']['topic'];
+            $this->state->channels[$msg['info']['channel']]->topic = $msg['info']['topic'];
             $this->state->isModified = true;
             break;
             
         case self::RPL_NOTOPIC:
-            $this->state->topicReply['topic'] = '';
+            $this->state->channels[$msg['info']['channel']]->topic = null;
             $this->state->isModified = true;
             break;
             
         case 333: // topic reply set by/timestamp.
-            $this->state->topicReply['setByNick'] = $msg['info']['setByNick'];
-            $this->state->topicReply['setTime'] = $msg['info']['setTime'];
+            $channel = $msg['info']['channel'];
+            $this->state->channels[$channel]->topicSetByNick = $msg['info']['setByNick'];
+            $this->state->channels[$channel]->topicSetTime = $msg['info']['setTime'];
             $this->state->isModified = true;
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
-            //$this->state->names[$msg['info']['target']] = $msg['info']['names'];
             $channel = $msg['info']['target'];
             if (!isset($this->state->channels[$channel])) {
                 $this->state->channels[$channel] = new spIrcChannelDesc();
@@ -405,21 +429,19 @@ class spIrcClient
             
             foreach ($msg['info']['names'] as $name) {
                 $m = array();
-                preg_match("/^(.)(.+)/", $name, $m);
-                $prefix = $m[1];
-                $nick = $m[2];
+                if (preg_match("/^(\W?)(.+)/", $name, $m)) {
+                    $prefix = $m[1];
+                    $nick = $m[2];
+                    
+                    if (!isset($this->state->channels[$channel]->members[$nick])) {
+                        $memberDesc = new spIrcChannelMemberDesc();
+                        $memberDesc->mode = $prefix;
+                        $this->state->channels[$channel]->members[$nick] = $memberDesc;
+                    }
                 
-                if (!isset($this->state->channels[$channel]->members[$nick])) {
-                    $member = new spIrcChannelMemberDesc();
-                    $member->mode = $prefix;
-                    // TODO: Populate class with member metadata.
-                    $this->state->channels[$channel]->members[$nick] = $member;
-                }
-            
-                if (!isset($this->state->users[$nick])) {
-                    $user = new spIrcUserDesc();
-                    // TODO: Populate class with user metadata.
-                    $this->state->users[$nick] = $user;
+                    if (!isset($this->state->users[$nick])) {
+                        $this->state->users[$nick] = new spIrcUserDesc();
+                    }
                 }
             }
             

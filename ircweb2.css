@@ -86,10 +86,6 @@ BODY {
     width: 50px;
 }
 
-.ircweb2 .ircChannel .usage {
-    color: #7fffff;
-}
-
 .ircweb2 .ircChannel .help {
     color: #00cfcf;
 }
@@ -115,7 +111,7 @@ BODY {
 }
 
 .ircweb2 .ircChannel .nick {
-    color: #dfdfdf;
+    color: white;
 }
 
 .ircweb2 .ircChannel .nickHighlight .nick {

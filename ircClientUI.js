@@ -547,18 +547,66 @@ $(function () {
     };
     
     // Convert URL patterns into HTML links.
-    var linkifyText = function (text) {
-        return text.replace(linkifyRegex, '<a href="$1" target="_blank">$1</a>');
+    var linkifyURLs = function (html) {
+        return html.replace(linkifyRegex, '<a href="$1" target="_blank">$1</a>');
     };
     var linkifyRegex = /(https?:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/g;;;;;;
 
+    var decorateNicks = function (html, nicks) {
+        var nickExpr = nicks.join('|');
+        var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
+        var s = html.replace(re, '<span class="nick">$1</span>');
+        return s;
+    };
+    
+    var decorateChannels = function (html) {
+        var s = html.replace(/(^|\W)(#\w+)\b/g, '$1<span class="channel">$2</span>');
+        if (console) console.log(s);
+        return s;
+    };
+    
+    var clearSelection = function () {
+        if (window.getSelection) {
+            window.getSelection().removeAllRanges();
+        }
+        else if (document.selection) {
+            document.selection.empty();
+        }
+    };
+    
     var writeLine = function (html) {
         var ircChannel = ircElement.find('#tabConsole .ircChannel');
         var el = ircChannel.get(0);
 
         var write = function (element) {
             var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
-            html = linkifyText(html);
+            
+            element.find('.message')
+                .not('.nick')
+                .not('.channel')
+                .html(function (i, html) {
+                    html = linkifyURLs(html);
+                    if (irc.state() !== undefined) {
+                        var nicks = $.map(irc.state().users, function (val, key) { return key; });
+                        html = decorateNicks(html, nicks);
+                    }
+                    html = decorateChannels(html);
+                    return html;
+                });
+            
+            element.find('.nick,.channel')
+                .dblclick(function () {
+                    var target = $(this).text();
+                    if (target != irc.state.nick) {
+                        queryTarget(target);
+                        
+                        // Remove selected text.
+                        clearSelection();
+                        
+                        ircElement.find('.userEntry').focus();
+                    }
+                });
+        
             $('<div class="line"/>')
                 .append(element)
                 .appendTo(ircChannel);
@@ -655,12 +703,9 @@ $(function () {
             // Restore title when user comes back to the window.
             document.title = defaultTitle;
             isWindowFocused = true;
-            if (console) console.log('isWindowFocused: ' + isWindowFocused);
-            if (console) console.log('defaultTitle: ' + defaultTitle);
         })
         .blur(function () {
             isWindowFocused = false;
-            if (console) console.log('isWindowFocused: ' + isWindowFocused);
         });
     
     // Setup chatmore event handlers.
