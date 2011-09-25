@@ -547,12 +547,14 @@ $(function () {
     };
     var linkifyRegex = /(https?:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/g;;;;;;
 
+    // Decorate nicks found in text with span.
     var decorateNicks = function (html, nicks) {
         var nickExpr = nicks.join('|');
         var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
         return html.replace(re, '<span class="nick">$1</span>');
     };
-    
+
+    // Decorate channel-like text with span.
     var decorateChannels = function (html) {
         return html.replace(/(^|\W)(#\w+)\b/g, '$1<span class="channel">$2</span>');
     };
@@ -909,7 +911,10 @@ $(function () {
                 
             case 'activated':
                 writeTmpl('clientMsg', { message: 'Activated' });
-                ircElement.find('.deactivateButton').button('enable');
+                ircElement
+                    .removeClass('deactivated')
+                    .addClass('activated')
+                    .find('.deactivateButton').button('enable');
                 break;
 
             case 'error':
@@ -917,8 +922,6 @@ $(function () {
                 ircElement.find('.activateButton').button('enable');
                 break;
             }
-        })
-        .bind('activatedClient', function () {
         })
         .bind('deactivatingClient', function () {
             ircElement.find('.deactivateButton')
@@ -928,8 +931,6 @@ $(function () {
                 .removeClass('activated')
                 .addClass('deactivated')
                 .find('.activateButton').button('enable');
-        })
-        .bind('deactivatedClient', function () {
         });
         
     // Setup user entry event handlers.
