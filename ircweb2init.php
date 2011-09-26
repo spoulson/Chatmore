@@ -65,22 +65,25 @@ if (!validateSession()) {
 
     if ($connectMode == 1 || $connectMode == 2) {
         $state =& $_SESSION['irc'];
-        $socketFile = $state->getSocketFilename();
-        log::info("Socket file: $socketFile");
-        if (file_exists($socketFile)) unlink($socketFile);
+        $primarySocketFile = $state->getPrimarySocketFilename();
+        $secondarySocketFile = $state->getSecondarySocketFilename();
+        log::info("Primary Socket file: $primarySocketFile");
+        log::info("Secondary Socket file: $secondarySocketFile");
+        if (file_exists($primarySocketFile)) unlink($primarySocketFile);
+        if (file_exists($secondarySocketFile)) unlink($secondarySocketFile);
 
         // Kick off background IRC proxy connection.
-        $cmd = "php " . $ircConfig['php_opts'] . " lib/ircConnection.php $socketFile " . $state->host . ' &';
+        $cmd = "php " . $ircConfig['php_opts'] . " lib/ircConnection.php $primarySocketFile $secondarySocketFile " . $state->host . ' &';
         log::info("Instantiating IRC process: $cmd");
         pclose(popen($cmd, 'r'));
         
         // Wait for socket to be created.  5 second timeout.
         for ($i = 0; $i < 50; $i++) {
-            if (file_exists($socketFile)) break;
+            if (file_exists($primarySocketFile)) break;
             usleep(100 * 1000);
         }
         
-        if (!file_exists($socketFile)) {
+        if (!file_exists($primarySocketFile)) {
             // Timeout waiting for socket file to be created.
             log::error("Timeout waiting for IRC connection to open.");
             @ob_clean();
@@ -96,7 +99,7 @@ if (!validateSession()) {
         log::info("Found socket file.");
         
         // Socket is ready.  Connect to server and initialize the IRC connection.
-        $ircbot = new spIrcClient($socketFile, $state);
+        $ircbot = new spIrcClient($secondarySocketFile, $state);
         $ircbot->register($state->nick, $state->ident, $state->realname);
         $ircbot->disconnect();
     }
@@ -128,7 +131,7 @@ function validateSession() {
     if (!isset($_SESSION['irc'])) return false;
     
     $state =& $_SESSION['irc'];
-    $socketFile = $state->getSocketFilename();
+    $socketFile = $state->getPrimarySocketFilename();
     log::info("Socket file: $socketFile");
     
     // Check if we can connect to domain socket.

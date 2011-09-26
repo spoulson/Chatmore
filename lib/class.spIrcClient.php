@@ -75,8 +75,6 @@ class spIrcClient
         $line = $this->socketReadLine($timeout);
         if ($line === false) return false;
         if ($line === null) return null;
-        $this->parseMsg($line);
-        
         return $line;
     }
     
@@ -87,12 +85,12 @@ class spIrcClient
         while (true) {
             // check for line ending in read buffer.
             $m = null;
-            //if (strlen($this->socketReadBuffer)) log::info('socketReadBuffer: ' . str_replace("\r\n", "$\r\n", $this->socketReadBuffer));
+            //if (strlen($this->socketReadBuffer)) log::info('socketReadBuffer: ' . $this->socketReadBuffer);
             if (preg_match("/^.*?\r\n/", $this->socketReadBuffer, $m)) {
                 // Found a line in the buffer.
                 $line = $m[0];
                 $this->socketReadBuffer = substr($this->socketReadBuffer, strlen($line));
-                //log::info("socket, size(" . strlen($line) . "): $line");
+                //log::info("Read line: $line");
                 break;
             }
             
@@ -339,12 +337,15 @@ class spIrcClient
             );
             break;
         }
-        
+
+        //log::info('Parsed message: ' . var_export($msg, true));
         return $msg;
     }
     
     // Process an incoming message with default logic.
     public function processMsg($msg) {
+        log::info('Processing message: ' . $msg['raw']);
+
         switch ($msg['command']) {
         case 'PING':
             $this->pong($msg);

@@ -576,9 +576,7 @@ $(function () {
             var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
             
             // Auto decorate nicks and channels in message.
-            element.find('.message')
-                .not('.nick')
-                .not('.channel')
+            element.closest('.channelMsg').find('.message')
                 .html(function (i, html) {
                     html = linkifyURLs(html);
                     if (irc.state() !== undefined) {
@@ -747,15 +745,13 @@ $(function () {
                 break;
 
             case 'recv':
-                // TODO: Nick/channel tagging and doubleclick event handler.
-                // Update title when new messages arrive and user isn't focused on the browser.
-                if (!isWindowFocused) {
-                    document.title = notificationTitle;
-                }
-
                 switch (msg.command) {
                 case 'PRIVMSG':
-                    // TODO: Nick highlighting
+                    // Update title when new messages arrive and user isn't focused on the browser.
+                    if (!isWindowFocused) {
+                        document.title = notificationTitle;
+                    }
+
                     if (msg.info.target.toLowerCase() == irc.state().nick.toLowerCase()) {
                         writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', {
                             clientNick: irc.state().nick,
@@ -774,6 +770,11 @@ $(function () {
                     break;
                     
                 case 'NOTICE':
+                    // Update title when new messages arrive and user isn't focused on the browser.
+                    if (!isWindowFocused) {
+                        document.title = notificationTitle;
+                    }
+
                     if (msg.info.target.toLowerCase() == irc.state().nick.toLowerCase()) {
                         writeTmpl('incomingPrivateNotice', {
                             clientNick: irc.state().nick,
@@ -899,6 +900,7 @@ $(function () {
             case 'start':
                 ircElement.find('.activateButton').button('disable').removeClass('ui-state-hover');
                 ircElement.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
+                ircElement.find('.userEntry').focus();
                 break;
                 
             case 'connecting':
@@ -910,7 +912,6 @@ $(function () {
                 break;
                 
             case 'activated':
-                writeTmpl('clientMsg', { message: 'Activated' });
                 ircElement
                     .removeClass('deactivated')
                     .addClass('activated')
@@ -997,7 +998,8 @@ $(function () {
 
     //  Setup buttons.
     ircElement.find('.activateButton').button({
-        icons: { primary: 'ui-icon-star' }
+        icons: { primary: 'ui-icon-star' },
+        disabled: false
     });
     ircElement.find('.deactivateButton').button({
         icons: { primary: 'ui-icon-close' },
@@ -1020,4 +1022,6 @@ $(function () {
     });
     
     alignUI();
+    
+    irc.activateClient();
 });

@@ -19,7 +19,7 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 if (isset($_SESSION['irc'])) {
     // Resuming a session.
     $state =& $_SESSION['irc'];
-    $socketFile = $state->getSocketFilename();
+    $socketFile = $state->getPrimarySocketFilename();
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile, $state);
         
@@ -28,7 +28,6 @@ if (isset($_SESSION['irc'])) {
         // Read all messages waiting in queue.
         $messageCount = 0;
         do {
-            // TODO: Separate socket reads from buffer reads.(?)
             $line = $ircbot->checkIncomingMsg($timeout);
 
             if ($line !== null && $line !== false) {
@@ -86,7 +85,7 @@ else {
 }
 
 // Send received messages data as JSON.
-@ob_clean();
+@ob_end_clean();
 echo json_encode($data);
 exit;
 

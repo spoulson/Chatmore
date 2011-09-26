@@ -4,6 +4,10 @@ require_once 'config.php';
 session_start();
 if (array_key_exists('x', $_GET)) {
     unset($_SESSION['irc']);
+
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 }
 
 ?>

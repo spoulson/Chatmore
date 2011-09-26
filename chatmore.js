@@ -7,6 +7,7 @@ function chatmore(element, server, port, nick, realname) {
     var local;
     local = {
         pollHandle: undefined,
+        pollXhr: undefined,
         lastRecvTime: undefined,
         state: undefined,
         isActivated: false,
@@ -17,6 +18,7 @@ function chatmore(element, server, port, nick, realname) {
             
             // Timestamp when last received message processing occurs.
             local.lastRecvTime = new Date().getTime();
+            var _this = this;
             
             $.each(data, function (key, msg) {
                 $(element).trigger('processingMessage', [ msg ]);
@@ -25,7 +27,7 @@ function chatmore(element, server, port, nick, realname) {
                 case 'recv':
                     if (console) {
                         if (msg.raw !== undefined) console.log(msg.raw);
-                        console.log(msg);
+                        // console.log(msg);
                     }
                     break;
                 
@@ -33,7 +35,7 @@ function chatmore(element, server, port, nick, realname) {
                     if (msg.state !== undefined) {
                         local.state = msg.state;
                         if (console) {
-                            console.log('Client state:');
+                            //console.log('Client state:');
                             console.log(local.state);
                         }
                     }
@@ -44,7 +46,7 @@ function chatmore(element, server, port, nick, realname) {
                     
                     if (msg.code >= 400) {
                         if (local.isActivated && msg.code == 400) {
-                            this.deactivateClient();
+                            _this.deactivateClient();
                         }
                     }
                     break;
@@ -105,10 +107,10 @@ function chatmore(element, server, port, nick, realname) {
                     connect: 0
                 },
                 success: function (data) {
-                    if (console) {
-                        console.log('data from init check:');
-                        console.log(data);
-                    }
+                    // if (console) {
+                        // console.log('data from init check:');
+                        // console.log(data);
+                    // }
                     local.processMessages(data);
                     
                     // Check for connection ready message.
@@ -138,10 +140,10 @@ function chatmore(element, server, port, nick, realname) {
                     port: port
                 },
                 success: function (data) {
-                    if (console) {
-                        console.log('data from init:');
-                        console.log(data);
-                    }
+                    // if (console) {
+                        // console.log('data from init:');
+                        // console.log(data);
+                    // }
                     local.processMessages(data);
                     
                     // TODO: verify session state has the expected server/port.  If not, reinitialize connection.
@@ -153,27 +155,33 @@ function chatmore(element, server, port, nick, realname) {
                     
                         // Repeatedly poll for IRC activity.
                         var pollFunc = function () {
-                            $.ajax('ircweb2recv.php', {
+                            local.pollHandle = undefined;
+                            local.pollXhr = $.ajax('ircweb2recv.php', {
                                 dataType: 'json',
                                 success: function (data) {
                                     // Validate data is an array.
                                     if (typeof(data) == 'object') {
                                         local.processMessages(data);
-                                        return;
                                     }
-
-                                    if (console) {
-                                        console.log('Got invalid data:');
-                                        console.log(data);
+                                    else {
+                                        // Data is invalid!
+                                        if (console) {
+                                            console.log('Got invalid data:');
+                                            console.log(data);
+                                        }
                                     }
                                 },
                                 complete: function () {
-                                   local.pollHandle = setTimeout(pollFunc, 0);
+                                    // Schedule next poll.
+                                    local.pollXhr = undefined;
+                                    if (local.isActivated) {
+                                        local.pollHandle = setTimeout(pollFunc, 100);
+                                    }
                                 }
                             });
                         };
+                        setTimeout(pollFunc, 0);
                         $(element).trigger('activatedClient');
-                        local.pollHandle = setTimeout(pollFunc, 0);
                     }
                     else {
                         // Error on activation.
@@ -188,8 +196,12 @@ function chatmore(element, server, port, nick, realname) {
         $(element).trigger('deactivatingClient');
         
         local.isActivated = false;
-        clearTimeout(local.pollHandle);
+        
+        // Ensure any running ajax call is aborted and stops recurring.
+        if (local.pollHandle !== undefined) clearTimeout(local.pollHandle);
         local.pollHandle = undefined;
+        if (local.pollXhr !== undefined) local.pollXhr.abort();
+        local.pollXhr = undefined;
         
         $(element).trigger('deactivatedClient');
     };

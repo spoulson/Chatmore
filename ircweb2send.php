@@ -13,7 +13,7 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 if (isset($_SESSION['irc'])) {
     $state =& $_SESSION['irc'];
-    $socketFile = $state->getSocketFilename();
+    $socketFile = $state->getSecondarySocketFilename();
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile, $state);
         
