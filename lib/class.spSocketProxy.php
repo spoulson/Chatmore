@@ -1,11 +1,11 @@
 <?
-// Creates and listens to a Unix domain socket;
-// proxies its connection with a given proxy socket handle.
-// Proxy socket I/O is buffered in event domain socket connection is dropped.
-// Flushes buffers when domain socket is reconnected.
-
-// TODO: manage multiple client connections so that simultaneous domain socket
-// connections for reads and/or writes don't block each other.
+// Creates and listens to two Unix domain sockets: primary and secondary.
+// Primary domain socket allows client read/write, secondary is client write-only.
+// Proxies client I/O with a given proxy socket handle.
+// Primary socket is kept alive as client connects and disconnects as it needs.
+// Received proxy socket data is buffered and flushed when client connects.
+// Client connections to either primary or secondary domain sockets will close
+// previously connected client sockets.
 
 require_once 'class.log.php';
 

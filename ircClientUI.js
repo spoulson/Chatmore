@@ -592,7 +592,16 @@ $(function () {
                 .dblclick(function () {
                     var target = $(this).text();
                     if (irc.state() !== undefined && target != irc.state().nick) {
-                        queryTarget(target);
+                        if (target.match(/^#/)) {
+                            // Check if joined to this channel.
+                            if (irc.state() !== undefined && irc.state().channels[target] === undefined)
+                                sendLine('/join ' + target);
+                            else
+                                queryTarget(target);
+                        }
+                        else {
+                            queryTarget(target);
+                        }
                         
                         // Unselect doubleclicked text.
                         clearSelection();

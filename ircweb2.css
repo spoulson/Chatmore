@@ -110,8 +110,18 @@ BODY {
     color: #c0c090;
 }
 
+.ircweb2 .ircChannel .channel:hover {
+    color: #909060;
+    cursor: pointer;
+}
+
 .ircweb2 .ircChannel .nick {
     color: white;
+}
+
+.ircweb2 .ircChannel .nick:hover {
+    color: #cfcfcf;
+    cursor: pointer;
 }
 
 .ircweb2 .ircChannel .nickHighlight .nick {
