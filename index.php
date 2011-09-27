@@ -57,6 +57,7 @@ if (array_key_exists('x', $_GET)) {
         </div>
         
         <div class="sideBar ui-widget ui-widget-content ui-corner-right">
+            <ul class="channelList"></ul>
         </div>
         
         <div id="templates" style="display:none">

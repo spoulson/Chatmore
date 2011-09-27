@@ -59,10 +59,56 @@ BODY {
     color: white;
 }
 
+.ircweb2 .channel {
+    color: #c0c090;
+    font-weight: bold;
+}
+
+.ircweb2 .channel:hover {
+    color: #909060;
+    cursor: pointer;
+}
+
+.ircweb2 .nick {
+    color: white;
+}
+
+.ircweb2 .nick:hover {
+    color: #cfcfcf;
+    cursor: pointer;
+}
+
+.ircweb2 .mode {
+    color: #F58400;
+}
+
 .ircweb2 .sideBar {
     float: left;
     width: 140px;
-    overflow: hidden;
+    padding: 12px 16px;
+}
+
+.ircweb2 .sideBar .channelList {
+    overflow: auto;
+    white-space: nowrap;
+}
+
+.ircweb2 .sideBar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ircweb2 .sideBar ul.channelList > li {
+    padding-bottom: 6px;
+}
+
+.ircweb2 .sideBar ul.memberList {
+    padding-left: 16px;
+}
+
+.ircweb2 .sideBar ul.memberList .mode {
+    padding-right: 3px;
 }
 
 .ircweb2 .ircChannel {
@@ -104,24 +150,6 @@ BODY {
 
 .ircweb2 .ircChannel .prefix {
     font-weight: bold;
-}
-
-.ircweb2 .ircChannel .channel {
-    color: #c0c090;
-}
-
-.ircweb2 .ircChannel .channel:hover {
-    color: #909060;
-    cursor: pointer;
-}
-
-.ircweb2 .ircChannel .nick {
-    color: white;
-}
-
-.ircweb2 .ircChannel .nick:hover {
-    color: #cfcfcf;
-    cursor: pointer;
 }
 
 .ircweb2 .ircChannel .nickHighlight .nick {

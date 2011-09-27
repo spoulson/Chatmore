@@ -30,13 +30,13 @@ $(function () {
         clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
         outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> <span class="message">${message}</span></span>',
         outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
+        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
         outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
         outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>-</span> <span class="message">${message}</span></span>',
         outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
         incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> <span class="message">${message}</span></span>',
         incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-        incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span></span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
+        incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
         incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span></span> <span class="message">${message}</span></span>',
         incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
         incomingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
@@ -567,7 +567,7 @@ $(function () {
             document.selection.empty();
         }
     };
-    
+
     var writeLine = function (html) {
         var ircChannel = ircElement.find('#tabConsole .ircChannel');
         var el = ircChannel.get(0);
@@ -589,26 +589,7 @@ $(function () {
             
             // Add doubleclick handler on nick and channel to auto-query.
             element.find('.nick,.channel')
-                .dblclick(function () {
-                    var target = $(this).text();
-                    if (irc.state() !== undefined && target != irc.state().nick) {
-                        if (target.match(/^#/)) {
-                            // Check if joined to this channel.
-                            if (irc.state() !== undefined && irc.state().channels[target] === undefined)
-                                sendLine('/join ' + target);
-                            else
-                                queryTarget(target);
-                        }
-                        else {
-                            queryTarget(target);
-                        }
-                        
-                        // Unselect doubleclicked text.
-                        clearSelection();
-                        
-                        ircElement.find('.userEntry').focus();
-                    }
-                });
+                .dblclick(dblclickChannelNickHandler);
                 
             // Detect if my nick was mentioned in a channel message.
             element.closest('.channelMsg').find('.message .nick')
@@ -648,7 +629,7 @@ $(function () {
         }
     };
     
-    // Resize elements to proper alignment based on #ircTabs dimensions.
+    // Resize elements to proper alignment based on ircTabs dimensions.
     var alignUI = function () {
         var ircTabs = ircElement.find('.ircTabs');
         var tabConsole = ircElement.find('#tabConsole');
@@ -658,6 +639,7 @@ $(function () {
         var userEntry = ircElement.find('.userEntry');
         var commandBar = ircElement.find('.commandBar');
         var sideBar = ircElement.find('.sideBar');
+        var channelList = sideBar.find('.channelList');
         tabConsole
             .outerWidth(ircTabs.width())
             .outerHeight(ircTabs.height() - ircTabs.children('.ui-tabs-nav').outerHeight());
@@ -671,6 +653,7 @@ $(function () {
         userEntry.width(userEntryLine.width());
         commandBar.outerWidth(ircTabs.outerWidth());
         sideBar.outerHeight(ircTabs.outerHeight() + userEntrySection.outerHeight());
+        channelList.height(sideBar.height());
     };
 
     var writeTmpl = function (templateName, data) {
@@ -682,6 +665,35 @@ $(function () {
         );
     };
 
+    var dblclickChannelNickHandler = function () {
+        // Get text of element, ignoring child elements.
+        var target = $(this)
+            .clone()
+            .children()
+            .remove()
+            .end()
+            .text();
+            
+        if (irc.state() !== undefined && target != irc.state().nick) {
+            if (target.match(/^#/)) {
+                // Check if joined to this channel.
+                if (irc.state() !== undefined && irc.state().channels[target] === undefined)
+                    sendLine('/join ' + target);
+                else
+                    queryTarget(target);
+            }
+            else {
+                queryTarget(target);
+            }
+                        
+            ircElement.find('.userEntry').focus();
+        }
+
+        // Unselect doubleclicked text.
+        clearSelection();
+        //return false;
+    };
+                
     var queryTarget = function (target) {
         var prevTarget = irc.target();
         
@@ -699,6 +711,64 @@ $(function () {
                 ircElement.find('.targetFragment').fadeIn();
             }
         });
+    };
+    
+    var getJoinedChannels = function () {
+        var channels = [];
+        
+        if (irc.state() !== undefined) {
+            for (var channel in irc.state().channels) {
+                channels.push(channel);
+            }
+        }
+
+        return channels.sort();
+    };
+    
+    var getChannelMembers = function(channel) {
+        var members = [];
+        
+        if (irc.state() !== undefined) {
+            var channelDesc = irc.state().channels[channel];
+            
+            if (channelDesc !== undefined) {
+                for (var member in channelDesc.members) {
+                    members.push(member);
+                }
+            }
+        }
+        
+        return members.sort();
+    };
+    
+    var refreshSideBar = function () {
+        if (irc.state() === undefined) return;
+        
+        var channelList = ircElement.find('.sideBar ul.channelList');
+        var originalScrollTop = channelList.get(0).scrollTop;
+        
+        channelList.empty();
+
+        $.each(getJoinedChannels(), function (i, channel) {
+            var channelDesc = irc.state().channels[channel];
+            var channelElement = $('<li><span class="channel">' + channel + '</span></li>')
+                .appendTo(channelList);
+            var memberList = $('<ul class="memberList"/>')
+                .appendTo(channelElement);
+            
+            $.each(getChannelMembers(channel), function (i, member) {
+                var memberDesc = channelDesc.members[member];
+                $('<li><span class="mode">' + memberDesc.mode + '</span><span class="nick">' + member + '</span></li>')
+                    .appendTo(memberList);
+            });
+        });
+        
+        // Scroll back to original spot.
+        channelList.get(0).scrollTop = originalScrollTop;
+        
+        // Apply doubleclick handler to channels and nicks.
+        channelList.find('.nick,.channel')
+            .dblclick(dblclickChannelNickHandler);
     };
     
     //
@@ -751,6 +821,8 @@ $(function () {
                         nickLabel.fadeIn();
                     });
                 }
+                
+                refreshSideBar();
                 break;
 
             case 'recv':
