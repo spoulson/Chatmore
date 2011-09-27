@@ -751,7 +751,10 @@ $(function () {
             }
         }
 
-        return channels.sort();
+        return channels.sort(function (a, b) {
+            return a.toLocaleLowerCase().localeCompare(
+                b.toLocaleLowerCase());
+        });
     };
     
     var getChannelMembers = function(channel) {
@@ -767,7 +770,10 @@ $(function () {
             }
         }
         
-        return members.sort();
+        return members.sort(function (a, b) {
+            return a.toLocaleLowerCase().localeCompare(
+                b.toLocaleLowerCase());
+        });
     };
     
     var refreshSideBar = function () {
@@ -958,6 +964,11 @@ $(function () {
                         nick: msg.info.nick,
                         prevNick: msg.prefixNick
                     });
+                    
+                    // If selected target's nick changes, update target.
+                    if (msg.prefixNick == irc.target()) {
+                        queryTarget(msg.info.nick);
+                    }
                     break;
                     
                 case 'TOPIC':

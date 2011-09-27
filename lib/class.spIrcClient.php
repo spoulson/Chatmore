@@ -305,11 +305,17 @@ class spIrcClient
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
+            // Nick prefixes: http://www.geekshed.net/2009/10/nick-prefixes-explained/
+            // ~ owners
+            // & admins
+            // @ full operators
+            // % half operators
+            // + voiced users
             if (!preg_match("/\S+\s+([=*@])\s+(#\S+)\s+:(.+)$/", $params, $msgParams)) return false;
             $names = array();
             foreach (explode(' ', $msgParams[3]) as $name) {
                 $m = array();
-                if (preg_match("/([@+])?(.+)/", $name, $m)) {
+                if (preg_match("/([~&@%+])?(.+)/", $name, $m)) {
                     $names[] = array(
                         'mode' => $m[1] ? $m[1] : '',
                         'nick' => $m[2]

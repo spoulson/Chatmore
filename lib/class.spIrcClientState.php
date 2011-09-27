@@ -53,6 +53,12 @@ class spIrcChannelDesc {
 
 // Describes a member in a channel.
 class spIrcChannelMemberDesc {
+    // Nick prefixes: http://www.geekshed.net/2009/10/nick-prefixes-explained/
+    // ~ owners
+    // & admins
+    // @ full operators
+    // % half operators
+    // + voiced users
     public $mode = '';
 }
 
