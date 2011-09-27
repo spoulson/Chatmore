@@ -30,7 +30,7 @@ SYSTEM REQUIREMENTS
 
 ### Client
  - Browser supporting HTML5.
- - Tested on browsers on Windows: Firefox 5+, Chrome 13+, IE9.
+ - Tested on browsers on Windows: Firefox 6+, Chrome 13+, IE9, Safari on Windows.
 
 INSTALLATION
 ------------
