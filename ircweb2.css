@@ -97,10 +97,29 @@ BODY {
     list-style: none;
     padding: 0;
     margin: 0;
+    clear: both;
 }
 
 .ircweb2 .sideBar ul.channelList > li {
     padding-bottom: 6px;
+}
+
+.ircweb2 .sideBar ul.channelList > li .channel {
+    float: left;
+}
+
+.ircweb2 .sideBar .channelList .leaveButton {
+    /*display: block;*/
+    float: left;
+    width: 16px;
+    height: 16px;
+    background: transparent url(bullet_delete.png) no-repeat top left;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+.ircweb2 .sideBar .channelList .leaveButton:hover {
+    background-color: #3f3f3f;
 }
 
 .ircweb2 .sideBar ul.memberList {

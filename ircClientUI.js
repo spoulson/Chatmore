@@ -62,6 +62,7 @@ $(function () {
         queryNick: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
         join: '{{tmpl "timestamp"}}<span class="JOIN">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
         leave: '{{tmpl "timestamp"}}<span class="PART">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
+        kick: '{{tmpl "timestamp"}}<span class="KICK"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt;</span> <span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span></span>',
         nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <span class="NICK"><span class="message">' +
             '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                 'Nick changed to <span class="nick">${nick}</span>' +
@@ -94,8 +95,9 @@ $(function () {
                 'Show help for client commands.',
                 'Commands:',
                 ' clear - Clear the chat console',
-                ' cleartopic - Clear the selected channel\'s topic',
+                ' cleartopic - Clear the channel\'s topic',
                 ' join - Join a channel',
+                ' kick - Kick user from channel',
                 ' leave - Leave a channel',
                 ' me - Send an action message',
                 ' motd - Get the server message of the day',
@@ -105,7 +107,7 @@ $(function () {
                 ' query - Select a target for messaging',
                 ' quit - Quit IRC session',
                 ' time - Get the server time',
-                ' topic - Get or set the selected channel\'s topic',
+                ' topic - Get or set the channel\'s topic',
                 ' who - Get info on a nick'
             ],
             parseParam: function (param, meta) {
@@ -406,6 +408,33 @@ $(function () {
                 irc.sendMsg('JOIN ' + meta.channel, function () {
                     sendLine('/query ' + meta.channel);
                 });
+            }
+        },
+        kick: {
+            helpUsage: 'Usage: /kick &gt;nick&lt; [comment]',
+            helpText: 'Kick user from channel',
+            parseParam: function (param, meta) {
+                var usage = cmdDefs['kick'].helpUsage;
+                var m = /^(\S+)(\s+(.+))?/.exec(param);
+                if (m === null) {
+                    meta.error = usage;
+                    return false;
+                }
+                
+                meta.channel = irc.target();
+                meta.nick = m[1];
+                meta.comment = m[3];
+                
+                if (!irc.isActivated()) {
+                    meta.error = 'Error: Must be connected to kick a user.';
+                    return false;
+                }
+            },
+            exec: function (meta) {
+                if (meta.comment !== undefined)
+                    irc.sendMsg('KICK ' + meta.channel + ' ' + meta.nick + ' ' + meta.comment);
+                else
+                    irc.sendMsg('KICK ' + meta.channel + ' ' + meta.nick);
             }
         },
         leave: {
@@ -744,6 +773,8 @@ $(function () {
     var refreshSideBar = function () {
         if (irc.state() === undefined) return;
         
+        // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
+        // such as incoming messages and user actions both changing state.
         var channelList = ircElement.find('.sideBar ul.channelList');
         var originalScrollTop = channelList.get(0).scrollTop;
         
@@ -751,10 +782,20 @@ $(function () {
 
         $.each(getJoinedChannels(), function (i, channel) {
             var channelDesc = irc.state().channels[channel];
-            var channelElement = $('<li><span class="channel">' + channel + '</span></li>')
+            var channelElement = $('<li><span class="channel">' + channel + '</span><span class="leaveButton" title="Leave channel"></span></li>')
                 .appendTo(channelList);
             var memberList = $('<ul class="memberList"/>')
                 .appendTo(channelElement);
+                
+            // Leave channel icon.
+            channelElement.find('.leaveButton')
+                .click(function () {
+                    // Update UI and leave the channel.
+                    channelElement
+                        .slideUp(400, 'swing', function () {
+                            sendLine('/leave ' + channel);
+                        });
+                });
             
             $.each(getChannelMembers(channel), function (i, member) {
                 var memberDesc = channelDesc.members[member];
@@ -776,6 +817,7 @@ $(function () {
     //
     // Client command aliases.
     cmdDefs['j'] = cmdDefs['join'];
+    cmdDefs['k'] = cmdDefs['kick'];
     cmdDefs['l'] = cmdDefs['leave'];
     cmdDefs['m'] = cmdDefs['msg'];
     cmdDefs['n'] = cmdDefs['notice'];
@@ -891,6 +933,17 @@ $(function () {
                     });
                     break;
                     
+                case 'KICK':
+                    $.each(msg.info.kicks, function (i, kick) {
+                        writeTmpl('kick', {
+                            channel: kick.channel,
+                            nick: kick.nick,
+                            op: msg.prefixNick,
+                            comment: msg.info.comment
+                        });
+                    });
+                    break;
+                    
                 case 'MODE':
                     writeTmpl('userMode', {
                         nick: msg.prefixNick,
@@ -961,6 +1014,11 @@ $(function () {
                     writeTmpl('nickInUse', {
                         nick: msg.info.nick
                     });
+                    break;
+                    
+                case '353':
+                case '366':
+                    // Disregard these messages.
                     break;
                     
                 default:

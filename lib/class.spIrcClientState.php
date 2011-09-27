@@ -5,13 +5,6 @@ class spIrcClientState
     
     private $sessionId;
 
-    // WHO reply array.
-    // array(
-    //    names => $namesarray,
-    //    modes => $modesarray
-    // )
-    public $whoReply;
-    
     // Nickname.
 	public $nick;
     
@@ -48,17 +41,19 @@ class spIrcClientState
 // Describes a channel on the IRC network.
 class spIrcChannelDesc {
     public $mode;
+    
+    // = public, * private, @ secret
+    public $visibility;
+    
     public $topic;
     public $topicSetByNick;
     public $topicSetTime;       // Epoch timestamp
     public $members = array();  // Array of $nick => spIrcChannelMemberDesc objects
-    public $joinTime;
-    public $lastMsgTime;
 }
 
 // Describes a member in a channel.
 class spIrcChannelMemberDesc {
-    public $mode;
+    public $mode = '';
 }
 
 // Describes a user on the IRC network.
