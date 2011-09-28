@@ -601,7 +601,7 @@ $(function () {
     };
 
     var writeLine = function (html) {
-        var ircChannel = ircElement.find('#tabConsole .ircChannel');
+        var ircChannel = ircElement.find('.ircChannel');
         var el = ircChannel.get(0);
         var lineElement;
 
@@ -677,8 +677,7 @@ $(function () {
 
     // Resize elements to proper alignment based on ircTabs dimensions.
     var alignUI = function () {
-        var ircTabs = ircElement.find('.ircTabs');
-        var tabConsole = ircElement.find('#tabConsole');
+        var ircMain = ircElement.find('.ircMain');
         var ircChannel = ircElement.find('.ircChannel');
         var userEntrySection = ircElement.find('.userEntrySection');
         var userEntryLine = ircElement.find('.userEntryLine');
@@ -686,19 +685,16 @@ $(function () {
         var commandBar = ircElement.find('.commandBar');
         var sideBar = ircElement.find('.sideBar');
         var channelList = sideBar.find('.channelList');
-        tabConsole
-            .outerWidth(ircTabs.width())
-            .outerHeight(ircTabs.height() - ircTabs.children('.ui-tabs-nav').outerHeight());
         ircChannel
-            .width(tabConsole.width())
-            .height(tabConsole.height());
-        userEntrySection.outerWidth(ircTabs.outerWidth());
+            .width(ircMain.width())
+            .height(ircMain.height());
+        userEntrySection.outerWidth(ircMain.outerWidth());
         userEntryLine
             .width(userEntrySection.width())
             .innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
         userEntry.width(userEntryLine.width());
-        commandBar.outerWidth(ircTabs.outerWidth());
-        sideBar.outerHeight(ircTabs.outerHeight() + userEntrySection.outerHeight());
+        commandBar.outerWidth(ircMain.outerWidth());
+        sideBar.outerHeight(ircMain.outerHeight() + userEntrySection.outerHeight());
         channelList.height(sideBar.height());
     };
 
@@ -797,19 +793,25 @@ $(function () {
         $.each(getJoinedChannels(), function (i, channel) {
             var channelDesc = irc.state().channels[channel];
             var channelElement = $('<li><span class="channel">' + channel + '</span><span class="leaveButton" title="Leave channel"></span></li>')
+                // Set topic as tooltip.
+                .find('.channel')
+                    .attr('title', channelDesc.topic)
+                    .end()
+                // Setup leave channel icon.
+                .find('.leaveButton')
+                    .click(function () {
+                        // Update UI and leave the channel.
+                        $(this).parent('li')
+                            .slideUp(400, 'swing', function () {
+                                sendLine('/leave ' + channel);
+                            });
+                    })
+                    .end()
                 .appendTo(channelList);
+            
             var memberList = $('<ul class="memberList"/>')
                 .appendTo(channelElement);
                 
-            // Leave channel icon.
-            channelElement.find('.leaveButton')
-                .click(function () {
-                    // Update UI and leave the channel.
-                    channelElement
-                        .slideUp(400, 'swing', function () {
-                            sendLine('/leave ' + channel);
-                        });
-                });
             
             $.each(getChannelMembers(channel), function (i, member) {
                 var memberDesc = channelDesc.members[member];
@@ -1141,23 +1143,8 @@ $(function () {
         })
         .focus();
     
-    // Create console tab from template.
-    ircElement.find('.channelTmpl')
-        .clone()
-        .attr('id', 'tabConsole')
-        .appendTo(ircElement.find('.ircTabs'));
-
-    // Setup tabs.
-    ircElement.find('.ircTabs')
-        .tabs({
-            // tabTemplate: "<li><a href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close'>Remove Tab</span></li>"
-        })
-        .removeClass('ui-corner-all')
-        .addClass('ui-corner-tl')
-        .tabs('add', '#tabConsole', 'Console');
-
     // Setup resizable console.
-    ircElement.find('.ircTabs').resizable({
+    ircElement.find('.ircMain').resizable({
         handles: 'se',
         minWidth: 400,
         minHeight: 175,

@@ -2,6 +2,13 @@ BODY {
     font: 11px sans-serif;
 }
 
+.ircweb2 .ircMain {
+    /*background: black;*/
+    padding: 12px 16px;
+    width: 740px;
+    height: 360px;
+}
+
 .ircweb2 .ircChannel {
     overflow: auto;
     font: 12px Tahoma, Helvetica, sans-serif;
@@ -17,11 +24,6 @@ BODY {
     /* Chrome has default top/bottom margins on buttons, others do not. */
     margin-top: 0;
     margin-bottom: 0;
-}
-
-.ircweb2 .ircTabs {
-    width: 740px;
-    height: 360px;
 }
 
 .ircweb2 .activationIndicator {
@@ -54,9 +56,10 @@ BODY {
 }
 
 .ircweb2 .userEntry {
-    background-color: transparent;
+    background-color: rgba(0, 0, 0, 0.5);
     border: 1px solid #666;
     color: white;
+    padding: 3px;
 }
 
 .ircweb2 .channel {
