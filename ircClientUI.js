@@ -18,6 +18,9 @@ $(function () {
     var lastMsgSender;
     var autoCompleteString;
     var autoCompleteSuggest;
+    var reactivateAttempts = 0;
+    var maxReactivateAttempts = 6;
+    var reactivateDelay = 10; // in seconds.
 
     // IRC client message templates.
     var tmpls = {
@@ -1053,8 +1056,6 @@ $(function () {
         .bind('activatingClient', function (e, stage, message) {
             switch (stage) {
             case 'start':
-                ircElement.find('.activateButton').button('disable').removeClass('ui-state-hover');
-                ircElement.find('.deactivateButton').button('disable').removeClass('ui-state-hover');
                 ircElement.find('.userEntry').focus();
                 break;
                 
@@ -1069,24 +1070,28 @@ $(function () {
             case 'activated':
                 ircElement
                     .removeClass('deactivated')
-                    .addClass('activated')
-                    .find('.deactivateButton').button('enable');
+                    .addClass('activated');
+                reactivateAttempts = 0;
                 break;
 
             case 'error':
                 writeTmpl('error', { message: message });
-                ircElement.find('.activateButton').button('enable');
                 break;
             }
         })
         .bind('deactivatingClient', function () {
-            ircElement.find('.deactivateButton')
-                .button('disable')
-                .removeClass('ui-state-hover');
-            ircElement
-                .removeClass('activated')
-                .addClass('deactivated')
-                .find('.activateButton').button('enable');
+            // Attempt reactivation.
+            if (reactivateAttempts < maxReactivateAttempts) {
+                writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + reactivateDelay + ' seconds...' });
+
+                setTimeout(function () {
+                    reactivateAttempts++;
+                    irc.activateClient();
+                }, reactivateDelay * 1000);
+            }
+            else {
+                writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
+            }
         });
         
     // Setup user entry event handlers.
@@ -1151,21 +1156,6 @@ $(function () {
         .addClass('ui-corner-tl')
         .tabs('add', '#tabConsole', 'Console');
 
-    //  Setup buttons.
-    ircElement.find('.activateButton').button({
-        icons: { primary: 'ui-icon-star' },
-        disabled: false
-    });
-    ircElement.find('.deactivateButton').button({
-        icons: { primary: 'ui-icon-close' },
-        disabled: true
-    });
-    ircElement.find('.connectionButtonset').buttonset();
-
-    // Setup event handlers.
-    ircElement.find('.activateButton').click(irc.activateClient);
-    ircElement.find('.deactivateButton').click(irc.deactivateClient);
-    
     // Setup resizable console.
     ircElement.find('.ircTabs').resizable({
         handles: 'se',

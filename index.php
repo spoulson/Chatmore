@@ -28,10 +28,6 @@ if (array_key_exists('x', $_GET)) {
 
     <div class="ircweb2">
         <div class="commandBar">
-            <span class="connectionButtonset">
-                <button class="activateButton">Activate</button>
-                <button class="deactivateButton">Deactivate</button>
-            </span>
         </div>
 
         <div style="float:left;overflow:hidden">

@@ -109,7 +109,6 @@ BODY {
 }
 
 .ircweb2 .sideBar .channelList .leaveButton {
-    /*display: block;*/
     float: left;
     width: 16px;
     height: 16px;
@@ -136,6 +135,7 @@ BODY {
     margin: -3px;
 }
 
+/* Console line styles */
 .ircweb2 .ircChannel .line {
     clear: both;
     padding: 0 0 0 50px;
@@ -153,6 +153,10 @@ BODY {
 
 .ircweb2 .ircChannel .help {
     color: #00cfcf;
+}
+
+.ircweb2 .ircChannel .ERROR .message {
+    color: #cf3f3f;
 }
 
 .ircweb2 .ircChannel .PRIVMSG {
