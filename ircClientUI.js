@@ -26,46 +26,109 @@ $(function () {
     var tmpls = {
         timestamp: '<span class="timestamp">[${getTimestamp()}]&nbsp;</span>',
         notePrefix: '<span class="prefix">***</span>',
-        error: '{{tmpl "timestamp"}}<span class="error">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        usage: '{{tmpl "timestamp"}}<span class="usage">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        help: '{{tmpl "timestamp"}}<span class="help">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> <span class="message">${message}</span></span>',
-        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
-        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> <span class="nick">${clientNick}</span> <span class="message">${message}</span></span>',
-        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>-</span> <span class="message">${message}</span></span>',
-        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-        incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> <span class="message">${message}</span></span>',
-        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span>*</span> <span class="message">${message}</span></span>',
-        incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> <span class="nick">${nick}</span> <span class="message">${message}</span></span>',
-        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">*<span class="nick">${nick}</span></span> <span class="message">${message}</span></span>',
-        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG"><span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> <span class="message">${message}</span></span>',
-        queryOff: '{{tmpl "timestamp"}}' +
-            '<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">' +
-            '{{if /^#/.test(prevTarget)}}' +
-                'You are no longer talking to channel <span class="channel">${prevTarget}</span>' +
+        error: '{{tmpl "timestamp"}}<span class="error">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        usage: '{{tmpl "timestamp"}}<span class="usage">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        help: '{{tmpl "timestamp"}}<span class="help">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+            '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+            '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
+            '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
+            '</span>',
+        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
+            '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
+            '</span>',
+        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-<span class="channel">${channel}</span>-</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-<span class="nick">${nick}</span>-</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+            '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">*<span class="nick">${nick}</span>*</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+            '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
+            '<span class="message"><span class="nick">${nick}</span> ${message}</span>' +
+            '</span>',
+        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">*</span>' +
+            '<span class="message"><span class="nick">${nick}</span></span> ${message}</span>' +
+            '</span>',
+        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-<span class="nick">${nick}</span>-</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+            '<span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
+        queryOff: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">' +
+            '{{if /^[#&!]/.test(prevTarget)}}' +
+                'You are no longer talking on channel <span class="channel">${prevTarget}</span>' +
             '{{else}}' +
                 'Ending conversation with <span class="nick">${prevTarget}</span>' +
             '{{/if}}' +
             '</span>',
-        query: '{{tmpl "timestamp"}}' +
-            '<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">' +
-            '{{if /^#/.test(target)}}' +
-                'You are now talking to channel <span class="channel">${target}</span>' +
+        query: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">' +
+            '{{if /^[#&!]/.test(target)}}' +
+                'You are now talking on channel <span class="channel">${target}</span>' +
             '{{else}}' +
                 'Starting conversation with <span class="nick">${target}</span>' +
             '{{/if}}' +
             '</span>',
-        queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span></span>',
-        queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">Ending conversation with <span class="nick">${nick}</span></span></span>',
-        queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">You are now talking to channel <span class="channel">${channel}</span></span></span>',
-        queryNick: '{{tmpl "timestamp"}}<span class="queryMsg">{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span></span>',
-        join: '{{tmpl "timestamp"}}<span class="JOIN">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> (${ident}@${host}) has joined channel <span class="channel">${channel}</span></span>',
-        leave: '{{tmpl "timestamp"}}<span class="PART">{{tmpl "notePrefix"}} <span class="message"><span class="nick">${nick}</span> has left channel <span class="channel">${channel}</span></span>',
-        kick: '{{tmpl "timestamp"}}<span class="KICK"><span class="prefix">&lt;<span class="channel">${channel}</span>&gt;</span> <span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span></span>',
+        queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span>' +
+            '</span>',
+        queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">Ending conversation with <span class="nick">${nick}</span></span>' +
+            '</span>',
+        queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">You are now talking to channel <span class="channel">${channel}</span></span>' +
+            '</span>',
+        queryNick: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span>' +
+            '</span>',
+        join: '{{tmpl "timestamp"}}<span class="JOIN">' +
+            '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+            '<span class="message"><span class="nick">${nick}</span> <span class="message">(${ident}@${host}) has joined channel</span>' +
+            '</span>',
+        leave: '{{tmpl "timestamp"}}<span class="PART">' +
+            '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+            '<span class="message"><span class="nick">${nick}</span> has left channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
+            '</span>',
+        kick: '{{tmpl "timestamp"}}<span class="KICK">' +
+            '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+            '<span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
+            '</span>',
         nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <span class="NICK"><span class="message">' +
             '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                 'Nick changed to <span class="nick">${nick}</span>' +
@@ -73,21 +136,39 @@ $(function () {
                 '<span class="nick">${prevNick}</span> is now known as <span class="nick">${nick}</span>' +
             '{{/if}}' +
             '</span></span>',
-        nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg">{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span></span>',
-        notopic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span></span>',
-        topic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">The current topic is: <span class="topicMessage">${topic}</span></span></span>',
-        changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message"><span class="nick">${nick}</span> ' +
+        nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+            '{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span>' +
+            '</span>',
+        notopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+            '{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span>' +
+            '</span>',
+        topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+            '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+            '<span class="message">The current topic is: <span class="topicMessage">${topic}</span></span>' +
+            '</span>',
+        changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC"><span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> <span class="message"><span class="nick">${nick}</span> ' +
             '{{if topic == ""}}' +
                 'has cleared the topic' +
             '{{else}}' +
                 'has changed the topic to: <span class="topicMessage">${topic}</span>' +
             '{{/if}}' +
             '</span></span>',
-        topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${formatTime(time)}</span></span></span>',
-        serverTime: '{{tmpl "timestamp"}}<span class="TIME">{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span></span>',
-        quit: '{{tmpl "timestamp"}}<span class="QUIT">{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${nick}</span> (${message})</span></span>',
-        error: '{{tmpl "timestamp"}}<span class="ERROR">{{tmpl "notePrefix"}} <span class="message">${message}</span></span>',
-        userMode: '{{tmpl "timestamp"}}<span class="MODE">{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="userMode">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span></span>'
+        topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+            '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+            '<span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${formatTime(time)}</span></span>' +
+            '</span>',
+        serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
+            '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span>' +
+            '</span>',
+        quit: '{{tmpl "timestamp"}}<span class="QUIT">' +
+            '{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${nick}</span> (${message})</span>' +
+            '</span>',
+        error: '{{tmpl "timestamp"}}<span class="ERROR">' +
+            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '</span>',
+        userMode: '{{tmpl "timestamp"}}<span class="MODE">' +
+            '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="userMode">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span>' +
+            '</span>'
     };
     
     // Client /command definitions.
@@ -209,7 +290,7 @@ $(function () {
                     return false;
                 }
                 
-                var params = param.split(' ', 1);
+                var params = param.split(/\s+/, 1);
                 meta.target = params[0];
                 
                 if (!irc.isActivated()) {
@@ -241,7 +322,7 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                if (/^#/.test(meta.target)) {
+                if (isChannel(meta.target)) {
                     irc.sendChannelAction(meta.target, meta.message);
                     writeTmpl('outgoingChannelAction', {
                         clientNick: irc.state().nick,
@@ -284,7 +365,7 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                if (/^#/.test(meta.target)) {
+                if (isChannel(meta.target)) {
                     irc.sendChannelMsg(meta.target, meta.message);
                     writeTmpl('outgoingChannelMsg', {
                         clientNick: irc.state().nick,
@@ -327,7 +408,7 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                if (/^#/.test(meta.target)) {
+                if (isChannel(meta.target)) {
                     irc.sendChannelNotice(meta.target, meta.message);
                     writeTmpl('outgoingChannelNotice', {
                         clientNick: irc.state().nick,
@@ -391,16 +472,18 @@ $(function () {
             }
         },
         join: {
-            helpUsage: 'Usage: /join &lt;#channel&gt;',
-            helpText: 'Join a channel.',
+            helpUsage: 'Usage: /join &lt;#channel&gt; [key]',
+            helpText: 'Join a channel.  Include a key if the channel requires it to join.',
             parseParam: function (param, meta) {
                 if (param === undefined) {
                     meta.error = cmdDefs['join'].helpUsage;
                     return false;
                 }
                 
-                var params = param.split(' ', 1);
-                meta.channel = params[0].replace(/^([^#])/, '#$1');
+                var params = param.split(/\s+/, 2);
+                // Normalize channel name if it's missing a prefix.
+                meta.channel = params[0].replace(/^([^#&!])/, '#$1');
+                if (params[1] !== undefined) meta.key = params[1];
                 
                 if (!irc.isActivated()) {
                     meta.error = 'Error: Must be connected to join a channel.';
@@ -408,9 +491,16 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                irc.sendMsg('JOIN ' + meta.channel, function () {
-                    sendLine('/query ' + meta.channel);
-                });
+                if (irc.state().channels[meta.channel] !== undefined) {
+                    // If already joined to this channel, just query it.
+                    queryTarget(meta.channel);
+                }
+                else {
+                    if (meta.key !== undefined)
+                        irc.sendMsg('JOIN ' + meta.channel + ' ' + meta.key);
+                    else
+                        irc.sendMsg('JOIN ' + meta.channel);
+                }
             }
         },
         kick: {
@@ -435,13 +525,13 @@ $(function () {
             },
             exec: function (meta) {
                 if (meta.comment !== undefined)
-                    irc.sendMsg('KICK ' + meta.channel + ' ' + meta.nick + ' ' + meta.comment);
+                    irc.sendMsg('KICK ' + meta.channel + ' ' + meta.nick + ' :' + meta.comment);
                 else
                     irc.sendMsg('KICK ' + meta.channel + ' ' + meta.nick);
             }
         },
         leave: {
-            helpUsage: 'Usage: /leave [#channel]',
+            helpUsage: 'Usage: /leave [#channel] [comment]',
             helpText: [
                 'Leave a channel.',
                 'If channel omitted, leaves channel currently selected by /query.'
@@ -457,8 +547,10 @@ $(function () {
                     }
                 }
                 else {
-                    var params = param.split(' ', 1);
-                    meta.channel = params[0].replace(/^([^#])/, '#$1');
+                    var m = /^(\S+)(\s+(.+))?\s*$/.exec(param);
+                    // Normalize channel name if it's missing a prefix.
+                    meta.channel = m[1].replace(/^([^#&!])/, '#$1');
+                    if (m[3] !== undefined) meta.comment = m[3];
                 }
                 
                 if (!irc.isActivated()) {
@@ -467,9 +559,10 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                irc.sendMsg('PART ' + meta.channel, function () {
-                    if (irc.target() == meta.channel) queryTarget();
-                });
+                if (meta.comment !== undefined)
+                    irc.sendMsg('PART ' + meta.channel + ' :' + meta.comment);
+                else
+                    irc.sendMsg('PART ' + meta.channel);
             }
         },
         nick: {
@@ -481,7 +574,7 @@ $(function () {
                     return false;
                 }
                 
-                var params = param.split(' ', 1);
+                var params = param.split(/\s+/, 1);
                 meta.nick = params[0];
 
                 if (!irc.isActivated()) {
@@ -494,10 +587,10 @@ $(function () {
             }
         },
         quit: {
-            helpUsage: 'Usage: /quit [message]',
+            helpUsage: 'Usage: /quit [comment]',
             helpText: 'Quit IRC session.',
             parseParam: function (param, meta) {
-                meta.message = param;
+                meta.comment = param;
             
                 if (!irc.isActivated()) {
                     meta.error = 'Error: Must be connected to quit.';
@@ -505,9 +598,40 @@ $(function () {
                 }
             },
             exec: function (meta) {
-                var message = meta.message;
-                if (message === undefined) message = quitMessage;
-                irc.sendMsg('QUIT :' + message);
+                var comment = meta.comment !== undefined ? meta.comment : quitMessage;
+                irc.sendMsg('QUIT :' + comment);
+            }
+        },
+        mode: {
+            helpUsage: 'Usage: /mode &lt;nick | channel&gt; [ &lt;+mode | -mode&gt; [parameters] ]',
+            helpText: [
+                'Get or change user or channel mode.',
+                'Available user modes: http://tools.ietf.org/html/rfc2812#section-3.1.5',
+                'Available channel modes: http://tools.ietf.org/html/rfc2811#section-4'
+            ],
+            parseParam: function (param, meta) {
+                var usage = cmdDefs['mode'].helpUsage;
+                var m = /^(\S+)(\s+(\S+(\s+\S+)*))?\s*$/.exec(param);
+                if (m == null) {
+                    meta.error = usage;
+                    return false;
+                }
+                
+                meta.target = m[1];
+                
+                if (m[3] !== undefined)
+                    meta.modes = m[3].split(/\s+/);
+            
+                if (!irc.isActivated()) {
+                    meta.error = 'Error: Must be connected to change mode.';
+                    return false;
+                }
+            },
+            exec: function (meta) {
+                if (meta.modes !== undefined)
+                    irc.sendMsg('MODE ' + meta.target + ' ' + meta.modes.join(' '));
+                else
+                    irc.sendMsg('MODE ' + meta.target);
             }
         }
     };
@@ -572,6 +696,10 @@ $(function () {
         d.setTime(time * 1000);
         return d.toLocaleString();
     };
+    
+    var isChannel = function(target) {
+        return target.match(/^[#&!]/);
+    }
     
     // Convert URL patterns into HTML links.
     var linkifyURLs = function (html) {
@@ -709,7 +837,7 @@ $(function () {
             .text();
             
         if (irc.state() !== undefined && target != irc.state().nick) {
-            if (target.match(/^#/)) {
+            if (isChannel(target)) {
                 // Check if joined to this channel.
                 if (irc.state() !== undefined && irc.state().channels[target] === undefined)
                     sendLine('/join ' + target);
@@ -860,7 +988,7 @@ $(function () {
     // Setup chatmore event handlers.
     ircElement
         .bind('localMessage', function (e, message, type) {
-            writeTmpl(type, message);
+            writeTmpl(type, { message: message });
         })
         .bind('processingMessage', function (e, msg) {
             switch (msg.type) {
@@ -879,6 +1007,11 @@ $(function () {
                         nickLabel.text(irc.state().nick);
                         nickLabel.fadeIn();
                     });
+                }
+
+                // Auto-query first channel if selected channel is no longer joined.
+                if (irc.target() !== undefined && irc.state().channels[irc.target()] === undefined) {
+                    queryTarget(getJoinedChannels()[0]);
                 }
                 
                 refreshSideBar();
@@ -939,6 +1072,11 @@ $(function () {
                         host: msg.prefixHost,
                         channel: msg.info.channel
                     });
+                    
+                    // Auto-query newly joined channel.
+                    if (msg.prefixNick == irc.state().nick) {
+                        queryTarget(msg.info.channel);
+                    }
                     break;
                     
                 case 'PART':
@@ -946,7 +1084,8 @@ $(function () {
                         nick: msg.prefixNick,
                         ident: msg.prefixUser,
                         host: msg.prefixHost,
-                        channel: msg.info.channel
+                        channel: msg.info.channel,
+                        comment: msg.info.comment
                     });
                     break;
                     
@@ -1056,6 +1195,9 @@ $(function () {
                 }
             }
         })
+        .bind('sendMsg', function (e, rawMsg) {
+            if (console) console.log('Sent: ' + rawMsg);
+        })
         .bind('activatingClient', function (e, stage, message) {
             switch (stage) {
             case 'start':
@@ -1075,6 +1217,11 @@ $(function () {
                     .removeClass('deactivated')
                     .addClass('activated');
                 reactivateAttempts = 0;
+                
+                // Auto-query first channel on activation.
+                var firstChannel = getJoinedChannels()[0];
+                if (firstChannel !== undefined) queryTarget(firstChannel);
+                
                 break;
 
             case 'error':

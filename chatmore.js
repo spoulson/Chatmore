@@ -216,7 +216,6 @@ function chatmore(element, server, port, nick, realname) {
             type: 'POST',
             data: { msg: rawMsg },
             success: function () {
-                if (console) console.log('Sent: ' + rawMsg);
                 if (postCallback) postCallback(rawMsg);
                 $(element).trigger('sentMsg', [ rawMsg ]);
             }

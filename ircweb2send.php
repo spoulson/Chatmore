@@ -19,6 +19,7 @@ if (isset($_SESSION['irc'])) {
         
         $raw = $_POST['msg'];
         if (!empty($raw)) {
+            log::info("Sending message: '$raw'");
             $ircbot->sendRawMsg("$raw\r\n");
             $ircbot->flushSendBuffer();
         }
