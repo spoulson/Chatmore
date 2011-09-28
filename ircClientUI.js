@@ -606,7 +606,8 @@ $(function () {
         var lineElement;
 
         var write = function (element) {
-            var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
+            // Is the console's scroll within 4 pixels from the bottom?
+            var atBottom = (el.scrollTop + 4) >= (el.scrollHeight - el.clientHeight);
             
             // Auto decorate nicks and channels in message.
             element.closest('.channelMsg').find('.message')
