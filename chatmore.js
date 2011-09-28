@@ -4,6 +4,7 @@ function chatmore(element, server, port, nick, realname) {
     //
     // Private members.
     //
+    var obj = this;
     var local;
     local = {
         pollHandle: undefined,
@@ -18,7 +19,6 @@ function chatmore(element, server, port, nick, realname) {
             
             // Timestamp when last received message processing occurs.
             local.lastRecvTime = new Date().getTime();
-            var _this = this;
             
             $.each(data, function (key, msg) {
                 $(element).trigger('processingMessage', [ msg ]);
@@ -46,7 +46,7 @@ function chatmore(element, server, port, nick, realname) {
                     
                     if (msg.code >= 400) {
                         if (local.isActivated && msg.code == 400) {
-                            _this.deactivateClient();
+                            obj.deactivateClient();
                         }
                     }
                     break;
@@ -111,7 +111,7 @@ function chatmore(element, server, port, nick, realname) {
                         // console.log('data from init check:');
                         // console.log(data);
                     // }
-                    local.processMessages(data);
+                    local.processMessages.call(obj, data);
                     
                     // Check for connection ready message.
                     if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
@@ -144,7 +144,7 @@ function chatmore(element, server, port, nick, realname) {
                         // console.log('data from init:');
                         // console.log(data);
                     // }
-                    local.processMessages(data);
+                    local.processMessages.call(obj, data);
                     
                     // TODO: verify session state has the expected server/port.  If not, reinitialize connection.
                     
@@ -161,7 +161,7 @@ function chatmore(element, server, port, nick, realname) {
                                 success: function (data) {
                                     // Validate data is an array.
                                     if (typeof(data) == 'object') {
-                                        local.processMessages(data);
+                                        local.processMessages.call(obj, data);
                                     }
                                     else {
                                         // Data is invalid!

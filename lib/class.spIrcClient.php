@@ -66,6 +66,10 @@ class spIrcClient
             // log::info("Already disconnected from IRC socket.");
         // }
     }
+    
+    public function isConnected() {
+        return $this->isConnected;
+    }
 
     // Check if incoming message is found, returns:
     // raw message string.
@@ -111,8 +115,8 @@ class spIrcClient
 
             // Read more data
             $buf = null;
-            $size = socket_recv($this->socket, $buf, $this->socketReadBufferSize, 0);
-            if ($size == false) {
+            $size = @socket_recv($this->socket, $buf, $this->socketReadBufferSize, 0);
+            if ($size === false) {
                 // Read error.
                 $errno = socket_last_error($this->socket);
                 log::error("socketReadLine error: $errno/" . socket_strerror($errno));

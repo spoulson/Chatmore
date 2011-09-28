@@ -5,8 +5,7 @@ require_once 'config.php';
 require_once 'class.log.php';
 require_once 'class.spIrcClient.php';
 
-// Timeout waiting for data to read.
-$timeout = 120 * 1000;
+$timeout = $ircConfig['recv_timeout'];
 
 set_time_limit($timeout/1000 + 5);
 session_start();
@@ -22,44 +21,56 @@ if (isset($_SESSION['irc'])) {
     $socketFile = $state->getPrimarySocketFilename();
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile, $state);
-        
-        $data = array();
-        
-        // Read all messages waiting in queue.
-        $messageCount = 0;
-        do {
-            $line = $ircbot->checkIncomingMsg($timeout);
 
-            if ($line !== null && $line !== false) {
-                // Got a message.
-                $msg = $ircbot->parseMsg($line);
-                
-                if ($msg !== false) {
-                    $prevState = clone $state;
+        if ($ircbot->isConnected()) {
+            $data = array();
+            $messageCount = 0;
+            
+            // Read all messages waiting in queue.
+            do {
+                $line = $ircbot->checkIncomingMsg($timeout);
+
+                if ($line !== null && $line !== false) {
+                    // Got a message.
+                    $msg = $ircbot->parseMsg($line);
                     
-                    $msg['type'] = spIrcClient::CLMSG_TYPE_RECV;
-                    $data[] = $msg;
-                    
-                    // Do default processing on the message.
-                    $ircbot->processMsg($msg);
-                    
-                    // Check for change in state.
-                    if ($state->isModified) {
-                        // Send client state.
-                        $data[] = array(
-                            'type' => spIrcClient::CLMSG_TYPE_STATE,
-                            'state' => $state
-                        );
+                    if ($msg !== false) {
+                        $prevState = clone $state;
+                        
+                        $msg['type'] = spIrcClient::CLMSG_TYPE_RECV;
+                        $data[] = $msg;
+                        
+                        // Do default processing on the message.
+                        $ircbot->processMsg($msg);
+                        
+                        // Check for change in state.
+                        if ($state->isModified) {
+                            // Send client state.
+                            $data[] = array(
+                                'type' => spIrcClient::CLMSG_TYPE_STATE,
+                                'state' => $state
+                            );
+                        }
                     }
                 }
-            }
-            
-            $timeout = 0;   // Only block socket_select for the first iteration.
-            $messageCount++;
-            usleep(0);
-        } while ($line !== null && $line !== false && $messageCount < 200);
+                
+                $timeout = 0;   // Only block socket_select for the first iteration.
+                $messageCount++;
+                usleep(0);
+            } while ($line !== null && $line !== false && $messageCount < 200);
 
-        $ircbot->disconnect();
+            $ircbot->disconnect();
+        }
+        else {
+            // Unable to connect to socket.
+            $data = array(
+                array(
+                    'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                    'message' => 'Connection not open.',
+                    'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+                )
+            );
+        }
     }
     else {
         // Socket no longer available.

@@ -10,9 +10,20 @@ ini_set('session.save_handler', 'sqlite');
 ini_set('session.save_path', '/home/ip90904j/tmp/php.sess.db');
 
 $ircConfig = array(
+    // Path to create domain sockets.
     'socketFilePath' => '/home/ip90904j/tmp',
+    
+    // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=1M',
+
+    // Timeout waiting for data to read in ms.
+    // - Higher timeout means less frequent client reconnections.
+    // - If the background process dies while this thread was running,
+    //   it will take the remainder of the timeout before an error will be caught.
+    'recv_timeout' => 5 * 1000,
+
     'debug' => array(
+        // Include received raw IRC messages in AJAX responses from ircweb2recv.php.
         'recv_send_raw' => true
     )
 );

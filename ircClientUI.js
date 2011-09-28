@@ -600,6 +600,7 @@ $(function () {
     var writeLine = function (html) {
         var ircChannel = ircElement.find('#tabConsole .ircChannel');
         var el = ircChannel.get(0);
+        var lineElement;
 
         var write = function (element) {
             var atBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight);
@@ -638,26 +639,39 @@ $(function () {
                 });
 
             // Add line to console.
-            $('<div class="line"/>')
+            var lineElement = $('<div class="line"/>')
                 .append(element)
                 .appendTo(ircChannel);
                 
             // Auto scroll to bottom if currently at bottom.
             if (atBottom) el.scrollTop = el.scrollHeight;
+            
+            return lineElement;
         };
         
         if (typeof(html) === 'object') {
             $.each(html, function (i, html) {
                 var element = $('<div/>').append(html);
-                write(element.contents());
+                lineElement = write(element.contents());
             });
         }
         else {
             var element = $('<div/>').append(html);
-            write(element.contents());
+            lineElement = write(element.contents());
         }
+        
+        return lineElement;
     };
     
+    var writeTmpl = function (templateName, data) {
+        data['irc'] = irc;
+        return writeLine(
+            $('<div/>')
+                .append($.tmpl(templateName, data))
+                .html()
+        );
+    };
+
     // Resize elements to proper alignment based on ircTabs dimensions.
     var alignUI = function () {
         var ircTabs = ircElement.find('.ircTabs');
@@ -683,15 +697,6 @@ $(function () {
         commandBar.outerWidth(ircTabs.outerWidth());
         sideBar.outerHeight(ircTabs.outerHeight() + userEntrySection.outerHeight());
         channelList.height(sideBar.height());
-    };
-
-    var writeTmpl = function (templateName, data) {
-        data['irc'] = irc;
-        writeLine(
-            $('<div/>')
-                .append($.tmpl(templateName, data))
-                .html()
-        );
     };
 
     var dblclickChannelNickHandler = function () {
