@@ -15,9 +15,10 @@ $(function () {
     var notificationTitle = 'A new message has arrived! -- ' + defaultTitle
     var isWindowFocused = true;
     var prevState;
-    var lastMsgSender;
-    var autoCompleteString;
-    var autoCompleteSuggest;
+    var msgSenders = [];
+    var autoCompleteReplyIndex; // Autocomplete index against msgSenders array when replying to message senders.
+    var autoCompletePrefix;     // Autocomplete filter, word typed at first Tab completion.
+    var autoCompleteSuggest;    // Suggestion given from last Tab completion
     var reactivateAttempts = 0;
     var maxReactivateAttempts = 6;
     var reactivateDelay = 10; // in seconds.
@@ -697,10 +698,55 @@ $(function () {
         return d.toLocaleString();
     };
     
-    var isChannel = function(target) {
+    var isChannel = function (target) {
         return target.match(/^[#&!]/);
-    }
+    };
     
+    var stricmp = function (a, b) {
+        return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
+    };
+    
+    var addToMsgSenders = function (nick) {
+        if (stricmp(nick, irc.state().nick) != 0) {
+            msgSenders = $.grep(msgSenders, function (val) {
+                // Remove from array, if exists.
+                return stricmp(val, nick) != 0;
+            });
+            msgSenders.unshift(nick);
+            
+            // Preserve placement of auto complete reply index so that additions to the list don't interfere.
+            if (autoCompleteReplyIndex !== undefined) autoCompleteReplyIndex++;
+        }
+    };
+        
+    var startsWith = function (subject, prefix, comparer) {
+        return subject.length >= prefix.length &&
+            comparer(subject.substr(0, prefix.length), prefix) == 0;
+    };
+
+    // Find next match from a list, where the item is greater than seed.
+    // comparer is function(a, b) returning -1, 0, or 1.
+    var getNextMatch = function (list, seed, comparer) {
+        if (list.length > 0) {
+            if (seed === undefined || seed === null)
+                return list[0];
+                
+            // Find next match.
+            for (var i in list) {
+                var val = list[i];
+                if (comparer(val, seed) > 0) {
+                    return val;
+                }
+            }
+            
+            // Wrap around to beginning of list.
+            return list[0];
+        }
+        else {
+            return undefined;
+        }
+    };          
+                            
     // Convert URL patterns into HTML links.
     var linkifyURLs = function (html) {
         return html.replace(linkifyRegex, '<a href="$1" target="_blank">$1</a>');
@@ -804,7 +850,7 @@ $(function () {
         );
     };
 
-    // Resize elements to proper alignment based on ircTabs dimensions.
+    // Resize elements to proper alignment based on ircMain's dimensions.
     var alignUI = function () {
         var ircMain = ircElement.find('.ircMain');
         var ircChannel = ircElement.find('.ircChannel');
@@ -884,10 +930,7 @@ $(function () {
             }
         }
 
-        return channels.sort(function (a, b) {
-            return a.toLocaleLowerCase().localeCompare(
-                b.toLocaleLowerCase());
-        });
+        return channels.sort(stricmp);
     };
     
     var getChannelMembers = function(channel) {
@@ -903,10 +946,7 @@ $(function () {
             }
         }
         
-        return members.sort(function (a, b) {
-            return a.toLocaleLowerCase().localeCompare(
-                b.toLocaleLowerCase());
-        });
+        return members.sort(stricmp);
     };
     
     var refreshSideBar = function () {
@@ -1031,7 +1071,10 @@ $(function () {
                             nick: msg.prefixNick,
                             message: msg.info.text
                         });
-                        if (!msg.info.isAction) lastMsgSender = msg.prefixNick;
+                        if (!msg.info.isAction) {
+                            // Add this sender to the history of senders.
+                            addToMsgSenders(msg.prefixNick);
+                        }
                     }
                     else
                         writeTmpl(msg.info.isAction ? 'incomingChannelAction' : 'incomingChannelMsg', {
@@ -1054,7 +1097,9 @@ $(function () {
                             nick: msg.prefixNick,
                             message: msg.info.text
                         });
-                        lastMsgSender = msg.prefixNick;
+
+                        // Add this sender to the history of senders.
+                        addToMsgSenders(msg.prefixNick);
                     }
                     else
                         writeTmpl('incomingChannelNotice', {
@@ -1074,7 +1119,7 @@ $(function () {
                     });
                     
                     // Auto-query newly joined channel.
-                    if (msg.prefixNick == irc.state().nick) {
+                    if (stricmp(msg.prefixNick, irc.state().nick) != 0) {
                         queryTarget(msg.info.channel);
                     }
                     break;
@@ -1116,7 +1161,7 @@ $(function () {
                     });
                     
                     // If selected target's nick changes, update target.
-                    if (msg.prefixNick == irc.target()) {
+                    if (stricmp(msg.prefixNick, irc.target()) != 0) {
                         queryTarget(msg.info.nick);
                     }
                     break;
@@ -1254,31 +1299,73 @@ $(function () {
             }
             else if (e.keyCode == '9') {
                 // Tab.
-                if (e.preventDefault) e.preventDefault();
+                if (e.preventDefault) e.preventDefault();   // Firefox: block default Tab functionality.
                 
                 if (irc.isActivated()) {
                     var userEntry = ircElement.find('.userEntry').val();
                     
-                    if (userEntry == '') {
-                        if (lastMsgSender !== undefined) {
-                            // Quick send message to last sender.
-                            ircElement.find('.userEntry').val('/msg ' + lastMsgSender + ' ');
+                    if (userEntry == '' || autoCompleteReplyIndex !== undefined) {
+                        if (msgSenders.length) {
+                            if (autoCompleteReplyIndex === undefined) autoCompleteReplyIndex = 0;
+                            
+                            // Quick send message to next recent sender.
+                            ircElement.find('.userEntry').val('/msg ' + msgSenders[autoCompleteReplyIndex] + ' ');
+                            
+                            autoCompleteReplyIndex++;
+                            if (autoCompleteReplyIndex >= msgSenders.length) autoCompleteReplyIndex = 0;
                         }
                     }
                     else {
-                        // Autocomplete nick.
-                        if (autoCompleteString === undefined) {
-                            // Get last word of user entry;
+                        // Autocomplete.
+                        if (autoCompletePrefix === undefined) {
+                            // Get last word of user entry.
                             var m = /(\S+)$/.exec(userEntry);
                             if (m !== null) {
-                                autoCompleteString = m[1];
+                                autoCompletePrefix = m[1];
                             }
                         }
                         
-                        if (autoCompleteString !== undefined) {
-                            if (console) console.log('autocomplete on: ' + autoCompleteString);
-                            
-                            // TODO: Iterate over channel members and get next alphabetic match after autoCompleteSuggest.
+                        if (autoCompletePrefix !== undefined) {
+                            if (isChannel(autoCompletePrefix)) {
+                                // When string looks like a channel, autocomplete from joined channel list.
+                                var channels = $.grep(getJoinedChannels(), function (val) {
+                                    return startsWith(val, autoCompletePrefix, stricmp);
+                                });
+                                
+                                autoCompleteSuggest = getNextMatch(channels, autoCompleteSuggest, stricmp);
+                                    
+                                // Replace last word with autoCompleteSuggest.
+                                if (autoCompleteSuggest !== undefined) {
+                                    userEntry = userEntry.replace(/(\S+)$/, autoCompleteSuggest);
+                                    ircElement.find('.userEntry')
+                                        .val(userEntry)
+                                        .each(function () {
+                                            // Select suggested portion of autocomplete.
+                                            this.selectionStart = userEntry.length - autoCompleteSuggest.length + autoCompletePrefix.length;
+                                            this.selectionEnd = userEntry.length;
+                                        });
+                                }
+                            }
+                            else if (irc.target() !== undefined && isChannel(irc.target())) {
+                                // When a channel is selected, autocomplete that channel's users.
+                                var nicks = $.grep(getChannelMembers(irc.target()), function (val) {
+                                    return startsWith(val, autoCompletePrefix, stricmp);
+                                });
+                                
+                                autoCompleteSuggest = getNextMatch(nicks, autoCompleteSuggest, stricmp);
+                                    
+                                // Replace last word with autoCompleteSuggest.
+                                if (autoCompleteSuggest !== undefined) {
+                                    userEntry = userEntry.replace(/(\S+)$/, autoCompleteSuggest);
+                                    ircElement.find('.userEntry')
+                                        .val(userEntry)
+                                        .each(function () {
+                                            // Select suggested portion of autocomplete.
+                                            this.selectionStart = userEntry.length - autoCompleteSuggest.length + autoCompletePrefix.length;
+                                            this.selectionEnd = userEntry.length;
+                                        });
+                                }
+                            }
                         }
                     }
                 }
@@ -1286,7 +1373,9 @@ $(function () {
                 return false;
             }
             else {
-                autoCompleteString = undefined;
+                // All other keyboard activity clears autocomplete state.
+                autoCompleteReplyIndex = undefined;
+                autoCompletePrefix = undefined;
             }
         })
         .focus();
