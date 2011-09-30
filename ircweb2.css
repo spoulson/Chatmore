@@ -143,7 +143,7 @@
     padding: 0 0 0 50px;
     text-indent: -50px;
     word-wrap: break-word;
-    margin-bottom: 0.1em;
+    padding-bottom: 0.1em;
 }
 
 .ircweb2 .ircChannel .timestamp {
@@ -153,30 +153,27 @@
     width: 50px;
 }
 
-.ircweb2 .ircChannel .help {
-    color: #00cfcf;
-}
-
-.ircweb2 .ircChannel .ERROR .message {
-    color: #cf3f3f;
-}
-
-.ircweb2 .ircChannel .PRIVMSG,
-.ircweb2 .ircChannel .NOTICE {
-    font-weight: bold;
-}
-
-.ircweb2 .ircChannel .line > .PRIVMSG
-.ircweb2 .ircChannel .line > .NOTICE {
-    background-color: #202010;
-}
-
-.ircweb2 .ircChannel .channelMsg {
+.ircweb2 .ircChannel .line {
     color: #dfdfdf;
 }
 
 .ircweb2 .ircChannel .prefix {
     font-weight: bold;
+}
+
+.ircweb2 .ircChannel .help {
+    color: #00cfcf;
+}
+
+.ircweb2 .ircChannel .privateMsg,
+.ircweb2 .ircChannel .privateNotice {
+    background-color: #202010;
+    font-weight: bold;
+}
+
+.ircweb2 .ircChannel .privateMsg .prefix,
+.ircweb2 .ircChannel .privateNotice .prefix {
+    color: #FFAF0F;
 }
 
 .ircweb2 .ircChannel .nickHighlight .nick {
@@ -186,6 +183,10 @@
 .ircweb2 .ircChannel .nickHighlight .message {
     color: #FFAF0F;
     padding-right: 3px;
+}
+
+.ircweb2 .ircChannel .ERROR .message {
+    color: #cf3f3f;
 }
 
 .ircweb2 .ircChannel .serverMsg .message {
@@ -199,6 +200,6 @@
     color: white;
 }
 
-.ircweb2 .ircChannel .MODE .userMode {
+.ircweb2 .ircChannel .MODE .modeString {
     font-family: monospace;
 }

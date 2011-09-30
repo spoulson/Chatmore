@@ -44,150 +44,150 @@ $.fn.chatmore = function (p1, p2) {
             tmpls: {
                 timestamp: '<span class="timestamp">[${self.getTimestamp()}]&nbsp;</span>',
                 notePrefix: '<span class="prefix">***</span>',
-                error: '{{tmpl "timestamp"}}<span class="error">' +
+                error: '{{tmpl "timestamp"}}<div class="error">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                usage: '{{tmpl "timestamp"}}<span class="usage">' +
+                    '</div>',
+                usage: '{{tmpl "timestamp"}}<div class="usage">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                help: '{{tmpl "timestamp"}}<span class="help">' +
+                    '</div>',
+                help: '{{tmpl "timestamp"}}<div class="help">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+                    '</div>',
+                serverMsg: '{{tmpl "timestamp"}}<div class="serverMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">' +
+                    '</div>',
+                clientMsg: '{{tmpl "timestamp"}}<div class="clientMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+                    '</div>',
+                outgoingChannelMsg: '{{tmpl "timestamp"}}<div class="channelMsg">' +
                     '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${clientNick}</span>&gt;</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+                    '</div>',
+                outgoingPrivateMsg: '{{tmpl "timestamp"}}<div class="privateMsg">' +
                     '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+                    '</div>',
+                outgoingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg">' +
                     '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
                     '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
-                    '</span>',
-                outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+                    '</div>',
+                outgoingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg">' +
                     '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
-                    '</span>',
-                outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="NOTICE">' +
+                    '</div>',
+                outgoingChannelNotice: '{{tmpl "timestamp"}}<div class="channelNotice">' +
                     '<span class="prefix">-<span class="channel">${channel}</span>-</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="NOTICE">' +
+                    '</div>',
+                outgoingPrivateNotice: '{{tmpl "timestamp"}}<div class="privateNotice">' +
                     '<span class="prefix">-<span class="nick">${nick}</span>-</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+                    '</div>',
+                incomingChannelMsg: '{{tmpl "timestamp"}}<div class="channelMsg">' +
                     '<span class="prefix">&lt;<span class="channel">${channel}</span>:<span class="nick">${nick}</span>&gt;</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+                    '</div>',
+                incomingPrivateMsg: '{{tmpl "timestamp"}}<div class="privateMsg">' +
                     '<span class="prefix">*<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+                    '</div>',
+                incomingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg">' +
                     '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
                     '<span class="message"><span class="nick">${nick}</span> ${message}</span>' +
-                    '</span>',
-                incomingPrivateAction: '{{tmpl "timestamp"}}<span class="PRIVMSG">' +
+                    '</div>',
+                incomingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg">' +
                     '<span class="prefix">*</span>' +
                     '<span class="message"><span class="nick">${nick}</span></span> ${message}</span>' +
-                    '</span>',
-                incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="NOTICE">' +
+                    '</div>',
+                incomingPrivateNotice: '{{tmpl "timestamp"}}<div class="privateNotice">' +
                     '<span class="prefix">-<span class="nick">${nick}</span>-</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                incomingChannelNotice: '{{tmpl "timestamp"}}<span class="NOTICE">' +
+                    '</div>',
+                incomingChannelNotice: '{{tmpl "timestamp"}}<div class="channelNotice">' +
                     '<span class="prefix">-<span class="channel">${channel}</span>:<span class="nick">${nick}</span>-</span> ' +
                     '<span class="message">${message}</span>' +
-                    '</span>',
-                queryOff: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                queryOff: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
                     '{{if /^[#&!]/.test(prevTarget)}}' +
                         'You are no longer talking on channel <span class="channel">${prevTarget}</span>' +
                     '{{else}}' +
                         'Ending conversation with <span class="nick">${prevTarget}</span>' +
                     '{{/if}}' +
-                    '</span>',
-                query: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                query: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
                     '{{if /^[#&!]/.test(target)}}' +
                         'You are now talking on channel <span class="channel">${target}</span>' +
                     '{{else}}' +
                         'Starting conversation with <span class="nick">${target}</span>' +
                     '{{/if}}' +
-                    '</span>',
-                queryOffChannel: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                queryOffChannel: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span>' +
-                    '</span>',
-                queryOffNick: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                queryOffNick: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">Ending conversation with <span class="nick">${nick}</span></span>' +
-                    '</span>',
-                queryChannel: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                queryChannel: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">You are now talking to channel <span class="channel">${channel}</span></span>' +
-                    '</span>',
-                queryNick: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+                    '</div>',
+                queryNick: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span>' +
-                    '</span>',
-                join: '{{tmpl "timestamp"}}<span class="JOIN">' +
+                    '</div>',
+                join: '{{tmpl "timestamp"}}<div class="JOIN">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message"><span class="nick">${nick}</span> <span class="message">(${ident}@${host}) has joined the channel</span>' +
-                    '</span>',
-                leave: '{{tmpl "timestamp"}}<span class="PART">' +
+                    '</div>',
+                leave: '{{tmpl "timestamp"}}<div class="PART">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
-                    '<span class="message"><span class="nick">${nick}</span> has left channel{{if !!comment}}: ${comment}{{/if}}</span>' +
-                    '</span>',
-                kick: '{{tmpl "timestamp"}}<span class="KICK">' +
+                    '<span class="message"><span class="nick">${nick}</span> has left the channel{{if !!comment}}: ${comment}{{/if}}</span>' +
+                    '</div>',
+                kick: '{{tmpl "timestamp"}}<div class="KICK">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
-                    '</span>',
-                nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <span class="NICK"><span class="message">' +
+                    '</div>',
+                nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <div class="NICK"><span class="message">' +
                     '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                         'Nick changed to <span class="nick">${nick}</span>' +
                     '{{else}}' +
                         '<span class="nick">${prevNick}</span> is now known as <span class="nick">${nick}</span>' +
                     '{{/if}}' +
-                    '</span></span>',
-                nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+                    '</span></div>',
+                nickInUse: '{{tmpl "timestamp"}}<div class="serverMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span>' +
-                    '</span>',
-                notopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+                    '</div>',
+                notopic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span>' +
-                    '</span>',
-                topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+                    '</div>',
+                topic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message">The current topic is: <span class="topicMessage">${topic}</span></span>' +
-                    '</span>',
-                changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+                    '</div>',
+                changeTopic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> <span class="message"><span class="nick">${nick}</span> ' +
                     '{{if topic == ""}}' +
                         'has cleared the topic' +
                     '{{else}}' +
                         'has changed the topic to: <span class="topicMessage">${topic}</span>' +
                     '{{/if}}' +
-                    '</span></span>',
-                topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+                    '</span></div>',
+                topicSetBy: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message">Topic set by <span class="nick">${nick}</span> on <span class="time">${self.formatTime(time)}</span></span>' +
-                    '</span>',
-                serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
+                    '</div>',
+                serverTime: '{{tmpl "timestamp"}}<div class="TIME">' +
                     '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${server}</span>: <span class="time">${timeString}</span></span>' +
-                    '</span>',
-                quit: '{{tmpl "timestamp"}}<span class="QUIT">' +
+                    '</div>',
+                quit: '{{tmpl "timestamp"}}<div class="QUIT">' +
                     '{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${nick}</span> (${message})</span>' +
-                    '</span>',
-                error: '{{tmpl "timestamp"}}<span class="ERROR">' +
+                    '</div>',
+                error: '{{tmpl "timestamp"}}<div class="ERROR">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-                    '</span>',
-                userMode: '{{tmpl "timestamp"}}<span class="MODE">' +
-                    '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="userMode">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span>' +
-                    '</span>'
+                    '</div>',
+                userMode: '{{tmpl "timestamp"}}<div class="MODE">' +
+                    '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span>' +
+                    '</div>'
             },
             
             // Client /command definitions.
@@ -1316,16 +1316,6 @@ $.fn.chatmore = function (p1, p2) {
                 self.autoCompletePrefix = undefined;
             })
             .keydown(function (e) {
-                if (e.keyCode >= '32' && self.autoCompletePrefix !== undefined) {
-                    // Typing text on an autocomplete suggestion will clear the selection,
-                    // then add the character after the suggestion,
-                    // instead of default of deleting the suggestion and adding a space.
-                    self.ircElement.find('.userEntry').each(function () {
-                        this.selectionStart = this.selectionEnd;
-                        return;
-                    });
-                }
-                
                 if (e.keyCode == '13') {
                     // Enter.
                     self.sendLine(self.ircElement.find('.userEntry').val());
@@ -1430,6 +1420,15 @@ $.fn.chatmore = function (p1, p2) {
                     return false;
                 }
                 else {
+                    if (self.autoCompletePrefix !== undefined) {
+                        // Typing text on an autocomplete suggestion will clear the selection,
+                        // then add the text after the suggestion,
+                        // instead of default of deleting the suggestion before adding the text.
+                        self.ircElement.find('.userEntry').each(function () {
+                            this.selectionStart = this.selectionEnd;
+                        });
+                    }
+
                     // All other keyboard activity clears autocomplete state.
                     self.autoCompleteReplyIndex = undefined;
                     self.autoCompletePrefix = undefined;
