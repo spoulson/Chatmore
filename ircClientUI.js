@@ -1119,7 +1119,7 @@ $(function () {
                     });
                     
                     // Auto-query newly joined channel.
-                    if (stricmp(msg.prefixNick, irc.state().nick) != 0) {
+                    if (stricmp(msg.prefixNick, irc.state().nick) == 0) {
                         queryTarget(msg.info.channel);
                     }
                     break;
@@ -1161,7 +1161,7 @@ $(function () {
                     });
                     
                     // If selected target's nick changes, update target.
-                    if (stricmp(msg.prefixNick, irc.target()) != 0) {
+                    if (stricmp(msg.prefixNick, irc.target()) == 0) {
                         queryTarget(msg.info.nick);
                     }
                     break;
@@ -1291,7 +1291,22 @@ $(function () {
         
     // Setup user entry event handlers.
     ircElement.find('.userEntry')
+        .click(function (e) {
+            // Clicking on user entry assumes changing selection; clears autocomplete state.
+            autoCompleteReplyIndex = undefined;
+            autoCompletePrefix = undefined;
+        })
         .keydown(function (e) {
+            if (e.keyCode >= '32' && autoCompletePrefix !== undefined) {
+                // Typing text on an autocomplete suggestion will clear the selection,
+                // then add the character after the suggestion,
+                // instead of default of deleting the suggestion and adding a space.
+                ircElement.find('.userEntry').each(function () {
+                    this.selectionStart = this.selectionEnd;
+                    return;
+                });
+            }
+            
             if (e.keyCode == '13') {
                 // Enter.
                 sendLine(ircElement.find('.userEntry').val());
@@ -1319,10 +1334,14 @@ $(function () {
                         // Autocomplete.
                         var caretPos = ircElement.find('.userEntry').get(0).selectionEnd;
                         if (autoCompletePrefix === undefined) {
+                            // Advance caret to end of word.
+                            var m1 = userEntry.substr(caretPos).match(/^\S+/);
+                            if (m1 != null) caretPos += m1[0].length;
+                            
                             // Get last word of user entry, up to the caret position.
-                            var m = /(\S+)$/.exec(userEntry.substr(0, caretPos));
-                            if (m !== null) {
-                                autoCompletePrefix = m[1];
+                            var m2 = /\S+$/.exec(userEntry.substr(0, caretPos));
+                            if (m2 !== null) {
+                                autoCompletePrefix = m2[0];
                             }
                         }
                         else {
