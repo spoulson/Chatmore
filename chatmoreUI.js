@@ -36,6 +36,7 @@ $.fn.chatmore = function (p1, p2) {
             autoCompleteReplyIndex: undefined, // Autocomplete index against msgSenders array when replying to message senders.
             autoCompletePrefix: undefined,     // Autocomplete filter, word typed at first Tab completion.
             autoCompleteSuggest: undefined,    // Suggestion given from last Tab completion
+            enableAutoReactivate: true,
             reactivateAttempts: 0,
             maxReactivateAttempts: options.reactivateAttempts,
             reactivateDelay: options.reactivateDelay,   // in seconds.
@@ -67,13 +68,13 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message">${message}</span>' +
                     '</div>',
-                outgoingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg">' +
-                    '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
-                    '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
+                outgoingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg action">' +
+                    '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; * <span class="nick">${clientNick}</span></span> ' +
+                    '<span class="message">${message}</span>' +
                     '</div>',
-                outgoingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg">' +
-                    '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
-                    '<span class="message"><span class="nick">${clientNick}</span> ${message}</span>' +
+                outgoingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg action">' +
+                    '<span class="prefix">-&gt; *<span class="nick">${nick}</span>* <span class="nick">${clientNick}</span></span> ' +
+                    '<span class="message">${message}</span>' +
                     '</div>',
                 outgoingChannelNotice: '{{tmpl "timestamp"}}<div class="channelNotice">' +
                     '<span class="prefix">-<span class="channel">${channel}</span>-</span> ' +
@@ -91,13 +92,13 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="prefix">*<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message">${message}</span>' +
                     '</div>',
-                incomingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg">' +
-                    '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; *</span> ' +
-                    '<span class="message"><span class="nick">${nick}</span> ${message}</span>' +
+                incomingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg action">' +
+                    '<span class="prefix">&lt;<span class="channel">${channel}</span>&gt; * <span class="nick">${nick}</span></span> ' +
+                    '<span class="message">${message}</span>' +
                     '</div>',
-                incomingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg">' +
-                    '<span class="prefix">*</span>' +
-                    '<span class="message"><span class="nick">${nick}</span></span> ${message}</span>' +
+                incomingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg action">' +
+                    '<span class="prefix">* <span class="nick">${nick}</span></span>' +
+                    '<span class="message">${message}</span>' +
                     '</div>',
                 incomingPrivateNotice: '{{tmpl "timestamp"}}<div class="privateNotice">' +
                     '<span class="prefix">-<span class="nick">${nick}</span>-</span> ' +
@@ -278,7 +279,7 @@ $.fn.chatmore = function (p1, p2) {
                     exec: function (meta) {
                         if (self.irc.state().channels[meta.channel] !== undefined) {
                             // If already joined to this channel, just query it.
-                            queryTarget(meta.channel);
+                            self.queryTarget(meta.channel);
                         }
                         else {
                             if (meta.key !== undefined)
@@ -566,7 +567,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                     },
                     exec: function (meta) {
-                        queryTarget(meta.target);
+                        self.queryTarget(meta.target);
                     }
                 },
                 quit: {
@@ -582,6 +583,7 @@ $.fn.chatmore = function (p1, p2) {
                     },
                     exec: function (meta) {
                         var comment = meta.comment !== undefined ? meta.comment : self.quitMessage;
+                        self.enableAutoReactivate = false;
                         self.irc.sendMsg('QUIT :' + comment);
                     }
                 },
@@ -1281,6 +1283,7 @@ $.fn.chatmore = function (p1, p2) {
                         .removeClass('deactivated')
                         .addClass('activated');
                     self.reactivateAttempts = 0;
+                    self.enableAutoReactivate = true;
                     
                     // Auto-query first channel on activation.
                     var firstChannel = self.getJoinedChannels()[0];
@@ -1294,17 +1297,22 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('deactivatingClient', function () {
-                // Attempt reactivation.
-                if (self.reactivateAttempts < self.maxReactivateAttempts) {
-                    self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.reactivateDelay + ' seconds...' });
+                if (self.enableAutoReactivate) {
+                    // Attempt reactivation.
+                    if (self.reactivateAttempts < self.maxReactivateAttempts) {
+                        self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.reactivateDelay + ' seconds...' });
 
-                    setTimeout(function () {
-                        self.reactivateAttempts++;
-                        self.irc.activateClient();
-                    }, self.reactivateDelay * 1000);
+                        setTimeout(function () {
+                            self.reactivateAttempts++;
+                            self.irc.activateClient();
+                        }, self.reactivateDelay * 1000);
+                    }
+                    else {
+                        self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
+                    }
                 }
                 else {
-                    self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
+                    self.writeTmpl('error', { message: 'Server connection closed.' });
                 }
             });
             
