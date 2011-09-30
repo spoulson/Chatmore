@@ -148,7 +148,7 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
                     '</div>',
-                nick: '{{tmpl "timestamp"}}{{tmpl "notePrefix"}} <div class="NICK"><span class="message">' +
+                nick: '{{tmpl "timestamp"}}<div class="NICK">{{tmpl "notePrefix"}} <span class="message">' +
                     '{{if clientNick.toLowerCase() == prevNick.toLowerCase()}}' +
                         'Nick changed to <span class="nick">${nick}</span>' +
                     '{{else}}' +
@@ -1182,7 +1182,7 @@ $.fn.chatmore = function (p1, p2) {
                         });
                         
                         // If selected target's nick changes, update target.
-                        if (self.stricmp(msg.prefixNick, self.irc.target()) == 0) {
+                        if (self.irc.target() !== undefined && self.stricmp(msg.prefixNick, self.irc.target()) == 0) {
                             self.queryTarget(msg.info.nick);
                         }
                         break;

@@ -500,6 +500,18 @@ class spIrcClient
             }
             break;
             
+        case 'QUIT':
+            // Remove user from state.
+            $nick = $msg['prefixNick'];
+            unset($this->state->users[$nick]);
+            
+            foreach ($this->state->channels as $channelDesc) {
+                unset($channelDesc->members[$nick]);
+            }
+
+            $this->state->isModified = true;
+            break;
+            
         case self::RPL_TOPIC:
             $this->state->channels[$msg['info']['channel']]->topic = $msg['info']['topic'];
             $this->state->isModified = true;
