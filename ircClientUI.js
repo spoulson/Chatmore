@@ -1317,52 +1317,71 @@ $(function () {
                     }
                     else {
                         // Autocomplete.
+                        var caretPos = ircElement.find('.userEntry').get(0).selectionEnd;
                         if (autoCompletePrefix === undefined) {
-                            // Get last word of user entry.
-                            var m = /(\S+)$/.exec(userEntry);
+                            // Get last word of user entry, up to the caret position.
+                            var m = /(\S+)$/.exec(userEntry.substr(0, caretPos));
                             if (m !== null) {
                                 autoCompletePrefix = m[1];
                             }
                         }
+                        else {
+                            // Delete selected text from last suggestion.
+                            ircElement.find('.userEntry').each(function () {
+                                var s = '';
+                                if (this.selectionStart > 0) s += userEntry.substr(0, this.selectionStart);
+                                if (this.selectionEnd < userEntry.length) s += userEntry.substr(this.selectionEnd);
+                                userEntry = s;
+                                this.selectionEnd = this.selectionStart;
+                                caretPos = this.selectionStart;
+                            });
+                        }
                         
                         if (autoCompletePrefix !== undefined) {
+                            var myNick = irc.state().nick;
+                            
                             if (isChannel(autoCompletePrefix)) {
                                 // When string looks like a channel, autocomplete from joined channel list.
                                 var channels = $.grep(getJoinedChannels(), function (val) {
-                                    return startsWith(val, autoCompletePrefix, stricmp);
+                                    return startsWith(val, autoCompletePrefix, stricmp) && stricmp(val, myNick) != 0;
                                 });
                                 
                                 autoCompleteSuggest = getNextMatch(channels, autoCompleteSuggest, stricmp);
                                     
                                 // Replace last word with autoCompleteSuggest.
                                 if (autoCompleteSuggest !== undefined) {
-                                    userEntry = userEntry.replace(/(\S+)$/, autoCompleteSuggest);
+                                    var s = userEntry.substr(0, caretPos).replace(/(\S+)$/, autoCompleteSuggest);
+                                    userEntry = s + userEntry.substr(caretPos);
                                     ircElement.find('.userEntry')
                                         .val(userEntry)
                                         .each(function () {
                                             // Select suggested portion of autocomplete.
-                                            this.selectionStart = userEntry.length - autoCompleteSuggest.length + autoCompletePrefix.length;
-                                            this.selectionEnd = userEntry.length;
+                                            this.selectionStart = s.length - autoCompleteSuggest.length + autoCompletePrefix.length;
+                                            this.selectionEnd = s.length;
                                         });
                                 }
                             }
                             else if (irc.target() !== undefined && isChannel(irc.target())) {
                                 // When a channel is selected, autocomplete that channel's users.
                                 var nicks = $.grep(getChannelMembers(irc.target()), function (val) {
-                                    return startsWith(val, autoCompletePrefix, stricmp);
+                                    return startsWith(val, autoCompletePrefix, stricmp) && stricmp(val, myNick) != 0;
                                 });
                                 
                                 autoCompleteSuggest = getNextMatch(nicks, autoCompleteSuggest, stricmp);
                                     
                                 // Replace last word with autoCompleteSuggest.
                                 if (autoCompleteSuggest !== undefined) {
-                                    userEntry = userEntry.replace(/(\S+)$/, autoCompleteSuggest);
+                                    var s = userEntry.substr(0, caretPos).replace(/(\S+)$/, autoCompleteSuggest);
+                                    var wordpos = s.length - autoCompleteSuggest.length;
+                                    // If this is the only word on the line, assume it's to address the suggested user.
+                                    if (wordpos == 0) s += ': ';
+                                    userEntry = s + userEntry.substr(caretPos);
                                     ircElement.find('.userEntry')
                                         .val(userEntry)
                                         .each(function () {
                                             // Select suggested portion of autocomplete.
-                                            this.selectionStart = userEntry.length - autoCompleteSuggest.length + autoCompletePrefix.length;
-                                            this.selectionEnd = userEntry.length;
+                                            this.selectionStart = wordpos + autoCompletePrefix.length;
+                                            this.selectionEnd = s.length;
                                         });
                                 }
                             }
