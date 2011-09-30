@@ -1,5 +1,4 @@
 $(function () {
-
     //
     // Private members.
     //
@@ -120,7 +119,7 @@ $(function () {
             '</span>',
         join: '{{tmpl "timestamp"}}<span class="JOIN">' +
             '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="nick">${nick}</span> <span class="message">(${ident}@${host}) has joined channel</span>' +
+            '<span class="message"><span class="nick">${nick}</span> <span class="message">(${ident}@${host}) has joined the channel</span>' +
             '</span>',
         leave: '{{tmpl "timestamp"}}<span class="PART">' +
             '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +

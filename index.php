@@ -22,7 +22,14 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="chatmore.js"></script>
-    <script type="text/javascript" src="ircClientUI.js"></script>
+    <script type="text/javascript" src="chatmoreUI.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $('.ircweb2').chatmore({
+                server: 'irc.dsm.org'
+            });
+        });
+    </script>
 </head>
 <body>
 
