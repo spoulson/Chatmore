@@ -136,34 +136,6 @@ class spSocketProxy {
                         }
                     }
                 }
-                else if ($socket === $this->SecondaryClientSocket) {
-                    // Data waiting in client socket.
-                    //log::info("rC");
-                    $size = @socket_recv($socket, $buf, $this->clientReadBufSize, 0);
-                    if ($size === false) {
-                        $errno = socket_last_error($socket);
-                        // 11 = no data available.
-                        if ($errno != 11) {
-                            // Error with client, close its connection.
-                            log::error("Error $errno receiving from client, closing client connection: " . socket_strerror($errno));
-                            socket_shutdown($socket, 2);
-                            socket_close($socket);
-                            $this->SecondaryClientSocket = null;
-                        }
-                    }
-                    else if ($size) {
-                        //log::info("client: $buf");
-                        log::info("Buffering to proxy, size(" . strlen($buf) . ")");
-                        $this->proxyBuffer .= $buf;
-                    }
-                    else {
-                        // Got 0 bytes; assume connection was closed.
-                        //log::info("Client connection was closed.");
-                        socket_shutdown($socket, 2);
-                        socket_close($socket);
-                        $this->SecondaryClientSocket = null;
-                    }
-                }
                 else if ($socket === $this->PrimaryClientSocket) {
                     // Data waiting in client socket.
                     //log::info("rC");
@@ -190,6 +162,34 @@ class spSocketProxy {
                         socket_shutdown($socket, 2);
                         socket_close($socket);
                         $this->PrimaryClientSocket = null;
+                    }
+                }
+                else if ($socket === $this->SecondaryClientSocket) {
+                    // Data waiting in client socket.
+                    //log::info("rC");
+                    $size = @socket_recv($socket, $buf, $this->clientReadBufSize, 0);
+                    if ($size === false) {
+                        $errno = socket_last_error($socket);
+                        // 11 = no data available.
+                        if ($errno != 11) {
+                            // Error with client, close its connection.
+                            log::error("Error $errno receiving from client, closing client connection: " . socket_strerror($errno));
+                            socket_shutdown($socket, 2);
+                            socket_close($socket);
+                            $this->SecondaryClientSocket = null;
+                        }
+                    }
+                    else if ($size) {
+                        //log::info("client: $buf");
+                        log::info("Buffering to proxy, size(" . strlen($buf) . ")");
+                        $this->proxyBuffer .= $buf;
+                    }
+                    else {
+                        // Got 0 bytes; assume connection was closed.
+                        //log::info("Client connection was closed.");
+                        socket_shutdown($socket, 2);
+                        socket_close($socket);
+                        $this->SecondaryClientSocket = null;
                     }
                 }
                 else {
@@ -240,6 +240,9 @@ class spSocketProxy {
                         $this->PrimaryClientSocket = null;
                     }
                     else {
+                        // Reset idle timer when client attempts to read.
+                        $this->idleTime = time();
+
                         if ($size < strlen($this->clientBuffer)) {
                             // Not all bytes were sent.  Buffer the remainder.
                             log::info("sent($size) buffered(" . (strlen($this->clientBuffer) - $size) . ") ");
@@ -289,10 +292,7 @@ class spSocketProxy {
         }
         
         // Check idle timeout.
-        if ($this->isPrimaryClientSocketConnected() || $this->isSecondaryClientSocketConnected()) {
-            $this->idleTime = time();
-        }
-        else if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
+        if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
             log::error("Idle timeout.  Disconnecting!");
             $this->disconnect();
             return false;
