@@ -57,13 +57,15 @@ class spSocketProxy {
     // Returns false if domain socket is disconnected.
     // Returns false if client is connected and proxy disconnected.
     public function poll() {
-        if (!$this->isprimaryDomainSocketConnected() || !$this->issecondaryDomainSocketConnected()) {
-            log::error("Domain socket is disconnected!");
+        // If the domain socket closes, quit.  This is too fatal of an error to be worth trying to recover from.
+        if (!$this->isPrimaryDomainSocketConnected() || !$this->isSecondaryDomainSocketConnected()) {
+            log::error("poll() aborted; Domain socket is disconnected!");
             return false;
         }
         
-        if (($this->isPrimaryClientSocketConnected() || $this->isSecondaryClientSocketConnected()) && !$this->isProxySocketConnected()) {
-            log::error("Proxy socket is disconnected!");
+        // If proxy socket is disconnected, don't quit until the client buffer is flushed.
+        if (empty($this->clientBuffer) && !$this->isProxySocketConnected()) {
+            log::error("poll() aborted; Proxy socket is disconnected!");
             return false;
         }
 
@@ -74,7 +76,6 @@ class spSocketProxy {
         if ($this->isProxySocketConnected()) {
             $rSelect[] = $this->proxySocket;
             if (!empty($this->proxyBuffer)) $wSelect[] = $this->proxySocket;
-            $eSelect[] = $this->proxySocket;
         }
         if ($this->isPrimaryClientSocketConnected()) {
             // PrimaryClientSocket doubles as R/W socket.
@@ -299,11 +300,11 @@ class spSocketProxy {
         }
     }
     
-    private function isprimaryDomainSocketConnected() {
+    private function isPrimaryDomainSocketConnected() {
         return !empty($this->primaryDomainSocket);
     }
     
-    private function issecondaryDomainSocketConnected() {
+    private function isSecondaryDomainSocketConnected() {
         return !empty($this->secondaryDomainSocket);
     }
 
@@ -348,13 +349,13 @@ class spSocketProxy {
         }
         
         // Close domain socket.
-        if ($this->isprimaryDomainSocketConnected()) {
+        if ($this->isPrimaryDomainSocketConnected()) {
             socket_shutdown($this->primaryDomainSocket);
             socket_close($this->primaryDomainSocket);
             if (file_exists($this->primaryDomainSocketFile)) unlink($this->primaryDomainSocketFile);
             $this->primaryDomainSocket = null;
         }
-        if ($this->issecondaryDomainSocketConnected()) {
+        if ($this->isSecondaryDomainSocketConnected()) {
             socket_shutdown($this->secondaryDomainSocket);
             socket_close($this->secondaryDomainSocket);
             if (file_exists($this->secondaryDomainSocketFile)) unlink($this->secondaryDomainSocketFile);
