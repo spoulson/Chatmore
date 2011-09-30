@@ -14,12 +14,15 @@ INTRODUCTION
 
 ### What *doesn't* Chatmore do?
  - Chatmore doesn't make IRC connections from the browser PC.  It only talks over HTTP(S) to the hosting web server.  The web server maintains the IRC connection.
- - Chatmore doesn't do everything because it's not finished.  It is under development, so is currently considered alpha grade software.
+ - Chatmore doesn't do everything because it's not finished.  It is under heavy development, so is currently considered alpha grade software.
 
 ### Why use Chatmore?
- - No client installation.
+ - No end-user client installation.
  - Chatmore aims to be a better web IRC client.  At the time of writing, there are few alternatives for self-hosting web-based IRC clients.
  - You want to access IRC networks from anywhere there's a web browser, such as an Internet cafe, while using a computer that you don't own, etc.
+
+### Why did you build this with PHP?
+ - Other languages could be easier, better, faster, and more gooder.  However, half decent PHP web hosting is dirt cheap.
 
 SYSTEM REQUIREMENTS
 -------------------
@@ -30,14 +33,14 @@ SYSTEM REQUIREMENTS
 
 ### Client
  - Browser supporting HTML5.
- - Tested on browsers on Windows: Firefox 6+, Chrome 13+, IE9, Safari on Windows.
+ - Tested on browsers on Windows: Firefox 5+, Chrome 13+, IE9, Safari 5.1.
 
 INSTALLATION
 ------------
 
 - Copy all files to a web hosted directory.
 - Customize settings in config.php.
-- In a browser access the directory's associated URL.
+- In a browser, access the directory's associated URL.
 
 LICENSING
 ---------
