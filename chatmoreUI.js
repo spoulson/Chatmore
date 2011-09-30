@@ -1359,6 +1359,7 @@ $.fn.chatmore = function (p1, p2) {
                                 var m2 = /\S+$/.exec(userEntry.substr(0, caretPos));
                                 if (m2 !== null) {
                                     self.autoCompletePrefix = m2[0];
+                                    self.autoCompleteSuggest = undefined;
                                 }
                             }
                             else {
