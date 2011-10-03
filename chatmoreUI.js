@@ -198,7 +198,7 @@ $.fn.chatmore = function (p1, p2) {
                     helpText: 'Clear the chat console.',
                     parseParam: function () { },
                     exec: function (meta) {
-                        self.ircElement.find('.ircChannel').html('');
+                        self.ircElement.find('.ircConsole .content').html('');
                     }
                 },
                 cleartopic: {
@@ -795,7 +795,7 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             writeLine: function (html) {
-                var ircChannel = self.ircElement.find('.ircChannel');
+                var ircChannel = self.ircElement.find('.ircConsole .content');
                 var el = ircChannel.get(0);
                 var lineElement;
 
@@ -868,26 +868,24 @@ $.fn.chatmore = function (p1, p2) {
                 );
             },
 
-            // Resize elements to proper alignment based on ircMain's dimensions.
+            // Resize elements to proper alignment based on ircConsole's dimensions.
             alignUI: function () {
-                var ircMain = self.ircElement.find('.ircMain');
-                var ircChannel = self.ircElement.find('.ircChannel');
+                var ircConsole = self.ircElement.find('.ircConsole');
+                var ircContent = self.ircElement.find('.ircConsole .content');
                 var userEntrySection = self.ircElement.find('.userEntrySection');
                 var userEntryLine = self.ircElement.find('.userEntryLine');
                 var userEntry = self.ircElement.find('.userEntry');
-                var commandBar = self.ircElement.find('.commandBar');
                 var sideBar = self.ircElement.find('.sideBar');
                 var channelList = sideBar.find('.channelList');
-                ircChannel
-                    .width(ircMain.width())
-                    .height(ircMain.height());
-                userEntrySection.outerWidth(ircMain.outerWidth());
+                ircContent
+                    .width(ircConsole.width())
+                    .height(ircConsole.height());
+                userEntrySection.outerWidth(ircConsole.outerWidth());
                 userEntryLine
                     .width(userEntrySection.width())
                     .innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
                 userEntry.width(userEntryLine.width());
-                commandBar.outerWidth(ircMain.outerWidth());
-                sideBar.outerHeight(ircMain.outerHeight() + userEntrySection.outerHeight());
+                sideBar.outerHeight(ircConsole.outerHeight() + userEntrySection.outerHeight());
                 channelList.height(sideBar.height());
             },
 

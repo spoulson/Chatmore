@@ -1,28 +1,18 @@
 .ircweb2 {
     font: 11px Tahoma, Helvetica, sans-serif;
+    white-space: nowrap;
 }
 
-.ircweb2 .ircMain {
+.ircweb2 .ircConsole {
     padding: 12px 16px;
     width: 740px;
     height: 360px;
 }
 
-.ircweb2 .ircChannel {
+.ircweb2 .ircConsole .content {
     overflow: auto;
     font: 12px Tahoma, Helvetica, sans-serif;
     white-space: pre-wrap;
-}
-
-.ircweb2 .commandBar {
-    padding-bottom: 3px;
-    white-space: normal;
-}
-
-.ircweb2 .commandBar button {
-    /* Chrome has default top/bottom margins on buttons, others do not. */
-    margin-top: 0;
-    margin-bottom: 0;
 }
 
 .ircweb2 .activationIndicator {
@@ -85,7 +75,8 @@
 }
 
 .ircweb2 .sideBar {
-    float: left;
+    /*float: left;*/
+    display: inline-block;
     width: 140px;
     padding: 12px 16px;
 }
@@ -131,14 +122,14 @@
     padding-right: 3px;
 }
 
-.ircweb2 .ircChannel {
+.ircweb2 .ircConsole .content {
     background-color: rgba(0, 0, 0, 0.5);
     padding: 3px;
     margin: -3px;
 }
 
 /* Console line styles */
-.ircweb2 .ircChannel .line {
+.ircweb2 .ircConsole .content .line {
     clear: both;
     padding: 0 0 0 50px;
     text-indent: -50px;
@@ -146,60 +137,60 @@
     padding-bottom: 0.1em;
 }
 
-.ircweb2 .ircChannel .timestamp {
+.ircweb2 .ircConsole .content .timestamp {
     color: #d0d0d0;
     display: block;
     float: left;
     width: 50px;
 }
 
-.ircweb2 .ircChannel .line {
+.ircweb2 .ircConsole .content .line {
     color: #dfdfdf;
 }
 
-.ircweb2 .ircChannel .prefix {
+.ircweb2 .ircConsole .content .prefix {
     font-weight: bold;
 }
 
-.ircweb2 .ircChannel .help {
+.ircweb2 .ircConsole .content .help {
     color: #00cfcf;
 }
 
-.ircweb2 .ircChannel .privateMsg,
-.ircweb2 .ircChannel .privateNotice {
+.ircweb2 .ircConsole .content .privateMsg,
+.ircweb2 .ircConsole .content .privateNotice {
     background-color: #202010;
     font-weight: bold;
 }
 
-.ircweb2 .ircChannel .privateMsg .prefix,
-.ircweb2 .ircChannel .privateNotice .prefix {
+.ircweb2 .ircConsole .content .privateMsg .prefix,
+.ircweb2 .ircConsole .content .privateNotice .prefix {
     color: #FFAF0F;
 }
 
-.ircweb2 .ircChannel .nickHighlight .nick {
+.ircweb2 .ircConsole .content .nickHighlight .nick {
     color: #F58400;
 }
 
-.ircweb2 .ircChannel .nickHighlight .message {
+.ircweb2 .ircConsole .content .nickHighlight .message {
     color: #FFAF0F;
     padding-right: 3px;
 }
 
-.ircweb2 .ircChannel .ERROR .message {
+.ircweb2 .ircConsole .content .ERROR .message {
     color: #cf3f3f;
 }
 
-.ircweb2 .ircChannel .serverMsg .message {
+.ircweb2 .ircConsole .content .serverMsg .message {
     font-family: monospace;
 }
 
-.ircweb2 .ircChannel .clientMsg .message,
-.ircweb2 .ircChannel .queryMsg .message
+.ircweb2 .ircConsole .content .clientMsg .message,
+.ircweb2 .ircConsole .content .queryMsg .message
  {
     font-style: italic;
     color: white;
 }
 
-.ircweb2 .ircChannel .MODE .modeString {
+.ircweb2 .ircConsole .content .MODE .modeString {
     font-family: monospace;
 }

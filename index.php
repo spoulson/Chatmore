@@ -34,12 +34,10 @@ if (array_key_exists('x', $_GET)) {
 <body>
 
     <div class="ircweb2 ui-widget">
-        <div class="commandBar"></div>
-
         <div style="float:left;overflow:hidden">
 
-            <div class="ircMain ui-widget-content ui-corner-tl">
-                <div class="ircChannel"></div>
+            <div class="ircConsole ui-widget-content ui-corner-tl">
+                <div class="content"></div>
             </div>
 
             <div class="userEntrySection ui-widget ui-widget-content ui-corner-bl">
@@ -55,7 +53,6 @@ if (array_key_exists('x', $_GET)) {
                     <input type="text" class="userEntry" />
                 </div>
             </div>
-
         </div>
         
         <div class="sideBar ui-widget ui-widget-content ui-corner-right">
