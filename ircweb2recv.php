@@ -28,6 +28,7 @@ if (isset($_SESSION['irc'])) {
             
             // Read all messages waiting in queue.
             do {
+                log::info("checkIncomingMsg()...");
                 $line = $ircbot->checkIncomingMsg($timeout);
 
                 if ($line !== null && $line !== false) {
@@ -94,6 +95,8 @@ else {
         )
     );
 }
+
+//log::info("Returned message(s): " . var_export($data, true));
 
 // Send received messages data as JSON.
 @ob_end_clean();

@@ -108,7 +108,7 @@ class spIrcClient
                     return false;
                 }
             }
-            else if ($c === 0) {
+            else if ($c == 0) {
                 // No more data.
                 //log::info("socketReadLine: no data");
                 break;
@@ -124,9 +124,14 @@ class spIrcClient
                 if ($errno == 0 || $errno == 11) return null;
                 return false;
             }
-
-            //log::info("socketReadBuffer appended: $buf");
-            $this->socketReadBuffer .= $buf;
+            else if ($size > 0) {
+                log::info("socketReadBuffer appended: $buf");
+                $this->socketReadBuffer .= $buf;
+            }
+            else {
+                log::info('socketReadBuffer got 0 bytes from socket_recv!  Connection dropped?');
+                return false;
+            }
             
             // Loop and attempt to read a line again.
         }
@@ -199,11 +204,10 @@ class spIrcClient
             break;
         
         case 'MODE':
-            if (!preg_match("/(\S+)\s+:(\S+(\s+\S+)*)\s*$/", $params, $msgParams)) return false;
-            $modes = preg_split("\s+", $msgParams[2]);
+            if (!preg_match("/(\S+)\s+:(.*)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'target' => $msgParams[1],
-                'modes' => $modes
+                'mode' => $msgParams[2]
             );
             break;
             
@@ -410,7 +414,7 @@ class spIrcClient
     
     // Process an incoming message with default logic.
     public function processMsg($msg) {
-        log::info('Processing message: ' . $msg['raw']);
+        //log::info('Processing message: ' . $msg['raw']);
 
         switch ($msg['command']) {
         case 'PING':
@@ -418,15 +422,24 @@ class spIrcClient
             break;
             
         case 'MODE':
-            // Request fully qualified mode string.
             $target = $msg['info']['target'];
-            if (isset($this->state->channels[$target])) {
-                $this->sendRawMsg('MODE ' + $target);
+            if ($this->isChannel($target)) {
+                if (isset($this->state->channels[$target])) {
+                    // Request fully qualified channel mode string.
+                    $this->sendRawMsg('MODE ' + $target);
 
-                if ($this->isChannel($target)) {
                     // Get channel members to capture possible user flag changes.
                     $this->sendRawMsg("NAMES $channel");
                 }
+            }
+            else {
+                // Save user mode in state.
+                if (!isset($this->state->users[$target])) {
+                    $this->state->users[$target] = new spIrcUserDesc();
+                }
+                
+                $this->state->users[$target]->mode = $msg['info']['mode'];
+                $this->state->isModified = true;
             }
             break;
             
@@ -605,38 +618,44 @@ class spIrcClient
     // Send buffered data to socket.
     // Returns buffer bytes remaining after send attempt.
     public function socketSendBuffer() {
-        $c = socket_select($r = null, $w = array($this->socket), $e = null, 0, $this->socketSendTimeout);
-        if ($c === false) {
-            $errno = socket_last_error($this->socket);
-            log::error("Error during socket_select: $errno/" . socket_strerror($errno));
-            return false;
-        }
-        else if ($c == 0) {
-            // Timeout waiting for socket to be writable.
-            log::error("Error: timeout on socket_select trying to send buffer.");
-            return false;
-        }
-        
-        $size = socket_write($this->socket, $this->socketSendBuffer);
-        if ($size === false) {
-            $errno = socket_last_error($this->socket);
-            log::error("Error during socket_write: $errno/" . socket_strerror($errno) . " trying to send message: $line");
-            return false;
-        }
-        else if ($size != strlen($this->socketSendBuffer)) {
-            // Not all bytes were sent.
-            log::info("sent($size) buffered(" . (strlen($this->socketSendBuffer) - $size) . ") ");
-            $this->socketSendBuffer = substr($this->socketSendBuffer, $size);
+        if (!empty($this->socketSendBuffer)) {
+            $c = socket_select($r = null, $w = array($this->socket), $e = null, 0, $this->socketSendTimeout);
+            if ($c === false) {
+                $errno = socket_last_error($this->socket);
+                log::error("Error during socket_select: $errno/" . socket_strerror($errno));
+                return false;
+            }
+            else if ($c == 0) {
+                // Timeout waiting for socket to be writable.
+                log::error("Error: timeout on socket_select trying to send buffer.");
+                return false;
+            }
+            
+            $size = socket_write($this->socket, $this->socketSendBuffer);
+            if ($size === false) {
+                $errno = socket_last_error($this->socket);
+                log::error("Error during socket_write: $errno/" . socket_strerror($errno) . " trying to send message: $line");
+                return false;
+            }
+            else if ($size != strlen($this->socketSendBuffer)) {
+                // Not all bytes were sent.
+                log::info("sent($size) buffered(" . (strlen($this->socketSendBuffer) - $size) . ") ");
+                $this->socketSendBuffer = substr($this->socketSendBuffer, $size);
+            }
+            else {
+                log::info("sent($size)");
+                $this->socketSendBuffer = null;
+            }
+            
+            //log::info("done");
+            @flush();
+            
+            return strlen($this->socketSendBuffer);
         }
         else {
-            log::info("sent($size)");
-            $this->socketSendBuffer = null;
+            // No data to send.
+            return 0;
         }
-        
-        log::info("done");
-        @flush();
-        
-        return strlen($this->socketSendBuffer);
     }
 
 	// Send raw message.
@@ -649,7 +668,7 @@ class spIrcClient
 	}
     
     public function isChannel($target) {
-        return preg_match("/^[^#&!]/", $target);
+        return preg_match("/^[#&!]/", $target);
     }
 	
     //

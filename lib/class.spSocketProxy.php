@@ -18,6 +18,7 @@ class spSocketProxy {
     private $secondaryClientSocket = null;
     private $proxySocket = null;
     private $proxySocketFunc = null;
+    private $proxySocketInitialized = false;
     private $idleTime;
     private $proxyBuffer = null;
     private $clientBuffer = null;
@@ -45,6 +46,7 @@ class spSocketProxy {
     public function setProxySocket($proxySocket) {
         $this->proxySocketFunc = null;
         $this->proxySocket = $proxySocket;
+        $this->proxySocketInitialized = true;
     }
     
     public function setProxySocketFunc($func) {
@@ -64,7 +66,7 @@ class spSocketProxy {
         }
         
         // If proxy socket is disconnected, don't quit until the client buffer is flushed.
-        if (empty($this->clientBuffer) && !$this->isProxySocketConnected()) {
+        if (empty($this->clientBuffer) && $this->proxySocketInitialized && !$this->isProxySocketConnected()) {
             log::error("poll() aborted; Proxy socket is disconnected!");
             return false;
         }
@@ -328,6 +330,7 @@ class spSocketProxy {
             $func = $this->proxySocketFunc;
             $this->proxySocket = $func();
             $this->proxySocketFunc = null;
+            $this->proxySocketInitialized = true;
 
             log::info("Connected.");
         }
