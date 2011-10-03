@@ -35,6 +35,7 @@ class spIrcClient
 
     // IRC socket.
 	private $socket;
+    private $socketFile;
     
     // spIrcClientState object.
     private $state;
@@ -44,16 +45,43 @@ class spIrcClient
     
     public $socketReadBufferSize = 1024;
     public $socketSendTimeout = 2000;   // in milliseconds
+    public $maxConnectAttempts = 3;
+    public $connectAttemptDelay = 500;  // in milliseconds
     
     // Constructor.
 	public function spIrcClient($socketFile, &$state) {
+        $this->socketFile = $socketFile;
         $this->state =& $state;
         $this->state->isModified = false;
-		$this->socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
-        if (socket_connect($this->socket, $socketFile)) {
-            $this->isConnected = true;
-        }
+        
+        $this->connectSocket();
 	}
+
+    // Check $this->isConnected for success status.
+    private function connectSocket() {
+        $this->isConnected = false;
+        
+        for ($attempt = 0; $attempt < $this->maxConnectAttempts; $attempt++) {
+            $this->socket = socket_create(AF_UNIX, SOCK_STREAM, 0);
+            if (socket_connect($this->socket, $this->socketFile)) {
+                $this->isConnected = true;
+                
+                // // Verify connection.
+                // if (!$this->isSocketAlive()) {
+                    // log::error('Connection verify failed.');
+                    // $this->disconnect();
+                // }
+            }
+            
+            // Success?
+            if ($this->isConnected) return;
+            
+            log::error('Connection attempt failed...');
+            usleep($this->connectAttemptDelay * 1000);
+        }
+        
+        log::error('All connection attempts failed.  Unable to connect!');
+    }
     
     // Disconnect from IRC proxy domain socket.
     public function disconnect() {
@@ -84,6 +112,9 @@ class spIrcClient
     }
     
     private function socketReadLine($timeout = 0) {
+        // Ping socket and reconnect on error.
+        //if (!$this->isSocketAlive()) $this->connectSocket();
+
         //log::info("socketReadBuffer size(" . strlen($this->socketReadBuffer) . ")");
         $line = null;
         
@@ -235,7 +266,7 @@ class spIrcClient
             break;
             
         case 'KICK':
-            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:(.*)/", $params, $msgParams)) return false;
+            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&%]\S+\s+(.*)/", $params, $msgParams)) return false;
             
             $channelList = explode(',', $msgParams[1]);
             $nickList = explode(',', $msgParams[2]);
@@ -592,6 +623,36 @@ class spIrcClient
         $this->flushSendBuffer();
     }
     
+    // Ping socket with a fake send to see if we're still connected.
+    // BUG: This function doesn't work at all.
+    public function isSocketAlive() {
+        if (!$this->isConnected) return false;
+        
+        $c = socket_select($r = array(), $w = array($this->socket), $e = array(), 0, 250 * 1000);
+        if ($c === false) {
+            $errno = socket_last_error($this->socket);
+            log::error("Error $errno during socket_select: '" . socket_strerror($errno) . "'");
+            return false;
+        }
+        else if ($c == 0) {
+            // Timeout waiting for socket to be writable.
+            log::error("Error: timeout on socket_select trying to send buffer.");
+            return false;
+        }
+        
+        $size = @socket_send($this->socket, '', 0, 0);
+        if ($size === false) {
+            $errno = socket_last_error($this->socket);
+            
+            // Success?
+            if ($errno === 0) return true;
+            
+            // Any other value is an actual error.
+        }
+        
+        return false;
+    }
+    
     public function flushSendBuffer() {
         // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
         $size = null;
@@ -606,9 +667,11 @@ class spIrcClient
         
         if ($size === false) {
             log::error("Error while flushing send buffer.  Cannot send.");
+            return false;
         }
         else if ($size > 0) {
             log::error("Error while flushing send buffer.  Some data may have been dropped.");
+            return false;
         }
         else {
             log::info('Send buffer flushed.');
@@ -618,11 +681,14 @@ class spIrcClient
     // Send buffered data to socket.
     // Returns buffer bytes remaining after send attempt.
     public function socketSendBuffer() {
+        // Ping socket and reconnect on error.
+        //if (!$this->isSocketAlive()) $this->connectSocket();
+        
         if (!empty($this->socketSendBuffer)) {
-            $c = socket_select($r = null, $w = array($this->socket), $e = null, 0, $this->socketSendTimeout);
+            $c = socket_select($r = array(), $w = array($this->socket), $e = array(), 0, $this->socketSendTimeout);
             if ($c === false) {
                 $errno = socket_last_error($this->socket);
-                log::error("Error during socket_select: $errno/" . socket_strerror($errno));
+                log::error("Error $errno during socket_select: '" . socket_strerror($errno) . "'");
                 return false;
             }
             else if ($c == 0) {
@@ -631,10 +697,10 @@ class spIrcClient
                 return false;
             }
             
-            $size = socket_write($this->socket, $this->socketSendBuffer);
+            $size = @socket_write($this->socket, $this->socketSendBuffer);
             if ($size === false) {
                 $errno = socket_last_error($this->socket);
-                log::error("Error during socket_write: $errno/" . socket_strerror($errno) . " trying to send message: $line");
+                log::error("Error $errno during socket_write: '" . socket_strerror($errno) . "', while trying to send message: $line");
                 return false;
             }
             else if ($size != strlen($this->socketSendBuffer)) {

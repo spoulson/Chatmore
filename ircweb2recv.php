@@ -58,7 +58,10 @@ if (isset($_SESSION['irc'])) {
                 $timeout = 0;   // Only block socket_select for the first iteration.
                 $messageCount++;
                 usleep(0);
-            } while ($line !== null && $line !== false && $messageCount < 200);
+            } while (
+                $line !== null && $line !== false &&    // Break if error returned.
+                $messageCount < 200 &&                  // Break if too many messages.  Endless loop?
+                $ircbot->isConnected());                // Break if disconnected.
 
             $ircbot->disconnect();
         }

@@ -1072,7 +1072,7 @@ $.fn.chatmore = function (p1, p2) {
 
                     // Auto-query first channel if selected channel is no longer joined.
                     if (self.irc.target() !== undefined && self.irc.state().channels[self.irc.target()] === undefined) {
-                        self.queryTarget(getJoinedChannels()[0]);
+                        self.queryTarget(self.getJoinedChannels()[0]);
                     }
                     
                     self.refreshSideBar();

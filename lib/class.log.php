@@ -6,7 +6,7 @@ class log {
     public static function info($message) {
         if (!self::$showInfo) return;
         $script = $_SERVER['SCRIPT_NAME'];
-        error_log(">>> " . $script . ": $message");
+        error_log(">>> " . $script . "(" . getmypid() . "): $message");
     }
 
     public static function error($message) {
