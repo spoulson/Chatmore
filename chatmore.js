@@ -57,6 +57,9 @@ function chatmore(element, server, port, nick, realname) {
     //
     // Public members.
     //
+    this.server = server;
+    this.port = port;
+    
     // Get selected target nick or channel, set via /query.
     this.target = function (newTarget) {
         if (newTarget === undefined) {
@@ -190,20 +193,22 @@ function chatmore(element, server, port, nick, realname) {
     };
 
     this.deactivateClient = function () {
-        $(element).trigger('deactivatingClient');
-        
-        local.isActivated = false;
-        
-        // Ensure any running ajax call is aborted and stops recurring.
-        if (local.pollHandle !== undefined) clearTimeout(local.pollHandle);
-        local.pollHandle = undefined;
-        if (local.pollXhr !== undefined) local.pollXhr.abort();
-        local.pollXhr = undefined;
-                
-        $(element).trigger('deactivatedClient');
+        if (local.isActivated) {
+            $(element).trigger('deactivatingClient');
+            
+            local.isActivated = false;
+            
+            // Ensure any running ajax call is aborted and stops recurring.
+            if (local.pollHandle !== undefined) clearTimeout(local.pollHandle);
+            local.pollHandle = undefined;
+            if (local.pollXhr !== undefined) local.pollXhr.abort();
+            local.pollXhr = undefined;
+                    
+            $(element).trigger('deactivatedClient');
 
-        local.state = undefined;
-        $(element).trigger('stateChanged');
+            local.state = undefined;
+            $(element).trigger('stateChanged');
+        }
     };
     
     // Send raw message to server.

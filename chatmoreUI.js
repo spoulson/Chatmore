@@ -21,8 +21,8 @@ $.fn.chatmore = function (p1, p2) {
             // Private members.
             //
             ircElement: $(this),
-            server: options.server,
-            port: options.port,
+            //server: options.server,
+            //port: options.port,
             nick: options.nick,
             realname: options.realname,
             irc: undefined,
@@ -111,7 +111,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</div>',
                 queryOff: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if /^[#&!]/.test(prevTarget)}}' +
+                    '{{if /^[#&+!]/.test(prevTarget)}}' +
                         'You are no longer talking on channel <span class="channel">${prevTarget}</span>' +
                     '{{else}}' +
                         'Ending conversation with <span class="nick">${prevTarget}</span>' +
@@ -119,7 +119,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</div>',
                 query: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if /^[#&!]/.test(target)}}' +
+                    '{{if /^[#&+!]/.test(target)}}' +
                         'You are now talking on channel <span class="channel">${target}</span>' +
                     '{{else}}' +
                         'Starting conversation with <span class="nick">${target}</span>' +
@@ -215,6 +215,38 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('TOPIC ' + self.irc.target() + ' :');
                     }
                 },
+                connect: {
+                    helpUsage: 'Usage: /connect &lt;server&gt; [port]',
+                    helpText: 'Connect to IRC server',
+                    parseParam: function (param, meta) {
+                        var m = /^(\S+)(\s+(\d+))?\s*$/.exec(param);
+                        if (m === null) {
+                            meta.error = self.cmdDefs['connect'].helpUsage;
+                            return false;
+                        }
+                        
+                        meta.server = m[1];
+                        meta.port = m[3];
+                    },
+                    exec: function (meta) {
+                        var connectFunc = function () {
+                            self.irc.deactivateClient();
+                            
+                            // Connect to server.
+                            self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname);
+                            self.irc.activateClient();
+                        };
+                        
+                        if (self.irc.isActivated()) {
+                            // /quit, wait a moment, then deactivate and reconnect.
+                            self.sendLine('/quit');
+                            setTimeout(connectFunc, 1000);
+                        }
+                        else {
+                            connectFunc();
+                        }
+                    }
+                },
                 help: {
                     helpUsage: 'Usage: /help &lt;command&gt;',
                     helpText: [
@@ -222,6 +254,7 @@ $.fn.chatmore = function (p1, p2) {
                         'Commands:',
                         ' clear - Clear the chat console',
                         ' cleartopic - Clear the channel\'s topic',
+                        ' connect - Connect to IRC server',
                         ' join - Join a channel',
                         ' kick - Kick user from channel',
                         ' leave - Leave a channel',
@@ -269,7 +302,7 @@ $.fn.chatmore = function (p1, p2) {
                         
                         var params = param.split(/\s+/, 2);
                         // Normalize channel name if it's missing a prefix.
-                        meta.channel = params[0].replace(/^([^#&!])/, '#$1');
+                        meta.channel = params[0].replace(/^([^#&+!])/, '#$1');
                         if (params[1] !== undefined) meta.key = params[1];
                         
                         if (!self.irc.isActivated()) {
@@ -278,16 +311,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                     },
                     exec: function (meta) {
-                        if (self.irc.state().channels[meta.channel] !== undefined) {
-                            // If already joined to this channel, just query it.
-                            self.queryTarget(meta.channel);
-                        }
-                        else {
-                            if (meta.key !== undefined)
-                                self.irc.sendMsg('JOIN ' + meta.channel + ' ' + meta.key);
-                            else
-                                self.irc.sendMsg('JOIN ' + meta.channel);
-                        }
+                        self.joinChannel(meta.channel, meta.key);
                     }
                 },
                 kick: {
@@ -336,7 +360,7 @@ $.fn.chatmore = function (p1, p2) {
                         else {
                             var m = /^(\S+)(\s+(.+))?\s*$/.exec(param);
                             // Normalize channel name if it's missing a prefix.
-                            meta.channel = m[1].replace(/^([^#&!])/, '#$1');
+                            meta.channel = m[1].replace(/^([^#&+!])/, '#$1');
                             if (m[3] !== undefined) meta.comment = m[3];
                         }
                         
@@ -583,6 +607,8 @@ $.fn.chatmore = function (p1, p2) {
                         }
                     },
                     exec: function (meta) {
+                        if (self.irc.target() !== undefined) self.queryTarget(undefined);
+                        
                         var comment = meta.comment !== undefined ? meta.comment : self.quitMessage;
                         self.enableAutoReactivate = false;
                         self.irc.sendMsg('QUIT :' + comment);
@@ -720,7 +746,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             isChannel: function (target) {
-                return target.match(/^[#&!]/);
+                return target.match(/^[#&+!]/);
             },
             
             stricmp: function (a, b) {
@@ -919,7 +945,22 @@ $.fn.chatmore = function (p1, p2) {
                     self.clearSelection();
                 }
             },
-                        
+
+            joinChannel: function (channel, key) {
+                if (self.irc.state().channels[channel] !== undefined) {
+                    // If already joined to this channel, just query it.
+                    self.queryTarget(channel);
+                }
+                else {
+                    if (key !== undefined)
+                        self.irc.sendMsg('JOIN ' + channel + ' ' + key);
+                    else
+                        self.irc.sendMsg('JOIN ' + channel);
+                    
+                    self.queryTarget(channel);
+                }
+            },
+            
             queryTarget: function (target) {
                 var prevTarget = self.irc.target();
                 
@@ -1070,17 +1111,21 @@ $.fn.chatmore = function (p1, p2) {
             .bind('processedMessage', function (e, msg) {
                 switch (msg.type) {
                 case 'state':
-                    if (self.prevState === undefined || self.stricmp(self.irc.state().nick, self.prevState.nick) != 0) {
+                    var state = self.irc.state();
+                    self.nick = state.nick;
+                    self.realname = state.realname;
+                    
+                    if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
                         // Nick changed.
                         var nickLabel = self.ircElement.find('.nickLabel');
                         nickLabel.fadeOut(null, function () {
-                            nickLabel.text(self.irc.state().nick);
+                            nickLabel.text(self.nick);
                             nickLabel.fadeIn();
                         });
                     }
 
                     // Auto-query first channel if selected channel is no longer joined.
-                    if (self.irc.target() !== undefined && self.irc.state().channels[self.irc.target()] === undefined) {
+                    if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
                         self.queryTarget(self.getJoinedChannels()[0]);
                     }
                     
@@ -1151,6 +1196,7 @@ $.fn.chatmore = function (p1, p2) {
                         if (self.stricmp(msg.prefixNick, self.irc.state().nick) == 0) {
                             self.queryTarget(msg.info.channel);
                         }
+
                         break;
                         
                     case 'PART':
@@ -1217,11 +1263,11 @@ $.fn.chatmore = function (p1, p2) {
                         });
                         break;
 
-                    case '001': // Welcome.
+                    case '001': // Welcome
                         if (options.channel !== undefined) {
                             var channels = typeof(options.channel) == 'string' ? [options.channel] : options.channel;
                             for (var i in channels) {
-                                self.irc.sendMsg('JOIN ' + channels[i]);
+                                self.joinChannel(channels[i]);
                             }
                         };
                         break;
@@ -1260,8 +1306,8 @@ $.fn.chatmore = function (p1, p2) {
                         });
                         break;
                         
-                    case '353':
-                    case '366':
+                    case '353': // RPL_NAMREPLY
+                    case '366': // RPL_ENDOFNAMES
                         // Disregard these messages.
                         break;
                         
@@ -1273,7 +1319,6 @@ $.fn.chatmore = function (p1, p2) {
                                 self.writeTmpl('serverMsg', { message: m[1] });
                             }
                         }
-                        
                         break;
                     }
                 }
@@ -1292,11 +1337,11 @@ $.fn.chatmore = function (p1, p2) {
                     break;
                     
                 case 'connecting':
-                    self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + self.server });
+                    self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + self.irc.server });
                     break;
                     
                 case 'resuming':
-                    self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + self.server });
+                    self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + self.irc.server });
                     self.freezeSideBar = false;
                     break;
                     
@@ -1311,7 +1356,6 @@ $.fn.chatmore = function (p1, p2) {
                     // Auto-query first channel on activation.
                     var firstChannel = self.getJoinedChannels()[0];
                     if (firstChannel !== undefined) self.queryTarget(firstChannel);
-                    
                     break;
 
                 case 'error':
@@ -1484,7 +1528,7 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement.get(0), self.server, self.port, self.nick, self.realname)
+            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, self.nick, self.realname)
             self.irc.activateClient();
         }
     }

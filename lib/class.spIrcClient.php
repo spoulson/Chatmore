@@ -156,7 +156,7 @@ class spIrcClient
                 return false;
             }
             else if ($size > 0) {
-                log::info("socketReadBuffer appended: $buf");
+                //log::info("socketReadBuffer appended: $buf");
                 $this->socketReadBuffer .= $buf;
             }
             else {
@@ -186,7 +186,7 @@ class spIrcClient
         log::info('Parsing: ' . $line);
         
         // Parse raw message for prefix, command, and params.
-        if (!preg_match("/^(:(\S+) )?(\w+)( (.+?))?\r\n$/", $line, $m)) return false;
+        if (!preg_match("/^(:(\S+)\s+)?(\w+)(\s+(.+?))?\r\n$/", $line, $m)) return false;
         $params = $m[5];
         $msg = array(
             'prefix' => isset($m[2]) ? $m[2] : null,
@@ -200,7 +200,7 @@ class spIrcClient
         
         // Parse prefix.
         $m = array();
-        if (preg_match("/^(.+?)((!([\w-\.]+))?@([\w-\.]+))?$/", $msg['prefix'], $m)) {
+        if (preg_match("/^(.+?)((!([^@\s]+))?@([\w-\.]+))?$/", $msg['prefix'], $m)) {
             $msg['prefixNick'] = $m[1];
             if (isset($m[4])) $msg['prefixUser'] = $m[4];
             if (isset($m[5])) $msg['prefixHost'] = $m[5];
@@ -251,7 +251,7 @@ class spIrcClient
             break;
         
         case 'JOIN':
-            if (!preg_match("/:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^:?([#&+!]\S+)\s*$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1]
             );
@@ -266,7 +266,7 @@ class spIrcClient
             break;
             
         case 'KICK':
-            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&%]\S+\s+(.*)/", $params, $msgParams)) return false;
+            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&+!]\S+\s+(.*)/", $params, $msgParams)) return false;
             
             $channelList = explode(',', $msgParams[1]);
             $nickList = explode(',', $msgParams[2]);
@@ -354,7 +354,7 @@ class spIrcClient
             // @ full operators
             // % half operators
             // + voiced users
-            if (!preg_match("/\S+\s+([=*@])\s+(#\S+)\s+:(.+)$/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+([=*@])\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $names = array();
             foreach (explode(' ', $msgParams[3]) as $name) {
                 $m = array();
@@ -374,7 +374,7 @@ class spIrcClient
             break;
             
         case self::RPL_NOTOPIC:
-            if (!preg_match("/^\S+\s+([#&!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => null
@@ -382,7 +382,7 @@ class spIrcClient
             break;
             
         case self::RPL_TOPIC:
-            if (!preg_match("/^\S+\s+([#&!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => $msgParams[2]
@@ -407,7 +407,7 @@ class spIrcClient
             break;
             
         case self::RPL_CHANNELMODEIS:
-            if (!preg_match("/\S+\s+([#&!]\S+)\s+(\S+(\s+\S+)?)\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+([#&+!]\S+)\s+(\S+(\s+\S+)?)\s*$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'mode' => $msgParams[2]
@@ -415,7 +415,7 @@ class spIrcClient
             break;
             
         case self::ERR_NOSUCHCHANNEL:
-            if (!preg_match("/([#&!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'error' => $msgParams[2]
@@ -576,24 +576,28 @@ class spIrcClient
         case self::RPL_NAMREPLY: // NAMES list.
             $channel = $msg['info']['channel'];
             
-            if (isset($this->state->channels[$channel])) {
-                // Only update state if currently joined to this channel.
-                $this->state->channels[$channel]->visibility = $msg['info']['visibility'];
-                
-                foreach ($msg['info']['names'] as $name) {
-                    $nick = $name['nick'];
-                    
-                    $memberDesc = new spIrcChannelMemberDesc();
-                    $memberDesc->mode = $name['mode'];
-                    $this->state->channels[$channel]->members[$nick] = $memberDesc;
-                
-                    if (!isset($this->state->users[$nick])) {
-                        $this->state->users[$nick] = new spIrcUserDesc();
-                    }
-                }
-                
-                $this->state->isModified = true;
+            if (!isset($this->state->channels[$channel])) {
+                $this->state->channels[$channel] = new spIrcChannelDesc();
             }
+            
+            // TODO: Support multiple 353's that are commited on 366.
+            $channelDesc = $this->state->channels[$channel];
+            $channelDesc->visibility = $msg['info']['visibility'];
+            $channelDesc->members = array();
+            
+            foreach ($msg['info']['names'] as $name) {
+                $nick = $name['nick'];
+                
+                $memberDesc = new spIrcChannelMemberDesc();
+                $memberDesc->mode = $name['mode'];
+                $this->state->channels[$channel]->members[$nick] = $memberDesc;
+            
+                if (!isset($this->state->users[$nick])) {
+                    $this->state->users[$nick] = new spIrcUserDesc();
+                }
+            }
+            
+            $this->state->isModified = true;
             break;
 
         case self::RPL_CHANNELMODEIS:
@@ -734,7 +738,7 @@ class spIrcClient
 	}
     
     public function isChannel($target) {
-        return preg_match("/^[#&!]/", $target);
+        return preg_match("/^[#&+!]/", $target);
     }
 	
     //
