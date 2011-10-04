@@ -26,7 +26,8 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript">
         $(function () {
             $('.ircweb2').chatmore({
-                server: 'irc.dsm.org'
+                server: 'irc.dsm.org',
+                channel: '#gvr4'
             });
         });
     </script>

@@ -1078,6 +1078,12 @@ $.fn.chatmore = function (p1, p2) {
 
                 case 'recv':
                     switch (msg.command) {
+                    case '001': // Welcome.
+                        if (options.channel != '') {
+                            self.irc.sendMsg('JOIN ' + options.channel);
+                        };
+                        break;
+                        
                     case 'PRIVMSG':
                         // Update title when new messages arrive and user isn't focused on the browser.
                         if (!self.isWindowFocused) {

@@ -457,10 +457,10 @@ class spIrcClient
             if ($this->isChannel($target)) {
                 if (isset($this->state->channels[$target])) {
                     // Request fully qualified channel mode string.
-                    $this->sendRawMsg('MODE ' + $target);
+                    $this->sendRawMsg('MODE ' + $target + "\r\n");
 
                     // Get channel members to capture possible user flag changes.
-                    $this->sendRawMsg("NAMES $channel");
+                    $this->sendRawMsg("NAMES $channel\r\n");
                 }
             }
             else {
@@ -506,7 +506,7 @@ class spIrcClient
                 $this->state->channels[$channel] = new spIrcChannelDesc();
                 
                 // Get channel mode.
-                $this->sendRawMsg("MODE $channel");
+                $this->sendRawMsg("MODE $channel\r\n");
             }
             
             $memberDesc = new spIrcChannelMemberDesc();
