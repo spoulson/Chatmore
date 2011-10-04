@@ -40,6 +40,7 @@ $.fn.chatmore = function (p1, p2) {
             reactivateAttempts: 0,
             maxReactivateAttempts: options.reactivateAttempts,
             reactivateDelay: options.reactivateDelay,   // in seconds.
+            freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
 
             // IRC client message templates.
             tmpls: {
@@ -890,31 +891,33 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             dblclickChannelNickHandler: function () {
-                // Get text of element, ignoring child elements.
-                var target = $(this)
-                    .clone()
-                    .children()
-                    .remove()
-                    .end()
-                    .text();
-                    
-                if (self.irc.state() !== undefined && target != self.irc.state().nick) {
-                    if (self.isChannel(target)) {
-                        // Check if joined to this channel.
-                        if (self.irc.state() !== undefined && self.irc.state().channels[target] === undefined)
-                            self.sendLine('/join ' + target);
-                        else
+                if (self.irc.isActivated()) {
+                    // Get text of element, ignoring child elements.
+                    var target = $(this)
+                        .clone()
+                        .children()
+                        .remove()
+                        .end()
+                        .text();
+                        
+                    if (self.irc.state() !== undefined && target != self.irc.state().nick) {
+                        if (self.isChannel(target)) {
+                            // Check if joined to this channel.
+                            if (self.irc.state() !== undefined && self.irc.state().channels[target] === undefined)
+                                self.sendLine('/join ' + target);
+                            else
+                                self.queryTarget(target);
+                        }
+                        else {
                             self.queryTarget(target);
+                        }
+                                    
+                        self.ircElement.find('.userEntry').focus();
                     }
-                    else {
-                        self.queryTarget(target);
-                    }
-                                
-                    self.ircElement.find('.userEntry').focus();
-                }
 
-                // Unselect doubleclicked text.
-                self.clearSelection();
+                    // Unselect doubleclicked text.
+                    self.clearSelection();
+                }
             },
                         
             queryTarget: function (target) {
@@ -965,51 +968,59 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             refreshSideBar: function () {
-                if (self.irc.state() === undefined) return;
-                
-                // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
-                // such as incoming messages and user actions both changing state.
-                var channelList = self.ircElement.find('.sideBar ul.channelList');
-                var originalScrollTop = channelList.get(0).scrollTop;
-                
-                channelList.empty();
-
-                $.each(self.getJoinedChannels(), function (i, channel) {
-                    var channelDesc = self.irc.state().channels[channel];
-                    var channelElement = $('<li><span class="channel">' + channel + '</span><span class="leaveButton" title="Leave channel"></span></li>')
-                        // Set topic as tooltip.
-                        .find('.channel')
-                            .attr('title', channelDesc.topic)
-                            .end()
-                        // Setup leave channel icon.
-                        .find('.leaveButton')
-                            .click(function () {
-                                // Update UI and leave the channel.
-                                $(this).parent('li')
-                                    .slideUp(400, 'swing', function () {
-                                        self.sendLine('/leave ' + channel);
-                                    });
-                            })
-                            .end()
-                        .appendTo(channelList);
-                    
-                    var memberList = $('<ul class="memberList"/>')
-                        .appendTo(channelElement);
+                if (!self.freezeSideBar) {
+                    if (self.irc.state() === undefined) {
+                        // If no state data, clear everything.
+                        self.ircElement.find('.sideBar ul.channelList').empty();
+                    }
+                    else {
+                        // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
+                        // such as incoming messages and user actions both changing state.
+                        var channelList = self.ircElement.find('.sideBar ul.channelList');
+                        var originalScrollTop = channelList.get(0).scrollTop;
                         
-                    
-                    $.each(self.getChannelMembers(channel), function (i, member) {
-                        var memberDesc = channelDesc.members[member];
-                        $('<li><span class="mode">' + memberDesc.mode + '</span><span class="nick">' + member + '</span></li>')
-                            .appendTo(memberList);
-                    });
-                });
-                
-                // Scroll back to original spot.
-                channelList.get(0).scrollTop = originalScrollTop;
-                
-                // Apply doubleclick handler to channels and nicks.
-                channelList.find('.nick,.channel')
-                    .dblclick(self.dblclickChannelNickHandler);
+                        channelList.empty();
+
+                        $.each(self.getJoinedChannels(), function (i, channel) {
+                            var channelDesc = self.irc.state().channels[channel];
+                            var channelElement = $('<li><span class="channel">' + channel + '</span><span class="leaveButton" title="Leave channel"></span></li>')
+                                // Set topic as tooltip.
+                                .find('.channel')
+                                    .attr('title', channelDesc.topic)
+                                    .end()
+                                // Setup leave channel icon.
+                                .find('.leaveButton')
+                                    .click(function () {
+                                        if (self.irc.isActivated()) {
+                                            // Update UI and leave the channel.
+                                            $(this).parent('li')
+                                                .slideUp(400, 'swing', function () {
+                                                    self.sendLine('/leave ' + channel);
+                                                });
+                                        }
+                                    })
+                                    .end()
+                                .appendTo(channelList);
+                            
+                            var memberList = $('<ul class="memberList"/>')
+                                .appendTo(channelElement);
+                                
+                            
+                            $.each(self.getChannelMembers(channel), function (i, member) {
+                                var memberDesc = channelDesc.members[member];
+                                $('<li><span class="mode">' + memberDesc.mode + '</span><span class="nick">' + member + '</span></li>')
+                                    .appendTo(memberList);
+                            });
+                        });
+                        
+                        // Scroll back to original spot.
+                        channelList.get(0).scrollTop = originalScrollTop;
+                        
+                        // Apply doubleclick handler to channels and nicks.
+                        channelList.find('.nick,.channel')
+                            .dblclick(self.dblclickChannelNickHandler);
+                    }
+                }
             }
         };
 
@@ -1073,17 +1084,10 @@ $.fn.chatmore = function (p1, p2) {
                         self.queryTarget(self.getJoinedChannels()[0]);
                     }
                     
-                    self.refreshSideBar();
                     break;
 
                 case 'recv':
                     switch (msg.command) {
-                    case '001': // Welcome.
-                        if (options.channel != '') {
-                            self.irc.sendMsg('JOIN ' + options.channel);
-                        };
-                        break;
-                        
                     case 'PRIVMSG':
                         // Update title when new messages arrive and user isn't focused on the browser.
                         if (!self.isWindowFocused) {
@@ -1213,6 +1217,15 @@ $.fn.chatmore = function (p1, p2) {
                         });
                         break;
 
+                    case '001': // Welcome.
+                        if (options.channel !== undefined) {
+                            var channels = typeof(options.channel) == 'string' ? [options.channel] : options.channel;
+                            for (var i in channels) {
+                                self.irc.sendMsg('JOIN ' + channels[i]);
+                            }
+                        };
+                        break;
+                        
                     case '331': // RPL_NOTOPIC
                         self.writeTmpl('notopic', {
                             channel: msg.info.channel
@@ -1265,6 +1278,10 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 }
             })
+            .bind('stateChanged', function (e) {
+                if (console) console.log(self.irc.state());
+                self.refreshSideBar();
+            })
             .bind('sendMsg', function (e, rawMsg) {
                 if (console) console.log('Sent: ' + rawMsg);
             })
@@ -1280,6 +1297,7 @@ $.fn.chatmore = function (p1, p2) {
                     
                 case 'resuming':
                     self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + self.server });
+                    self.freezeSideBar = false;
                     break;
                     
                 case 'activated':
@@ -1288,6 +1306,7 @@ $.fn.chatmore = function (p1, p2) {
                         .addClass('activated');
                     self.reactivateAttempts = 0;
                     self.enableAutoReactivate = true;
+                    self.freezeSideBar = false;
                     
                     // Auto-query first channel on activation.
                     var firstChannel = self.getJoinedChannels()[0];
@@ -1304,6 +1323,7 @@ $.fn.chatmore = function (p1, p2) {
                 if (self.enableAutoReactivate) {
                     // Attempt reactivation.
                     if (self.reactivateAttempts < self.maxReactivateAttempts) {
+                        self.freezeSideBar = true;
                         self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.reactivateDelay + ' seconds...' });
 
                         setTimeout(function () {
@@ -1313,10 +1333,12 @@ $.fn.chatmore = function (p1, p2) {
                     }
                     else {
                         self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
+                        self.freezeSideBar = false;
                     }
                 }
                 else {
                     self.writeTmpl('error', { message: 'Server connection closed.' });
+                    self.freezeSideBar = false;
                 }
             });
             

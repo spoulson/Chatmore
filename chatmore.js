@@ -34,10 +34,7 @@ function chatmore(element, server, port, nick, realname) {
                 case 'state':
                     if (msg.state !== undefined) {
                         local.state = msg.state;
-                        if (console) {
-                            //console.log('Client state:');
-                            console.log(local.state);
-                        }
+                        $(element).trigger('stateChanged');
                     }
                     break;
 
@@ -75,7 +72,7 @@ function chatmore(element, server, port, nick, realname) {
     this.state = function () {
         return local.state;
     };
-     
+    
     this.isActivated = function () {
         return local.isActivated;
     };
@@ -202,8 +199,11 @@ function chatmore(element, server, port, nick, realname) {
         local.pollHandle = undefined;
         if (local.pollXhr !== undefined) local.pollXhr.abort();
         local.pollXhr = undefined;
-        
+                
         $(element).trigger('deactivatedClient');
+
+        local.state = undefined;
+        $(element).trigger('stateChanged');
     };
     
     // Send raw message to server.
