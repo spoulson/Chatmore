@@ -15,7 +15,7 @@ else if (substr($script_url, -1) == '/') {
     $script_path = substr($script_url, 0, strlen($script_url) - 1);
 }
 else {
-    $scripr_path = dirname($script_url);
+    $script_path = dirname($script_url);
 }
 
 ini_set('session.cookie_path', $script_path);
