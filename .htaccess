@@ -1,6 +1,6 @@
 DirectoryIndex index.php
 
-<Files ~ "config\.php|lib">
+<Files ~ "^config\.php|lib|tmp$">
   order deny,allow
   deny from all
 </Files>

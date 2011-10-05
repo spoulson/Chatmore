@@ -1,5 +1,5 @@
 <?
-$tmpdir = '/home/ip90904j/tmp';
+$tmpdir = './tmp';
 
 set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
 ini_set('error_log', "$tmpdir/php_errors.log");

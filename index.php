@@ -23,7 +23,6 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
-    <script type="text/javascript" src="json2.js"></script>
     <script type="text/javascript" src="chatmore.js"></script>
     <script type="text/javascript" src="chatmoreUI.js"></script>
     <script type="text/javascript" src="config.js"></script>
