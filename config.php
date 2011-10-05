@@ -1,22 +1,41 @@
 <?
+$tmpdir = '/home/ip90904j/tmp';
+
 set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
-ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
+ini_set('error_log', "$tmpdir/php_errors.log");
 ini_set('error_reporting', E_ALL);
 ini_set('log_errors', true);
 
+// Limit session cookie to only this virtual directory.
+$script_url = $_SERVER['SCRIPT_URL'];
+if ($script_url == '/') {
+    $script_path = '/';
+}
+else if (substr($script_url, -1) == '/') {
+    $script_path = substr($script_url, 0, strlen($script_url) - 1);
+}
+else {
+    $scripr_path = dirname($script_url);
+}
+
+ini_set('session.cookie_path', $script_path);
+
+// Use SQLite session save handler.
 // Cannot use the 'files' session save handler.
-// It cannot handle concurrent PHP session execution, which causes problems with sending while waiting for received data.
+// files is unable to handle concurrent PHP session execution, which
+// causes blocking issues when sending while waiting for received messages
+// in a separate request.
 ini_set('session.save_handler', 'sqlite');
-ini_set('session.save_path', '/home/ip90904j/tmp/php.sess.db');
+ini_set('session.save_path', "$tmpdir/php.sess.db");
 
 $ircConfig = array(
     // Path to create domain sockets.
-    'socketFilePath' => '/home/ip90904j/tmp',
+    'socketFilePath' => $tmpdir,
     
     // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=1M',
 
-    // Timeout waiting for data to read in ms.
+    // Client side timeout in ms waiting for ircweb2recv.php to return data.
     // - Higher timeout means less frequent client reconnections.
     // - If the background process dies while the recv thread was running,
     //   the error will not be caught until timeout.
