@@ -1322,11 +1322,11 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
-                if (console) console.log(self.irc.state());
+                if (window.console) console.log(self.irc.state());
                 self.refreshSideBar();
             })
             .bind('sendMsg', function (e, rawMsg) {
-                if (console) console.log('Sent: ' + rawMsg);
+                if (window.console) console.log('Sent: ' + rawMsg);
             })
             .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {

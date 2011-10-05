@@ -32,7 +32,7 @@ function chatmore(element, server, port, nick, realname, options) {
                 
                 switch (msg.type) {
                 case 'recv':
-                    if (console) {
+                    if (window.console) {
                         if (msg.raw !== undefined) console.log(msg.raw);
                         // console.log(msg);
                     }
@@ -46,7 +46,7 @@ function chatmore(element, server, port, nick, realname, options) {
                     break;
 
                 case 'servermsg':
-                    if (console) console.log('servermsg: ' + msg.code + ' ' + msg.message);
+                    if (window.console) console.log('servermsg: ' + msg.code + ' ' + msg.message);
                     
                     if (msg.code >= 400) {
                         if (local.isActivated && msg.code == 400) {
@@ -121,10 +121,11 @@ function chatmore(element, server, port, nick, realname, options) {
             {
                 async: false,
                 type: 'POST',
+                cache: false,
                 dataType: 'json',
                 data: initCheckPostData,
                 success: function (data) {
-                    // if (console) {
+                    // if (window.console) {
                         // console.log('data from init check:');
                         // console.log(data);
                     // }
@@ -170,10 +171,11 @@ function chatmore(element, server, port, nick, realname, options) {
             'ircweb2init.php',
             {
                 type: 'POST',
+                cache: false,
                 dataType: 'json',
                 data: initPostData,
                 success: function (data) {
-                    // if (console) {
+                    // if (window.console) {
                         // console.log('data from init:');
                         // console.log(data);
                     // }
@@ -192,6 +194,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         var pollFunc = function () {
                             local.pollHandle = undefined;
                             local.pollXhr = $.ajax('ircweb2recv.php', {
+                                cache: false,
                                 dataType: 'json',
                                 success: function (data) {
                                     // Validate data is an array.
@@ -200,7 +203,7 @@ function chatmore(element, server, port, nick, realname, options) {
                                     }
                                     else {
                                         // Data is invalid!
-                                        if (console) {
+                                        if (window.console) {
                                             console.log('Got invalid data:');
                                             console.log(data);
                                         }
@@ -260,6 +263,7 @@ function chatmore(element, server, port, nick, realname, options) {
         $.ajax('ircweb2send.php', {
             async: true,
             type: 'POST',
+            cache: false,
             data: { msg: rawMsg },
             success: function () {
                 if (postCallback) postCallback(rawMsg);
