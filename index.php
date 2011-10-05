@@ -2,6 +2,8 @@
 require_once 'config.php';
 
 session_start();
+
+// If 'x' parameter exists in query string, reset session state.
 if (array_key_exists('x', $_GET)) {
     unset($_SESSION['irc']);
 
@@ -24,14 +26,7 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="json2.js"></script>
     <script type="text/javascript" src="chatmore.js"></script>
     <script type="text/javascript" src="chatmoreUI.js"></script>
-    <script type="text/javascript">
-        $(function () {
-            $('.ircweb2').chatmore({
-                server: 'irc.dsm.org',
-                channel: '#gvr4'
-            });
-        });
-    </script>
+    <script type="text/javascript" src="config.js"></script>
 </head>
 <body>
 
