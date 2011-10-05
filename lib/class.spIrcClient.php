@@ -260,9 +260,10 @@ class spIrcClient
         case 'PART':
             if (!preg_match("/^(\\S+)(\\s+:(.+))?\s*$/", $params, $msgParams)) return false;
             $msg['info'] = array(
-                'channel' => $msgParams[1],
-                'comment' => $msgParams[3]
+                'channel' => $msgParams[1]
             );
+            
+            if (isset($msgParams[3])) $msg['info']['comment'] = $msgParams[3];
             break;
             
         case 'KICK':

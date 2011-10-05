@@ -21,8 +21,6 @@ $.fn.chatmore = function (p1, p2) {
             // Private members.
             //
             ircElement: $(this),
-            //server: options.server,
-            //port: options.port,
             nick: options.nick,
             realname: options.realname,
             irc: undefined,
@@ -226,14 +224,14 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         
                         meta.server = m[1];
-                        meta.port = m[3];
+                        meta.port = m[3] === undefined ? 6667 : m[3];
                     },
                     exec: function (meta) {
                         var connectFunc = function () {
                             self.irc.deactivateClient();
                             
                             // Connect to server.
-                            self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname);
+                            self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname, { mustMatchServer: true });
                             self.irc.activateClient();
                         };
                         
@@ -957,7 +955,7 @@ $.fn.chatmore = function (p1, p2) {
                     else
                         self.irc.sendMsg('JOIN ' + channel);
                     
-                    self.queryTarget(channel);
+                    //self.queryTarget(channel);
                 }
             },
             
@@ -1330,18 +1328,20 @@ $.fn.chatmore = function (p1, p2) {
             .bind('sendMsg', function (e, rawMsg) {
                 if (console) console.log('Sent: ' + rawMsg);
             })
-            .bind('activatingClient', function (e, stage, message) {
+            .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
                     self.ircElement.find('.userEntry').focus();
                     break;
                     
                 case 'connecting':
-                    self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + self.irc.server });
+                    var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
+                    self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + server });
                     break;
                     
                 case 'resuming':
-                    self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + self.irc.server });
+                    var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
+                    self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + server });
                     self.freezeSideBar = false;
                     break;
                     

@@ -38,7 +38,7 @@ if (array_key_exists('x', $_GET)) {
         <div style="float:left;overflow:hidden">
 
             <div class="ircConsole ui-widget-content ui-corner-tl">
-                <div class="content"></div>
+                <div class="content ui-corner-all"></div>
             </div>
 
             <div class="userEntrySection ui-widget ui-widget-content ui-corner-bl">

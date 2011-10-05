@@ -27,6 +27,10 @@ if ($connectMode == 0) {
         @ob_clean();
         echo json_encode(array(
             array(
+                'type' => spIrcClient::CLMSG_TYPE_STATE,
+                'state' => $_SESSION['irc']
+            ),
+            array(
                 'type' => spIrcClient::CLMSG_TYPE_SERVER,
                 'message' => 'Connection ready.',
                 'code' => spIrcClient::CLMSG_CONNECTION_READY
@@ -61,7 +65,8 @@ if (!validateSession()) {
         $_POST['nick'],
         uniqid(),
         $_POST['realname'],
-        $_POST['server'] . ':' . (isset($_POST['port']) ? $_POST['port'] : 6667));
+        $_POST['server'],
+        $_POST['port']);
 
     if ($connectMode == 1 || $connectMode == 2) {
         $state =& $_SESSION['irc'];
@@ -73,7 +78,7 @@ if (!validateSession()) {
         if (file_exists($secondarySocketFile)) unlink($secondarySocketFile);
 
         // Kick off background IRC proxy connection.
-        $cmd = "php " . $ircConfig['php_opts'] . " lib/ircConnection.php $primarySocketFile $secondarySocketFile " . $state->host . ' &';
+        $cmd = "php " . $ircConfig['php_opts'] . " lib/ircConnection.php $primarySocketFile $secondarySocketFile " . $state->server . ' &';
         log::info("Instantiating IRC process: $cmd");
         pclose(popen($cmd, 'r'));
         
@@ -128,20 +133,34 @@ exit;
 function validateSession() {
     log::info("Validate session.");
     
-    if (!isset($_SESSION['irc'])) return false;
+    if (!isset($_SESSION['irc'])) {
+        log::info('No session found, session invalid.');
+        return false;
+    }
     
     $state =& $_SESSION['irc'];
     $socketFile = $state->getPrimarySocketFilename();
     log::info("Socket file: $socketFile");
+
+    $server = $_POST['server'];
+    $port = $_POST['port'];
+    
+    // Check if session and POST server names match.
+    if (isset($_POST['mustMatchServer']) && $_POST['mustMatchServer'] &&
+        $state->server != $server || $state->port != $port) {
+        log::info("Server:port '" . $server . ':' . $port . " are different than existing session '" . $state->server . ':' . $state->port . "', session invalid.");
+        return false;
+    }
     
     // Check if we can connect to domain socket.
     if (!validateSocketFile($socketFile, 5)) {
         // No answer.  Assume listening process is dead and reinitialize.
         // TODO: Reconnect and attempt to restore joined channels.
-        log::info("Uh oh, socket file isn't connecting, reinitializing session.");
+        log::info("Uh oh, socket file isn't connecting, session invalid.");
         return false;
     }
 
+    log::info('Session is valid.');
     return true;
 }
 
@@ -171,14 +190,15 @@ function validateSocketFile($socketFile, $timeout_sec, $timeout_usec = 0) {
 
 // Initialize new session state object.
 // Return object.
-function initializeSession($nick, $ident, $realname, $host) {
+function initializeSession($nick, $ident, $realname, $server, $port) {
     $state = new spIrcClientState();
     $state->nick = $nick;
     $state->realname = $realname;
     $state->ident = $ident;
-    $state->host = $host;
-    log::info('server: ' . $state->host);
-    log::info('nick/realname: ' . $state->nick . '/' . $state->realname);
+    $state->server = $server;
+    $state->port = $port;
+    
+    log::info("Session initialized for connection to $server:$port");
     $_SESSION['irc'] =& $state;
     return $state;
 }

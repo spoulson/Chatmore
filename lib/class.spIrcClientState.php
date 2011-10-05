@@ -14,11 +14,12 @@ class spIrcClientState
     // Ident.
     public $ident;
     
-    // Hostname.
-    public $host;
-    
     // Real name.
     public $realname;
+    
+    // IRC server:port.
+    public $server;
+    public $port;
     
     public $channels = array(); // Array of $channel => spIrcChannelDesc objects.
     public $users = array();    // Array of $nick => spIrcUserDesc objects.

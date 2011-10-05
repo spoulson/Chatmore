@@ -1,6 +1,13 @@
 // Instantiate chatmore as an object.
 // var c = new chatmore(...);
-function chatmore(element, server, port, nick, realname) {
+// element: Associated HTML DOM object
+// options array:
+//    mustMatchServer:
+//       when true, allows resuming connection, regardless of server
+//       when false, allows resuming connection only if server/port match constructor parameters
+function chatmore(element, server, port, nick, realname, options) {
+    if (options === undefined) options = {};
+    
     //
     // Private members.
     //
@@ -57,10 +64,7 @@ function chatmore(element, server, port, nick, realname) {
     //
     // Public members.
     //
-    this.server = server;
-    this.port = port;
-    
-    // Get selected target nick or channel, set via /query.
+    // Get selected target nick or channel, such as by /query command.
     this.target = function (newTarget) {
         if (newTarget === undefined) {
             return local.target;
@@ -84,12 +88,20 @@ function chatmore(element, server, port, nick, realname) {
         local.isActivated = false;
         local.lastRecvTime = undefined;
         
-        $(element).trigger('activatingClient', [ 'start' ]);
+        $(element).trigger('activatingClient', [
+            'start',
+            undefined,
+            { server: server, port: port }
+        ]);
         
         var newConnectionFlag = true;
         var errorFlag = false;
         var errorFunc = function (xhr, status, error) {
-            $(element).trigger('activatingClient', [ 'error', 'Error during activation: ' + status + ', ' + error ]);
+            $(element).trigger('activatingClient', [
+                'error',
+                'Error during activation: ' + status + ', ' + error,
+                { server: server, port: port }
+            ]);
             errorFlag = true;
         };
         
@@ -97,15 +109,20 @@ function chatmore(element, server, port, nick, realname) {
         // Check for open connection.
         var newConnectionFlag = true;
         
+        var initCheckPostData = {
+            connect: 0,
+            server: server,
+            port: port
+        };
+        if (options.mustMatchServer) initCheckPostData.mustMatchServer = true;
+        
         $.ajax(
             'ircweb2init.php',
             {
                 async: false,
                 type: 'POST',
                 dataType: 'json',
-                data: {
-                    connect: 0
-                },
+                data: initCheckPostData,
                 success: function (data) {
                     // if (console) {
                         // console.log('data from init check:');
@@ -125,20 +142,36 @@ function chatmore(element, server, port, nick, realname) {
         if (errorFlag) return;
         
         // Create/resume a connection.
-        $(element).trigger('activatingClient', [ newConnectionFlag ? 'connecting' : 'resuming' ]);
+        if (newConnectionFlag) {
+            $(element).trigger('activatingClient', [
+                'connecting',
+                undefined,
+                { server: server, port: port }
+            ]);
+        }
+        else {
+            $(element).trigger('activatingClient', [
+                'resuming',
+                undefined,
+                { server: local.state.server, port: local.state.port }
+            ]);
+        }
+        
+        var initPostData = {
+            connect: 1,
+            nick: nick,
+            realname: realname,
+            server: server,
+            port: port
+        };
+        if (options.mustMatchServer) initPostData.mustMatchServer = true;
         
         $.ajax(
             'ircweb2init.php',
             {
                 type: 'POST',
                 dataType: 'json',
-                data: {
-                    connect: 1,
-                    nick: nick,
-                    realname: realname,
-                    server: server,
-                    port: port
-                },
+                data: initPostData,
                 success: function (data) {
                     // if (console) {
                         // console.log('data from init:');
@@ -146,11 +179,13 @@ function chatmore(element, server, port, nick, realname) {
                     // }
                     local.processMessages.call(obj, data);
                     
-                    // TODO: verify session state has the expected server/port.  If not, reinitialize connection.
-                    
                     if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
                         // Activated.
-                        $(element).trigger('activatingClient', [ 'activated' ]);
+                        $(element).trigger('activatingClient', [
+                            'activated',
+                            undefined,
+                            { server: local.state.server, port: local.state.port }
+                        ]);
                         local.isActivated = true;
                     
                         // Repeatedly poll for IRC activity.
@@ -181,11 +216,17 @@ function chatmore(element, server, port, nick, realname) {
                             });
                         };
                         setTimeout(pollFunc, 0);
-                        $(element).trigger('activatedClient');
+                        $(element).trigger('activatedClient', [
+                            { server: server, port: port }
+                        ]);
                     }
                     else {
                         // Error on activation.
-                        $(element).trigger('activatingClient', [ 'error', 'Error during activation' ]);
+                        $(element).trigger('activatingClient', [
+                            'error',
+                            'Error during activation',
+                            { server: server, port: port }
+                        ]);
                     }
                 },
                 error: errorFunc
