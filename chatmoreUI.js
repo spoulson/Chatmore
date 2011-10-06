@@ -924,6 +924,9 @@ $.fn.chatmore = function (p1, p2) {
                         .end()
                         .text();
                         
+                    // Unselect doubleclicked text.
+                    self.clearSelection();
+
                     if (self.irc.state() !== undefined && target != self.irc.state().nick) {
                         if (self.isChannel(target)) {
                             // Check if joined to this channel.
@@ -935,15 +938,8 @@ $.fn.chatmore = function (p1, p2) {
                         else {
                             self.queryTarget(target);
                         }
-                                    
-                        // Unselect doubleclicked text.
-                        self.clearSelection();
 
                         self.ircElement.find('.userEntry').focus();
-                    }
-                    else {
-                        // Unselect doubleclicked text.
-                        self.clearSelection();
                     }
                 }
             },
@@ -1063,6 +1059,22 @@ $.fn.chatmore = function (p1, p2) {
                         channelList.find('.nick,.channel')
                             .dblclick(self.dblclickChannelNickHandler);
                     }
+                }
+            },
+        
+            methods: {
+                // Resize chatmoreUI element.
+                // Args: width, height.
+                resize: function (args) {
+                    var ircConsole = self.ircElement.find('.ircConsole');
+                    var sideBar = self.ircElement.find('.sideBar');
+                    var userEntrySection = self.ircElement.find('.userEntrySection');
+                    
+                    ircConsole
+                        .outerWidth(args.width - sideBar.outerWidth())
+                        .outerHeight(args.height - userEntrySection.outerHeight());
+                    
+                    self.alignUI();
                 }
             }
         };
@@ -1536,5 +1548,12 @@ $.fn.chatmore = function (p1, p2) {
             self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, self.nick, self.realname)
             self.irc.activateClient();
         }
+    }
+    else {
+        // Invoke method against chatmoreUI.
+        var method = p1;
+        var args = p2;
+        var self = $(this).data('chatmore');
+        self.methods[method].call(self, args);
     }
 };

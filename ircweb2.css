@@ -1,3 +1,9 @@
+BODY {
+    padding: 6px;
+    margin: 0;
+    overflow: hidden;
+}
+
 .ircweb2 {
     font: 11px Tahoma, Helvetica, sans-serif;
     white-space: nowrap;

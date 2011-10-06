@@ -26,6 +26,26 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="chatmore.js"></script>
     <script type="text/javascript" src="chatmoreUI.js"></script>
     <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            // Determine padding+margin of BODY element.
+            var paddingX = $(document.body).outerWidth() - $(document.body).width();
+            var paddingY = $(document.body).outerHeight() - $(document.body).height();
+            
+            // Stretch client element to width/height of browser window space.
+            var stretchClient = function () {
+                //if (window.console) console.log('resize to: (' + $(window).width() + ',' + $(window).height() + ')');
+                $('.ircweb2').chatmore('resize', {
+                    width: $(window).width() - paddingX,
+                    height: $(window).height() - paddingY
+                });
+            };
+            
+            $(window).resize(stretchClient);
+
+            stretchClient();
+        });
+    </script>
 </head>
 <body>
 
