@@ -936,11 +936,15 @@ $.fn.chatmore = function (p1, p2) {
                             self.queryTarget(target);
                         }
                                     
+                        // Unselect doubleclicked text.
+                        self.clearSelection();
+
                         self.ircElement.find('.userEntry').focus();
                     }
-
-                    // Unselect doubleclicked text.
-                    self.clearSelection();
+                    else {
+                        // Unselect doubleclicked text.
+                        self.clearSelection();
+                    }
                 }
             },
 
@@ -1083,7 +1087,6 @@ $.fn.chatmore = function (p1, p2) {
         });
 
         // Track browser window focus.
-        // TODO: Test in IE.  May need to bind to $(document).
         $(window)
             .focus(function () {
                 // Restore title when user comes back to the window.
@@ -1091,11 +1094,9 @@ $.fn.chatmore = function (p1, p2) {
                     document.title = self.defaultTitle;
                 }, 200);
                 self.isWindowFocused = true;
-                if (window.console) console.log('Window focus');
             })
             .blur(function () {
                 self.isWindowFocused = false;
-                if (window.console) console.log('Window blur');
             });
         
         // Setup chatmore event handlers.
