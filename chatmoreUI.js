@@ -746,6 +746,17 @@ $.fn.chatmore = function (p1, p2) {
             isChannel: function (target) {
                 return target.match(/^[#&+!]/);
             },
+
+            // Determine if IRC console is scrolled to the bottom.
+            isAtBottom: function () {
+                var ircContent = self.ircElement.find('.ircConsole .content');
+                return (ircContent[0].scrollTop + 4) >= (ircContent[0].scrollHeight - ircContent[0].clientHeight);
+            },
+            
+            scrollToBottom: function () {
+                var ircContent = self.ircElement.find('.ircConsole .content');
+                ircContent[0].scrollTop = ircContent[0].scrollHeight;
+            },
             
             stricmp: function (a, b) {
                 return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
@@ -820,13 +831,12 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             writeLine: function (html) {
-                var ircChannel = self.ircElement.find('.ircConsole .content');
-                var el = ircChannel.get(0);
+                var ircContent = self.ircElement.find('.ircConsole .content');
                 var lineElement;
 
                 var write = function (element) {
                     // Is the console's scroll within 4 pixels from the bottom?
-                    var atBottom = (el.scrollTop + 4) >= (el.scrollHeight - el.clientHeight);
+                    var atBottom = self.isAtBottom();
                     
                     // Auto decorate nicks and channels in message.
                     element.closest('.channelMsg,.PRIVMSG').find('.message')
@@ -862,10 +872,10 @@ $.fn.chatmore = function (p1, p2) {
                     // Add line to console.
                     var lineElement = $('<div class="line"/>')
                         .append(element)
-                        .appendTo(ircChannel);
+                        .appendTo(ircContent);
                         
                     // Auto scroll to bottom if currently at bottom.
-                    if (atBottom) el.scrollTop = el.scrollHeight;
+                    if (atBottom) self.scrollToBottom();
                     
                     return lineElement;
                 };
@@ -1075,6 +1085,13 @@ $.fn.chatmore = function (p1, p2) {
                         .outerHeight(args.height - userEntrySection.outerHeight());
                     
                     self.alignUI();
+                },
+                // Determine if IRC console is scrolled to the bottom.
+                isAtBottom: function () {
+                    return self.isAtBottom();
+                },
+                scrollToBottom: function () {
+                    return self.scrollToBottom();
                 }
             }
         };
@@ -1532,16 +1549,6 @@ $.fn.chatmore = function (p1, p2) {
             })
             .focus();
         
-        // Setup resizable console.
-        self.ircElement.find('.ircMain').resizable({
-            handles: 'se',
-            minWidth: 400,
-            minHeight: 175,
-            resize: function () {
-                self.alignUI();
-            }
-        });
-        
         self.alignUI();
     
         if (options.server !== undefined) {
@@ -1554,6 +1561,6 @@ $.fn.chatmore = function (p1, p2) {
         var method = p1;
         var args = p2;
         var self = $(this).data('chatmore');
-        self.methods[method].call(self, args);
+        return self.methods[method].call(self, args);
     }
 };
