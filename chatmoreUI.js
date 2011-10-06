@@ -1087,11 +1087,15 @@ $.fn.chatmore = function (p1, p2) {
         $(window)
             .focus(function () {
                 // Restore title when user comes back to the window.
-                document.title = self.defaultTitle;
+                setTimeout(function () {
+                    document.title = self.defaultTitle;
+                }, 200);
                 self.isWindowFocused = true;
+                if (window.console) console.log('Window focus');
             })
             .blur(function () {
                 self.isWindowFocused = false;
+                if (window.console) console.log('Window blur');
             });
         
         // Setup chatmore event handlers.
