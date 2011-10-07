@@ -14,6 +14,7 @@ $.fn.chatmore = function (p1, p2) {
         if (options.quitMessage === undefined) options.quitMessage = 'Chatmore IRC client';
         if (options.reactivateAttempts === undefined) options.reactivateAttempts = 6;
         if (options.reactivateDelay === undefined) options.reactivateDelay = 10;
+        if (options.mustMatchServer === undefined) options.mustMatchServer = false;
         
         var self;
         self = {
@@ -1552,7 +1553,9 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, self.nick, self.realname)
+            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, self.nick, self.realname, {
+                mustMatchServer: options.mustMatchServer
+            });
             self.irc.activateClient();
         }
     }

@@ -19,6 +19,7 @@ if (empty($port)) $port = 6667;
 
 function connectToIrcServer() {
     global $ircSocket, $host, $port;
+    log::info('Connecting to IRC server ' . $host . ':' . $port);
     $ircSocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
     socket_connect($ircSocket, $host, $port);
     return $ircSocket;

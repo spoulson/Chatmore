@@ -256,7 +256,6 @@ function chatmore(element, server, port, nick, realname, options) {
     };
     
     // Send raw message to server.
-    // TODO: Consider if postCallback can be implemented as a JQuery Deferred action.
     this.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         

@@ -18,8 +18,19 @@ if (array_key_exists('x', $_GET)) {
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Experimental IRC chat client</title>
+    <base href="<?=$script_path?>/" />
     <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="ircweb2.css" />
+    <!--
+<?php
+    foreach ($_SERVER as $key => $value) {
+        echo "$key: $value\n";
+    }
+?>
+    -->
+    <script type="text/javascript">
+        var querystring = '<?=$_SERVER['QUERY_STRING']?>';
+    </script>
     <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
@@ -28,17 +39,22 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {
+            var ircElement = $('.ircweb2');
+
             // Determine padding+margin of BODY element.
             var paddingX = $(document.body).outerWidth() - $(document.body).width();
             var paddingY = $(document.body).outerHeight() - $(document.body).height();
-            
+
             // Stretch client element to width/height of browser window space.
             var stretchClient = function () {
-                //if (window.console) console.log('resize to: (' + $(window).width() + ',' + $(window).height() + ')');
-                $('.ircweb2').chatmore('resize', {
+                var atBottom = ircElement.chatmore('isAtBottom');
+                
+                ircElement.chatmore('resize', {
                     width: $(window).width() - paddingX,
                     height: $(window).height() - paddingY
                 });
+                
+                if (atBottom) ircElement.chatmore('scrollToBottom');
             };
             
             $(window).resize(stretchClient);

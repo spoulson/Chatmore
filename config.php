@@ -7,15 +7,15 @@ ini_set('error_reporting', E_ALL);
 ini_set('log_errors', true);
 
 // Limit session cookie to only this virtual directory.
-$script_url = $_SERVER['SCRIPT_URL'];
-if ($script_url == '/') {
+$script_name = $_SERVER['SCRIPT_NAME'];
+if ($script_name == '/') {
     $script_path = '/';
 }
-else if (substr($script_url, -1) == '/') {
-    $script_path = substr($script_url, 0, strlen($script_url) - 1);
+else if (substr($script_name, -1) == '/') {
+    $script_path = substr($script_name, 0, strlen($script_name) - 1);
 }
 else {
-    $script_path = dirname($script_url);
+    $script_path = dirname($script_name);
 }
 
 ini_set('session.cookie_path', $script_path);
@@ -28,6 +28,7 @@ ini_set('session.cookie_path', $script_path);
 ini_set('session.save_handler', 'sqlite');
 ini_set('session.save_path', "$tmpdir/php.sess.db");
 
+// IRC client's server-side configuration.
 $ircConfig = array(
     // Path to create domain sockets.
     'socketFilePath' => $tmpdir,
