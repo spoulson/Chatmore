@@ -42,6 +42,38 @@ INSTALLATION
 - Customize settings in config.php.
 - In a browser, access the directory's associated URL.
 
+USER ACCESS
+-----------
+### In a browser, access the directory's associated URL.  
+ Assuming the installed virtual directory is /chatmore.  
+
+ Chatmore accepts access URLs in formats:
+
+http://server/chatmore/  
+Startup with defaults.
+
+http://server/chatmore/?server=irc.example.com  
+http://server/chatmore/?server=irc.example.com&nick=yournick  
+http://server/chatmore/?server=irc.example.com&nick=yournick#channel
+
+Connect to IRC server name.  
+If nick is omitted, use randomly generated nick.  
+If #channel is provided, join the channel automatically.
+
+### Alternatively, user friendly URLs:
+http://server/irc.example.com  
+http://server/irc.example.com/yournick  
+http://server/irc.example.com/yournick#channel
+
+To implement, update .htaccess in parent directory:  
+Assuming /chatmore is the chat client virtual directory, append /.htaccess with:
+
+    RewriteEngine On  
+    # http://server/<IRC server>  
+    RewriteRule ^/?([^/]*\.[^/]*)/?(#.+)?$ /chatmore/?server=$1$2  
+    # http://server/<IRC server>/<nick>  
+    RewriteRule ^/?([^/]*\.[^/]*)/([^/]+)[^#]*(#.+)?$ /chatmore/?server=$1&nick=$2$3
+
 LICENSING
 ---------
 
