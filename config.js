@@ -2,7 +2,7 @@ $(function () {
     // Default configuration.
     var defaults = {
         server: 'irc.dsm.org',
-        channel: '#gvr4',
+        channel: undefined,
         mustMatchServer: false
     };
     

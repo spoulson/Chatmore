@@ -747,7 +747,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             isChannel: function (target) {
-                return target.match(/^[#&+!]/);
+                return target.match(/^[#&+!][^\s,:\cg]+/);
             },
 
             // Determine if IRC console is scrolled to the bottom.
@@ -814,14 +814,18 @@ $.fn.chatmore = function (p1, p2) {
 
             // Decorate nicks found in text with span.
             decorateNicks: function (html, nicks) {
-                var nickExpr = nicks.join('|');
+                // Convert array of nicks to regex expression.
+                var nickExpr = $.map(nicks, function (nick) {
+                    // Escape regex symbols.
+                    return nick.replace(/([?*|.()\[\]{}\\])/, "\\$1");
+                }).join('|');
                 var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
                 return html.replace(re, '<span class="nick">$1</span>');
             },
 
             // Decorate channel-like text with span.
             decorateChannels: function (html) {
-                return html.replace(/(^|\W)(#\w+)\b/g, '$1<span class="channel">$2</span>');
+                return html.replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, '$1<span class="channel">$2</span>');
             },
             
             clearSelection: function () {
@@ -919,11 +923,10 @@ $.fn.chatmore = function (p1, p2) {
                     .width(ircConsole.width())
                     .height(ircConsole.height());
                 userEntrySection
-                    .outerWidth(ircConsole.outerWidth())
-                    .height($('.userEntryModeLine').height() + $('.userEntryLine').height());
+                    .outerWidth(ircConsole.outerWidth());
                 userEntryLine
-                    .width(userEntrySection.width())
-                    .innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
+                    .width(userEntrySection.width());
+                    //.innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
                 userEntry.outerWidth(userEntryLine.width());
                 sideBar.outerHeight(ircConsole.outerHeight() + userEntrySection.outerHeight());
                 channelList.height(sideBar.height());

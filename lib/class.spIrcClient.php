@@ -739,7 +739,7 @@ class spIrcClient
 	}
     
     public function isChannel($target) {
-        return preg_match("/^[#&+!]/", $target);
+        return preg_match("/^[#&+!][^\s,:\cg]+/", $target);
     }
 	
     //
