@@ -21,14 +21,8 @@ if (array_key_exists('x', $_GET)) {
     <base href="<?=$script_path?>/" />
     <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="ircweb2.css" />
-    <!--
-<?php
-    foreach ($_SERVER as $key => $value) {
-        echo "$key: $value\n";
-    }
-?>
-    -->
     <script type="text/javascript">
+        // querystring needed for config.js.
         var querystring = '<?=$_SERVER['QUERY_STRING']?>';
     </script>
     <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
@@ -41,17 +35,13 @@ if (array_key_exists('x', $_GET)) {
         $(function () {
             var ircElement = $('.ircweb2');
 
-            // Determine padding+margin of BODY element.
-            var paddingX = $(document.body).outerWidth() - $(document.body).width();
-            var paddingY = $(document.body).outerHeight() - $(document.body).height();
-
             // Stretch client element to width/height of browser window space.
             var stretchClient = function () {
                 var atBottom = ircElement.chatmore('isAtBottom');
                 
                 ircElement.chatmore('resize', {
-                    width: $(window).width() - paddingX,
-                    height: $(window).height() - paddingY
+                    width: $(window).width() - ircElement.parent().outerWidth() + ircElement.parent().width(),
+                    height: $(window).height() - ircElement.parent().outerHeight() + ircElement.parent().height()
                 });
                 
                 if (atBottom) ircElement.chatmore('scrollToBottom');

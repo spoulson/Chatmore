@@ -9,7 +9,6 @@ $(function () {
     // Parse querystring.
     var opts = {};
     if (querystring !== undefined) {
-        //if (window.console) console.log(querystring);
         var form = {};
         var pairs = querystring.split('&');
         
@@ -28,8 +27,6 @@ $(function () {
                 form[key] = value;
             }
         }
-        
-        //if (window.console) console.log(form);
         
         if (form.server !== undefined) opts.server = form.server;
         if (form.port !== undefined) opts.port = form.port;
@@ -67,7 +64,8 @@ $(function () {
     if (objectSize(opts) == 0) opts = clone(defaults);
     else opts.mustMatchServer = true;
     
+    // TODO: If no server provided, popup dialog requesting connection details.
+    
     // Startup the IRC client.
-    if (window.console) console.log(opts);
     $('.ircweb2').chatmore(opts);
 });

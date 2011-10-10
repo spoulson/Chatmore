@@ -31,14 +31,16 @@ $.fn.chatmore = function (p1, p2) {
             notificationTitle: options.notificationTitle,
             isWindowFocused: true,
             prevState: undefined,
-            msgSenders: [],                    // History of private message senders for autocomplete.
-            autoCompleteReplyIndex: undefined, // Autocomplete index against msgSenders array when replying to message senders.
-            autoCompletePrefix: undefined,     // Autocomplete filter, word typed at first Tab completion.
-            autoCompleteSuggest: undefined,    // Suggestion given from last Tab completion
+            msgSenders: [],                     // History of private message senders for autocomplete.
+            autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
+            autoCompletePrefix: undefined,      // Autocomplete filter, word typed at first Tab completion.
+            autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
             enableAutoReactivate: true,
             reactivateAttempts: 0,
             maxReactivateAttempts: options.reactivateAttempts,
             reactivateDelay: options.reactivateDelay,   // in seconds.
+            userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
+            userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
 
             // IRC client message templates.
@@ -654,7 +656,7 @@ $.fn.chatmore = function (p1, p2) {
                     helpText: 'Get or set the selected channel\'s topic',
                     parseParam: function (param, meta) {
                         if (self.irc.target() === undefined) {
-                            meta.error = 'Error: No target selected.  Use: /query &lt;nick|#channel&gt;.';
+                            meta.error = 'Error: No target selected.  Doubleclick a channel or nick on the side bar or enter: /query &lt;nick|#channel&gt;.';
                             return false;
                         }
                         
@@ -775,7 +777,7 @@ $.fn.chatmore = function (p1, p2) {
                     if (self.autoCompleteReplyIndex !== undefined) self.autoCompleteReplyIndex++;
                 }
             },
-                
+
             startsWith: function (subject, prefix, comparer) {
                 return subject.length >= prefix.length &&
                     comparer(subject.substr(0, prefix.length), prefix) == 0;
@@ -916,13 +918,24 @@ $.fn.chatmore = function (p1, p2) {
                 ircContent
                     .width(ircConsole.width())
                     .height(ircConsole.height());
-                userEntrySection.outerWidth(ircConsole.outerWidth());
+                userEntrySection
+                    .outerWidth(ircConsole.outerWidth())
+                    .height($('.userEntryModeLine').height() + $('.userEntryLine').height());
                 userEntryLine
                     .width(userEntrySection.width())
                     .innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
-                userEntry.width(userEntryLine.width());
+                userEntry.outerWidth(userEntryLine.width());
                 sideBar.outerHeight(ircConsole.outerHeight() + userEntrySection.outerHeight());
                 channelList.height(sideBar.height());
+            },
+            
+            // Get total padding/margin of left and right sides of an element.
+            getSpacingX: function (el) {
+                return $(el).parent().outerWidth() + $(el).parent().width();
+            },
+            
+            getSpacingY: function (el) {
+                return $(el).parent().outerHeight() + $(el).parent().height();
             },
 
             dblclickChannelNickHandler: function () {
@@ -1431,7 +1444,10 @@ $.fn.chatmore = function (p1, p2) {
             .keydown(function (e) {
                 if (e.keyCode == '13') {
                     // Enter.
-                    self.sendLine(self.ircElement.find('.userEntry').val());
+                    // Add scratch to user entry history.
+                    self.userEntryHistory.unshift('');
+                    
+                    self.sendLine($(this).val());
                     return false;
                 }
                 else if (e.keyCode == '9') {
@@ -1439,14 +1455,14 @@ $.fn.chatmore = function (p1, p2) {
                     if (e.preventDefault) e.preventDefault();   // Firefox: block default Tab functionality.
                     
                     if (self.irc.isActivated()) {
-                        var userEntry = self.ircElement.find('.userEntry').val();
+                        var userEntry = $(this).val();
                         
                         if (userEntry == '' || self.autoCompleteReplyIndex !== undefined) {
                             if (self.msgSenders.length) {
                                 if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
                                 
                                 // Quick send message to next recent sender.
-                                self.ircElement.find('.userEntry').val('/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ');
+                                $(this).val('/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ');
                                 
                                 self.autoCompleteReplyIndex++;
                                 if (self.autoCompleteReplyIndex >= self.msgSenders.length) self.autoCompleteReplyIndex = 0;
@@ -1454,7 +1470,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         else {
                             // Autocomplete.
-                            var caretPos = self.ircElement.find('.userEntry').get(0).selectionEnd;
+                            var caretPos = this.selectionEnd;
                             if (self.autoCompletePrefix === undefined) {
                                 // Advance caret to end of word.
                                 var m1 = userEntry.substr(caretPos).match(/^\S+/);
@@ -1469,14 +1485,12 @@ $.fn.chatmore = function (p1, p2) {
                             }
                             else {
                                 // Delete selected text from last suggestion.
-                                self.ircElement.find('.userEntry').each(function () {
-                                    var s = '';
-                                    if (this.selectionStart > 0) s += userEntry.substr(0, this.selectionStart);
-                                    if (this.selectionEnd < userEntry.length) s += userEntry.substr(this.selectionEnd);
-                                    userEntry = s;
-                                    this.selectionEnd = this.selectionStart;
-                                    caretPos = this.selectionStart;
-                                });
+                                var s = '';
+                                if (this.selectionStart > 0) s += userEntry.substr(0, this.selectionStart);
+                                if (this.selectionEnd < userEntry.length) s += userEntry.substr(this.selectionEnd);
+                                userEntry = s;
+                                this.selectionEnd = this.selectionStart;
+                                caretPos = this.selectionStart;
                             }
                             
                             if (self.autoCompletePrefix !== undefined) {
@@ -1494,13 +1508,11 @@ $.fn.chatmore = function (p1, p2) {
                                     if (self.autoCompleteSuggest !== undefined) {
                                         var s = userEntry.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
                                         userEntry = s + userEntry.substr(caretPos);
-                                        self.ircElement.find('.userEntry')
-                                            .val(userEntry)
-                                            .each(function () {
-                                                // Select suggested portion of autocomplete.
-                                                this.selectionStart = s.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
-                                                this.selectionEnd = s.length;
-                                            });
+                                        $(this).val(userEntry);
+
+                                        // Select suggested portion of autocomplete.
+                                        this.selectionStart = s.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
+                                        this.selectionEnd = s.length;
                                     }
                                 }
                                 else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
@@ -1518,13 +1530,11 @@ $.fn.chatmore = function (p1, p2) {
                                         // If this is the only word on the line, assume it's to address the suggested user.
                                         if (wordpos == 0) s += ': ';
                                         userEntry = s + userEntry.substr(caretPos);
-                                        self.ircElement.find('.userEntry')
-                                            .val(userEntry)
-                                            .each(function () {
-                                                // Select suggested portion of autocomplete.
-                                                this.selectionStart = wordpos + self.autoCompletePrefix.length;
-                                                this.selectionEnd = s.length;
-                                            });
+                                        $(this).val(userEntry);
+
+                                        // Select suggested portion of autocomplete.
+                                        this.selectionStart = wordpos + self.autoCompletePrefix.length;
+                                        this.selectionEnd = s.length;
                                     }
                                 }
                             }
@@ -1533,20 +1543,53 @@ $.fn.chatmore = function (p1, p2) {
                     
                     return false;
                 }
-                else {
-                    if (self.autoCompletePrefix !== undefined) {
-                        // Typing text on an autocomplete suggestion will clear the selection,
-                        // then add the text after the suggestion,
-                        // instead of default of deleting the suggestion before adding the text.
-                        self.ircElement.find('.userEntry').each(function () {
-                            this.selectionStart = this.selectionEnd;
-                        });
+                else if (e.keyCode == '38' || e.keyCode == '40') {
+                    if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
+                        // Start browsing history, if any exists.
+                        self.userEntryHistoryIndex = 0;
                     }
+                    
+                    if (self.userEntryHistoryIndex !== undefined) {
+                        if (e.keyCode == '38') {
+                            // Go to next oldest history entry.
+                            self.userEntryHistoryIndex++;
+                            if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
+                                self.userEntryHistoryIndex = 0;
+                        }
+                        else {
+                            // Go to next newest history entry.
+                            self.userEntryHistoryIndex--;
+                            if (self.userEntryHistoryIndex < 0)
+                                self.userEntryHistoryIndex = self.userEntryHistory.length - 1;
+                        }
+                    
+                        // Display history in user entry.
+                        var entry = self.userEntryHistory[self.userEntryHistoryIndex];
+                        $(this).val(entry);
 
-                    // All other keyboard activity clears autocomplete state.
-                    self.autoCompleteReplyIndex = undefined;
-                    self.autoCompletePrefix = undefined;
+                        // Place caret at end of line.
+                        this.selectionStart = entry.length;
+                        this.selectionEnd = this.selectionStart;
+                    }
+                    
+                    return false;
                 }
+            })
+            .keypress(function (e) {
+                if (self.autoCompletePrefix !== undefined) {
+                    // Typing text on an autocomplete suggestion will clear the selection,
+                    // then add the text after the suggestion,
+                    // instead of default of deleting the suggestion before adding the text.
+                    this.selectionStart = this.selectionEnd;
+                }
+
+                // Test entry activity clears autocomplete state.
+                self.autoCompleteReplyIndex = undefined;
+                self.autoCompletePrefix = undefined;
+                self.userEntryHistoryIndex = undefined;
+
+                // Store current entry in first history element as scratch buffer.
+                self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
             })
             .focus();
         

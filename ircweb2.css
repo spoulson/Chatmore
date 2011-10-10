@@ -5,7 +5,7 @@ BODY {
 }
 
 .ircweb2 {
-    font: 11px Tahoma, Helvetica, sans-serif;
+    font: 14px Tahoma, Helvetica, sans-serif;
     white-space: nowrap;
 }
 
@@ -17,7 +17,7 @@ BODY {
 
 .ircweb2 .ircConsole .content {
     overflow: auto;
-    font: 12px Tahoma, Helvetica, sans-serif;
+    font: 1.1em Tahoma, Helvetica, sans-serif;
     white-space: pre-wrap;
 }
 
@@ -51,7 +51,7 @@ BODY {
 }
 
 .ircweb2 .userEntry {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #666;
     color: white;
     padding: 3px;
@@ -129,7 +129,7 @@ BODY {
 }
 
 .ircweb2 .ircConsole .content {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
     padding: 3px;
     margin: -3px;
 }
@@ -147,7 +147,7 @@ BODY {
     color: #d0d0d0;
     display: block;
     float: left;
-    width: 50px;
+    width: 55px;
 }
 
 .ircweb2 .ircConsole .content .line {
