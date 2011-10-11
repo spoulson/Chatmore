@@ -59,6 +59,9 @@ $.fn.chatmore = function (p1, p2) {
                 serverMsg: '{{tmpl "timestamp"}}<div class="serverMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
                     '</div>',
+                serverMsgNumber: '{{tmpl "timestamp"}}<div class="serverMsg">' +
+                    '{{tmpl "notePrefix"}} <span class="message">${number} ${message}</span>' +
+                    '</div>',
                 clientMsg: '{{tmpl "timestamp"}}<div class="clientMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
                     '</div>',
@@ -196,7 +199,7 @@ $.fn.chatmore = function (p1, p2) {
                         'user <span class="nick">${target}</span>' +
                     '{{/if}}' +
                     ' by <span class="nick">${nick}</span></span>' +
-                    '</div>',
+                    '</div>'
             },
             
             // Client /command definitions.
@@ -1327,6 +1330,15 @@ $.fn.chatmore = function (p1, p2) {
                         };
                         break;
                         
+                    case '252': // RPL_LUSEROP
+                    case '253': // RPL_LUSERUNKNOWN
+                    case '254': // RPL_LUSERCHANNELS
+                        self.writeTmpl('serverMsgNumber', {
+                            message: msg.info.message,
+                            number: msg.info.number
+                        });
+                        break;
+                        
                     case '331': // RPL_NOTOPIC
                         self.writeTmpl('notopic', {
                             channel: msg.info.channel
@@ -1361,18 +1373,17 @@ $.fn.chatmore = function (p1, p2) {
                         });
                         break;
                         
+                    // Disregard these messages.
+                    case '004': // RPL_MYINFO
+                    case '005': // RPL_BOUNCE
                     case '353': // RPL_NAMREPLY
                     case '366': // RPL_ENDOFNAMES
-                        // Disregard these messages.
                         break;
                         
                     default:
-                        if (/^\d{3}$/.test(msg.command)) {
-                            // Any other server message.
-                            var m;
-                            if (m = /:(.+)/.exec(msg.params)) {
-                                self.writeTmpl('serverMsg', { message: m[1] });
-                            }
+                        // Any other server message.
+                        if (msg.info.message !== undefined) {
+                            self.writeTmpl('serverMsg', { message: msg.info.message });
                         }
                         break;
                     }

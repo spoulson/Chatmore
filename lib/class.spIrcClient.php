@@ -18,6 +18,15 @@ class spIrcClient
 
     // IRC server message codes.
     const RPL_WELCOME = 001;
+    const RPL_YOURHOST = 002;
+    const RPL_CREATED = 003;
+    const RPL_MYINFO = 004;
+    const RPL_BOUNCE = 005;
+    const RPL_LUSERCLIENT = 251;
+    const RPL_LUSEROP = 252;
+    const RPL_LUSERUNKNOWN = 253;
+    const RPL_LUSERCHANNELS = 254;
+    const RPL_LUSERME = 255;
     const RPL_ENDOFWHO = 315;
     const RPL_CHANNELMODEIS = 324;
     const RPL_WHOREPLY = 352;
@@ -330,6 +339,17 @@ class spIrcClient
                 'message' => $msgParams[1]
             );
             break;
+                        
+        case self::RPL_LUSEROP:
+        case self::RPL_LUSERUNKNOWN:
+        case self::RPL_LUSERCHANNELS:
+            if (!preg_match("/^(\S+)\s+(\d+)\s+:(.*)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'nick' => $msgParams[1],
+                'number' => $msgParams[2],
+                'message' => $msgParams[3]
+            );
+            break;
             
         case self::RPL_ENDOFWHO: // End of WHO list.
             if (!preg_match("/^(#\S+)\s+\S+\s+:.+/", $params, $msgParams)) return false;
@@ -440,6 +460,15 @@ class spIrcClient
             $msg['info'] = array(
                 'command' => $msgParams[1],
                 'error' => $msgParams[2]
+            );
+            break;
+
+        default:
+            // All other messages parsed as a simple text message.
+            if (!preg_match("/^(\S+)\s+:(.*)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'nick' => $msgParams[1],
+                'message' => $msgParams[2]
             );
             break;
         }
