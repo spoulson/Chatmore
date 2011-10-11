@@ -34,9 +34,9 @@ $(function () {
     }
     
     // Parse anchor string.
-    var m = window.location.href.match(/#(.+)/);
+    var m = window.location.href.match(/(#.+)/);
     if (m !== null) {
-        opts.channel = '#' + m[1];
+        opts.channel = m[1].split(',');
     }
     
     // Determine if any options were set.
