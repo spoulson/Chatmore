@@ -819,10 +819,12 @@ $.fn.chatmore = function (p1, p2) {
             linkifyURLs: function (html) {
                 return html.replace(self.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
             },
-            linkifyRegex: /(https?:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/g,
+            linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
 
             // Decorate nicks found in text with span.
             decorateNicks: function (html, nicks) {
+                if (nicks.length == 0) return html;
+                
                 // Convert array of nicks to regex expression.
                 var nickExpr = $.map(nicks, function (nick) {
                     // Escape regex symbols.
@@ -855,7 +857,7 @@ $.fn.chatmore = function (p1, p2) {
                     var atBottom = self.isAtBottom();
                     
                     // Auto decorate nicks and channels in message.
-                    element.closest('.channelMsg,.PRIVMSG').find('.message')
+                    element.closest('.channelMsg,.PRIVMSG,.TOPIC,.serverMsg,.clientMsg').find('.message')
                         .html(function (i, html) {
                             html = self.linkifyURLs(html);
                             if (self.irc.state() !== undefined) {
