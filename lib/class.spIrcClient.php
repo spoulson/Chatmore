@@ -235,11 +235,15 @@ class spIrcClient
             break;
         
         case 'MODE':
-            if (!preg_match("/(\S+)\s+:(.*)/", $params, $msgParams)) return false;
-            $msg['info'] = array(
-                'target' => $msgParams[1],
-                'mode' => $msgParams[2]
-            );
+            // Check channel mode/user mode syntax.
+            if (preg_match("/([#&+!][^\s,:\cg]+)\s+(.+)/", $params, $msgParams) ||
+                preg_match("/(\S+)\s+:(.*)/", $params, $msgParams)) {
+                $msg['info'] = array(
+                    'target' => $msgParams[1],
+                    'mode' => $msgParams[2]
+                );
+            }
+            else return false;
             break;
             
         case 'NICK':
@@ -251,7 +255,7 @@ class spIrcClient
             break;
         
         case 'JOIN':
-            if (!preg_match("/^:?([#&+!]\S+)\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/^:?([#&+!][^\s,:\cg]+)\s*$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1]
             );
@@ -267,7 +271,7 @@ class spIrcClient
             break;
             
         case 'KICK':
-            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&+!]\S+\s+(.*)/", $params, $msgParams)) return false;
+            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&+!][^\s,:\cg]+\s+(.*)/", $params, $msgParams)) return false;
             
             $channelList = explode(',', $msgParams[1]);
             $nickList = explode(',', $msgParams[2]);
@@ -355,7 +359,7 @@ class spIrcClient
             // @ full operators
             // % half operators
             // + voiced users
-            if (!preg_match("/\S+\s+([=*@])\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+([=*@])\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $names = array();
             foreach (explode(' ', $msgParams[3]) as $name) {
                 $m = array();
@@ -375,7 +379,7 @@ class spIrcClient
             break;
             
         case self::RPL_NOTOPIC:
-            if (!preg_match("/^\S+\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => null
@@ -383,7 +387,7 @@ class spIrcClient
             break;
             
         case self::RPL_TOPIC:
-            if (!preg_match("/^\S+\s+([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => $msgParams[2]
@@ -408,7 +412,7 @@ class spIrcClient
             break;
             
         case self::RPL_CHANNELMODEIS:
-            if (!preg_match("/\S+\s+([#&+!]\S+)\s+(\S+(\s+\S+)?)\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+([#&+!][^\s,:\cg]+)\s+(\S+(\s+\S+)?)\s*$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'mode' => $msgParams[2]
@@ -416,7 +420,7 @@ class spIrcClient
             break;
             
         case self::ERR_NOSUCHCHANNEL:
-            if (!preg_match("/([#&+!]\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'error' => $msgParams[2]
@@ -458,10 +462,10 @@ class spIrcClient
             if ($this->isChannel($target)) {
                 if (isset($this->state->channels[$target])) {
                     // Request fully qualified channel mode string.
-                    $this->sendRawMsg('MODE ' + $target + "\r\n");
+                    $this->sendRawMsg("MODE $target\r\n");
 
                     // Get channel members to capture possible user flag changes.
-                    $this->sendRawMsg("NAMES $channel\r\n");
+                    $this->sendRawMsg("NAMES $target\r\n");
                 }
             }
             else {
@@ -678,9 +682,9 @@ class spIrcClient
             log::error("Error while flushing send buffer.  Some data may have been dropped.");
             return false;
         }
-        else {
-            log::info('Send buffer flushed.');
-        }
+        // else {
+            // log::info('Send buffer flushed.');
+        // }
     }
         
     // Send buffered data to socket.

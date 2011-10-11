@@ -1,24 +1,23 @@
 <?
-$tmpdir = './tmp';
-
-set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
-ini_set('error_log', "$tmpdir/php_errors.log");
-ini_set('error_reporting', E_ALL);
-ini_set('log_errors', true);
-
 // Limit session cookie to only this virtual directory.
-$script_name = $_SERVER['SCRIPT_NAME'];
-if ($script_name == '/') {
-    $script_path = '/';
+$scriptName = $_SERVER['SCRIPT_NAME'];
+if ($scriptName == '/') {
+    $scriptPath = '/';
 }
-else if (substr($script_name, -1) == '/') {
-    $script_path = substr($script_name, 0, strlen($script_name) - 1);
+else if (substr($scriptName, -1) == '/') {
+    $scriptPath = substr($scriptName, 0, strlen($scriptName) - 1);
 }
 else {
-    $script_path = dirname($script_name);
+    $scriptPath = dirname($scriptName);
 }
 
-ini_set('session.cookie_path', $script_path);
+$tmpDir = dirname($_SERVER['SCRIPT_FILENAME']) . '/tmp';
+
+set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
+ini_set('error_log', "$tmpDir/php_errors.log");
+ini_set('error_reporting', E_ALL);
+ini_set('log_errors', true);
+ini_set('session.cookie_path', $scriptPath);
 
 // Use SQLite session save handler.
 // Cannot use the 'files' session save handler.
@@ -26,12 +25,12 @@ ini_set('session.cookie_path', $script_path);
 // causes blocking issues when sending while waiting for received messages
 // in a separate request.
 ini_set('session.save_handler', 'sqlite');
-ini_set('session.save_path', "$tmpdir/php.sess.db");
+ini_set('session.save_path', "$tmpDir/php.sess.db");
 
 // IRC client's server-side configuration.
 $ircConfig = array(
     // Path to create domain sockets.
-    'socketFilePath' => $tmpdir,
+    'socketFilePath' => $tmpDir,
     
     // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=1M',

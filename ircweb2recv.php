@@ -28,7 +28,7 @@ if (isset($_SESSION['irc'])) {
             
             // Read all messages waiting in queue.
             do {
-                log::info("checkIncomingMsg()...");
+                //log::info("checkIncomingMsg()...");
                 $line = $ircbot->checkIncomingMsg($timeout);
 
                 if ($line !== null && $line !== false) {

@@ -225,7 +225,7 @@ class spSocketProxy {
                             else {
                                 $this->proxyBuffer = null;
                             }
-                            log::info("done");
+                            //log::info("done");
                         }
                     }
                 }
@@ -254,7 +254,7 @@ class spSocketProxy {
                         else {
                             $this->clientBuffer = null;
                         }
-                        log::info("done");
+                        //log::info("done");
                     }
                 }
                 else {

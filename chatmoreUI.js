@@ -188,9 +188,15 @@ $.fn.chatmore = function (p1, p2) {
                 error: '{{tmpl "timestamp"}}<div class="ERROR">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
                     '</div>',
-                userMode: '{{tmpl "timestamp"}}<div class="MODE">' +
-                    '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${mode}</span>" for user <span class="nick">${target}</span> by <span class="nick">${nick}</span></span>' +
-                    '</div>'
+                mode: '{{tmpl "timestamp"}}<div class="MODE">' +
+                    '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${mode}</span>" for ' +
+                    '{{if self.isChannel(target)}}' +
+                        'channel <span class="channel">${target}</span>' +
+                    '{{else}}'  +
+                        'user <span class="nick">${target}</span>' +
+                    '{{/if}}' +
+                    ' by <span class="nick">${nick}</span></span>' +
+                    '</div>',
             },
             
             // Client /command definitions.
@@ -1270,7 +1276,7 @@ $.fn.chatmore = function (p1, p2) {
                         break;
                         
                     case 'MODE':
-                        self.writeTmpl('userMode', {
+                        self.writeTmpl('mode', {
                             nick: msg.prefixNick,
                             target: msg.info.target,
                             mode: msg.info.mode

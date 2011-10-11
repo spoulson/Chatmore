@@ -18,7 +18,7 @@ if (array_key_exists('x', $_GET)) {
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Experimental IRC chat client</title>
-    <base href="<?=$script_path?>/" />
+    <base href="<?=$scriptPath?>/" />
     <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="ircweb2.css" />
     <script type="text/javascript">
