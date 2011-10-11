@@ -67,5 +67,5 @@ $(function () {
     // TODO: If no server provided, popup dialog requesting connection details.
     
     // Startup the IRC client.
-    $('.ircweb2').chatmore(opts);
+    $('.chatmore').chatmore(opts);
 });

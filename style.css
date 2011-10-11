@@ -4,24 +4,24 @@ BODY {
     overflow: hidden;
 }
 
-.ircweb2 {
+.chatmore {
     font: 14px Tahoma, Helvetica, sans-serif;
     white-space: nowrap;
 }
 
-.ircweb2 .ircConsole {
+.chatmore .ircConsole {
     padding: 12px 16px;
     width: 740px;
     height: 360px;
 }
 
-.ircweb2 .ircConsole .content {
+.chatmore .ircConsole .content {
     overflow: auto;
     font: 1.1em Tahoma, Helvetica, sans-serif;
     white-space: pre-wrap;
 }
 
-.ircweb2 .activationIndicator {
+.chatmore .activationIndicator {
     width: 16px;
     height: 16px;
     padding-right: 3px;
@@ -29,85 +29,85 @@ BODY {
     float: left;
 }
 
-.ircweb2.activated .activationIndicator {
+.chatmore.activated .activationIndicator {
     background: transparent url(images/bullet_green.png) no-repeat top left;
 }
 
-.ircweb2.deactivated .activationIndicator {
+.chatmore.deactivated .activationIndicator {
     background: transparent url(images/stop.png) no-repeat top left;
 }
 
-.ircweb2 .userEntrySection {
+.chatmore .userEntrySection {
     padding: 3px 16px;
     white-space: nowrap;
 }
 
-.ircweb2 .userEntryModeLine {
+.chatmore .userEntryModeLine {
     height: 20px;
 }
 
-.ircweb2 .nickLabel {
+.chatmore .nickLabel {
     overflow: hidden;
 }
 
-.ircweb2 .userEntry {
+.chatmore .userEntry {
     background-color: rgba(0, 0, 0, 0.8);
     border: 1px solid #666;
     color: white;
     padding: 3px;
 }
 
-.ircweb2 .channel {
+.chatmore .channel {
     color: #c0c090;
     font-weight: bold;
 }
 
-.ircweb2 .channel:hover {
+.chatmore .channel:hover {
     color: #909060;
     cursor: pointer;
 }
 
-.ircweb2 .nick {
+.chatmore .nick {
     color: white;
 }
 
-.ircweb2 .nick:hover {
+.chatmore .nick:hover {
     color: #cfcfcf;
     cursor: pointer;
 }
 
-.ircweb2 .mode {
+.chatmore .mode {
     color: #F58400;
 }
 
-.ircweb2 .sideBar {
+.chatmore .sideBar {
     /*float: left;*/
     display: inline-block;
     width: 140px;
     padding: 12px 16px;
 }
 
-.ircweb2 .sideBar .channelList {
+.chatmore .sideBar .channelList {
     overflow: auto;
     white-space: nowrap;
 }
 
-.ircweb2 .sideBar ul {
+.chatmore .sideBar ul {
     list-style: none;
     padding: 0;
     margin: 0;
     clear: both;
 }
 
-.ircweb2 .sideBar ul.channelList > li {
+.chatmore .sideBar ul.channelList > li {
     padding-bottom: 6px;
 }
 
-.ircweb2 .sideBar ul.channelList > li .channel {
+.chatmore .sideBar ul.channelList > li .channel {
     float: left;
 }
 
-.ircweb2 .sideBar .channelList .leaveButton {
+.chatmore .sideBar .channelList .leaveButton {
     float: left;
     width: 16px;
     height: 16px;
@@ -116,26 +116,26 @@ BODY {
     margin-left: 6px;
 }
 
-.ircweb2 .sideBar .channelList .leaveButton:hover {
+.chatmore .sideBar .channelList .leaveButton:hover {
     background-color: #3f3f3f;
 }
 
-.ircweb2 .sideBar ul.memberList {
+.chatmore .sideBar ul.memberList {
     padding-left: 16px;
 }
 
-.ircweb2 .sideBar ul.memberList .mode {
+.chatmore .sideBar ul.memberList .mode {
     padding-right: 3px;
 }
 
-.ircweb2 .ircConsole .content {
+.chatmore .ircConsole .content {
     background-color: rgba(0, 0, 0, 0.8);
     padding: 3px;
     margin: -3px;
 }
 
 /* Console line styles */
-.ircweb2 .ircConsole .content .line {
+.chatmore .ircConsole .content .line {
     clear: both;
     padding: 0 0 0 50px;
     text-indent: -50px;
@@ -143,60 +143,60 @@ BODY {
     padding-bottom: 0.1em;
 }
 
-.ircweb2 .ircConsole .content .timestamp {
+.chatmore .ircConsole .content .timestamp {
     color: #d0d0d0;
     display: block;
     float: left;
     width: 55px;
 }
 
-.ircweb2 .ircConsole .content .line {
+.chatmore .ircConsole .content .line {
     color: #dfdfdf;
 }
 
-.ircweb2 .ircConsole .content .prefix {
+.chatmore .ircConsole .content .prefix {
     font-weight: bold;
 }
 
-.ircweb2 .ircConsole .content .help {
+.chatmore .ircConsole .content .help {
     color: #00cfcf;
 }
 
-.ircweb2 .ircConsole .content .privateMsg,
-.ircweb2 .ircConsole .content .privateNotice {
+.chatmore .ircConsole .content .privateMsg,
+.chatmore .ircConsole .content .privateNotice {
     background-color: #202010;
     font-weight: bold;
 }
 
-.ircweb2 .ircConsole .content .privateMsg .prefix,
-.ircweb2 .ircConsole .content .privateNotice .prefix {
+.chatmore .ircConsole .content .privateMsg .prefix,
+.chatmore .ircConsole .content .privateNotice .prefix {
     color: #FFAF0F;
 }
 
-.ircweb2 .ircConsole .content .nickHighlight .nick {
+.chatmore .ircConsole .content .nickHighlight .nick {
     color: #F58400;
 }
 
-.ircweb2 .ircConsole .content .nickHighlight .message {
+.chatmore .ircConsole .content .nickHighlight .message {
     color: #FFAF0F;
     padding-right: 3px;
 }
 
-.ircweb2 .ircConsole .content .ERROR .message {
+.chatmore .ircConsole .content .ERROR .message {
     color: #cf3f3f;
 }
 
-.ircweb2 .ircConsole .content .serverMsg .message {
+.chatmore .ircConsole .content .serverMsg .message {
     font-family: monospace;
 }
 
-.ircweb2 .ircConsole .content .clientMsg .message,
-.ircweb2 .ircConsole .content .queryMsg .message
+.chatmore .ircConsole .content .clientMsg .message,
+.chatmore .ircConsole .content .queryMsg .message
  {
     font-style: italic;
     color: white;
 }
 
-.ircweb2 .ircConsole .content .MODE .modeString {
+.chatmore .ircConsole .content .MODE .modeString {
     font-family: monospace;
 }

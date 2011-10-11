@@ -33,7 +33,7 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {
-            var ircElement = $('.ircweb2');
+            var ircElement = $('.chatmore');
 
             // Stretch client element to width/height of browser window space.
             var stretchClient = function () {
@@ -55,7 +55,7 @@ if (array_key_exists('x', $_GET)) {
 </head>
 <body>
 
-    <div class="ircweb2 ui-widget">
+    <div class="chatmore ui-widget">
         <div style="float:left;overflow:hidden">
 
             <div class="ircConsole ui-widget-content ui-corner-tl">

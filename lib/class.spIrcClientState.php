@@ -30,12 +30,12 @@ class spIrcClientState
     
     public function getPrimarySocketFilename() {
         global $ircConfig;
-        return $ircConfig['socketFilePath'] . '/ircweb2_' . $this->sessionId . '1.sock';
+        return $ircConfig['socketFilePath'] . '/chatmore_' . $this->sessionId . '1.sock';
     }
 
     public function getSecondarySocketFilename() {
         global $ircConfig;
-        return $ircConfig['socketFilePath'] . '/ircweb2_' . $this->sessionId . '2.sock';
+        return $ircConfig['socketFilePath'] . '/chatmore_' . $this->sessionId . '2.sock';
     }
 }
 

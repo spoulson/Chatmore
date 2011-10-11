@@ -935,7 +935,6 @@ $.fn.chatmore = function (p1, p2) {
                     .outerWidth(ircConsole.outerWidth());
                 userEntryLine
                     .width(userEntrySection.width());
-                    //.innerHeight(userEntry.outerHeight() + 4 /* margin not included in outerHeight? */);
                 userEntry.outerWidth(userEntryLine.width());
                 sideBar.outerHeight(ircConsole.outerHeight() + userEntrySection.outerHeight());
                 channelList.height(sideBar.height());
