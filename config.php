@@ -35,14 +35,14 @@ $ircConfig = array(
     // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=1M',
 
-    // Client side timeout in ms waiting for ircweb2recv.php to return data.
+    // Client side timeout in ms waiting for recv.php to return data.
     // - Higher timeout means less frequent client reconnections.
     // - If the background process dies while the recv thread was running,
     //   the error will not be caught until timeout.
     'recv_timeout' => 30 * 1000,
 
     'debug' => array(
-        // Include received raw IRC messages in AJAX responses from ircweb2recv.php.
+        // Include received raw IRC messages in AJAX responses from recv.php.
         'recv_send_raw' => true
     )
 );

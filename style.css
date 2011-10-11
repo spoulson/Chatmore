@@ -30,11 +30,11 @@ BODY {
 }
 
 .ircweb2.activated .activationIndicator {
-    background: transparent url(bullet_green.png) no-repeat top left;
+    background: transparent url(images/bullet_green.png) no-repeat top left;
 }
 
 .ircweb2.deactivated .activationIndicator {
-    background: transparent url(stop.png) no-repeat top left;
+    background: transparent url(images/stop.png) no-repeat top left;
 }
 
 .ircweb2 .userEntrySection {
@@ -111,7 +111,7 @@ BODY {
     float: left;
     width: 16px;
     height: 16px;
-    background: transparent url(bullet_delete.png) no-repeat top left;
+    background: transparent url(images/bullet_delete.png) no-repeat top left;
     cursor: pointer;
     margin-left: 6px;
 }

@@ -117,7 +117,7 @@ function chatmore(element, server, port, nick, realname, options) {
         if (options.mustMatchServer) initCheckPostData.mustMatchServer = true;
         
         $.ajax(
-            'ircweb2init.php',
+            'init.php',
             {
                 async: false,
                 type: 'POST',
@@ -168,7 +168,7 @@ function chatmore(element, server, port, nick, realname, options) {
         if (options.mustMatchServer) initPostData.mustMatchServer = true;
         
         $.ajax(
-            'ircweb2init.php',
+            'init.php',
             {
                 type: 'POST',
                 cache: false,
@@ -193,7 +193,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         // Repeatedly poll for IRC activity.
                         var pollFunc = function () {
                             local.pollHandle = undefined;
-                            local.pollXhr = $.ajax('ircweb2recv.php', {
+                            local.pollXhr = $.ajax('recv.php', {
                                 cache: false,
                                 dataType: 'json',
                                 success: function (data) {
@@ -259,7 +259,7 @@ function chatmore(element, server, port, nick, realname, options) {
     this.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
-        $.ajax('ircweb2send.php', {
+        $.ajax('send.php', {
             async: true,
             type: 'POST',
             cache: false,

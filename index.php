@@ -19,8 +19,8 @@ if (array_key_exists('x', $_GET)) {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Experimental IRC chat client</title>
     <base href="<?=$scriptPath?>/" />
-    <link rel="stylesheet" type="text/css" href="css/ui-darkness/jquery-ui-1.8.16.custom.css" />
-    <link rel="stylesheet" type="text/css" href="ircweb2.css" />
+    <link rel="stylesheet" type="text/css" href="themes/ui-darkness/jquery-ui-1.8.16.custom.css" />
+    <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript">
         // querystring needed for config.js.
         var querystring = '<?=$_SERVER['QUERY_STRING']?>';
