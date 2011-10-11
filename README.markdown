@@ -55,10 +55,11 @@ Startup with defaults.
 http://server/chatmore/?server=irc.example.com  
 http://server/chatmore/?server=irc.example.com&nick=yournick  
 http://server/chatmore/?server=irc.example.com&nick=yournick#channel
+http://server/chatmore/?server=irc.example.com&nick=yournick#channel,#channel2
 
 Connect to IRC server name.  
 If nick is omitted, use randomly generated nick.  
-If #channel is provided, join the channel automatically.
+If #channel is provided, join the channel(s) automatically.
 
 ### Alternatively, user friendly URLs:
 http://server/irc.example.com  
