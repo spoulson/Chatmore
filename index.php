@@ -19,8 +19,8 @@ if (array_key_exists('x', $_GET)) {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Experimental IRC chat client</title>
     <base href="<?=$scriptPath?>/" />
-    <link rel="stylesheet" type="text/css" href="themes/ui-darkness/jquery-ui-1.8.16.custom.css" />
     <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="themes/lightness/lightness.css" />
     <script type="text/javascript">
         // querystring needed for config.js.
         var querystring = '<?=$_SERVER['QUERY_STRING']?>';
@@ -62,10 +62,10 @@ if (array_key_exists('x', $_GET)) {
                 <div class="content ui-corner-all"></div>
             </div>
 
-            <div class="userEntrySection ui-widget ui-widget-content ui-corner-bl">
+            <div class="userEntrySection ui-widget-content ui-corner-bl">
                 <div class="userEntryModeLine">
                     <div class="activationIndicator"></div>
-                    <span class="nickLabel"></span>
+                    <span class="nickLabel nick"></span>
                     <span class="targetFragment" style="display:none">
                         &rarr;
                         <span class="targetLabel"></span>

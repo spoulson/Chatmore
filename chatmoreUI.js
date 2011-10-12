@@ -70,7 +70,7 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="message">${message}</span>' +
                     '</div>',
                 outgoingPrivateMsg: '{{tmpl "timestamp"}}<div class="privateMsg">' +
-                    '<span class="prefix">-&gt; *<span class="nick">${nick}</span>*</span> ' +
+                    '<span class="prefix">&rarr; *<span class="nick">${nick}</span>*</span> ' +
                     '<span class="message">${message}</span>' +
                     '</div>',
                 outgoingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg action">' +
@@ -78,7 +78,7 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="message">${message}</span>' +
                     '</div>',
                 outgoingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg action">' +
-                    '<span class="prefix">-&gt; *<span class="nick">${nick}</span>* <span class="nick">${clientNick}</span></span> ' +
+                    '<span class="prefix">&rarr; *<span class="nick">${nick}</span>* <span class="nick">${clientNick}</span></span> ' +
                     '<span class="message">${message}</span>' +
                     '</div>',
                 outgoingChannelNotice: '{{tmpl "timestamp"}}<div class="channelNotice">' +
@@ -164,7 +164,8 @@ $.fn.chatmore = function (p1, p2) {
                     '{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${nick}</span> is already in use.</span>' +
                     '</div>',
                 notopic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
-                    '{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; <span class="message">No topic is set</span>' +
+                    '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+                    '<span class="message">No topic is set</span>' +
                     '</div>',
                 topic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
@@ -817,8 +818,10 @@ $.fn.chatmore = function (p1, p2) {
                                     
             // Convert URL patterns into HTML links.
             linkifyURLs: function (html) {
+                // TODO: HTML escapting issues when URL contains ampersands in querystring.
                 return html.replace(self.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
             },
+            //             [-scheme---------][-hostname------------][-port][-path------------][-querystring------------------------------------------------][-anchor----]
             linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
 
             // Decorate nicks found in text with span.
@@ -870,6 +873,7 @@ $.fn.chatmore = function (p1, p2) {
                     
                     // Add doubleclick handler on nick and channel to auto-query.
                     element.find('.nick,.channel')
+                        .hover(self.hoverClickableHandler, self.leaveClickableHandler)
                         .dblclick(self.dblclickChannelNickHandler);
                         
                     // Detect if my nick was mentioned in a channel message.
@@ -951,6 +955,14 @@ $.fn.chatmore = function (p1, p2) {
                 return $(el).parent().outerHeight() + $(el).parent().height();
             },
 
+            hoverClickableHandler: function () {
+                $(this).addClass('ui-state-hover');
+            },
+            
+            leaveClickableHandler: function () {
+                $(this).removeClass('ui-state-hover');
+            },
+            
             dblclickChannelNickHandler: function () {
                 if (self.irc.isActivated()) {
                     // Get text of element, ignoring child elements.
@@ -1010,6 +1022,11 @@ $.fn.chatmore = function (p1, p2) {
                 self.ircElement.find('.targetFragment').fadeOut(null, function () {
                     self.ircElement.find('.targetLabel').text(target);
                     if (target !== undefined && target !== null) {
+                        var isChannel = self.isChannel(target);
+                        self.ircElement.find('.targetLabel')
+                            .removeClass(isChannel ? 'nick' : 'channel')
+                            .addClass(isChannel ? 'channel' : 'nick');
+
                         self.ircElement.find('.targetFragment').fadeIn();
                     }
                 });
@@ -1094,6 +1111,7 @@ $.fn.chatmore = function (p1, p2) {
                         
                         // Apply doubleclick handler to channels and nicks.
                         channelList.find('.nick,.channel')
+                            .hover(self.hoverClickableHandler, self.leaveClickableHandler)
                             .dblclick(self.dblclickChannelNickHandler);
                     }
                 }
