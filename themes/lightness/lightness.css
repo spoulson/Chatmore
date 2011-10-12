@@ -635,7 +635,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 }
 
 .chatmore .nick {
-    color: #1a1a1a;
+    color: #5a5a5a;
     font-weight: bold;
     background-color: transparent;
     border: 0;
@@ -724,6 +724,10 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 
 .chatmore .ircConsole .content .prefix {
     font-weight: bold;
+}
+
+.chatmore .ircConsole .content .prefix .nick {
+    color: #3A3A1A;
 }
 
 .chatmore .ircConsole .content .help {
