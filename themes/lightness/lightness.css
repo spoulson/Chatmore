@@ -596,11 +596,11 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 }
 
 .chatmore.activated .activationIndicator {
-    background: transparent url(images/bullet_green.png) no-repeat top left;
+    background: transparent url(images/bullet_green.png) no-repeat left top;
 }
 
 .chatmore.deactivated .activationIndicator {
-    background: transparent url(images/stop.png) no-repeat top left;
+    background: transparent url(images/stop.png) no-repeat left top;
 }
 
 .chatmore .userEntrySection {
@@ -610,6 +610,14 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 
 .chatmore .userEntryModeLine {
     height: 20px;
+}
+
+.chatmore .userEntryModeLine .targetLabel {
+    display: block;
+    float: left;
+    padding-left: 19px;
+    margin: 0 3px;
+    background: transparent url(images/bullet_go.png) no-repeat left center;
 }
 
 .chatmore .nickLabel {
@@ -679,7 +687,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     float: left;
     width: 16px;
     height: 16px;
-    background: transparent url(images/bullet_delete.png) no-repeat top left;
+    background: transparent url(images/bullet_delete.png) no-repeat left top;
     cursor: pointer;
     margin-left: 6px;
 }

@@ -46,7 +46,8 @@ $.fn.chatmore = function (p1, p2) {
             // IRC client message templates.
             tmpls: {
                 timestamp: '<span class="timestamp">[${self.getTimestamp()}]&nbsp;</span>',
-                notePrefix: '<span class="prefix">***</span>',
+                bullet: '&bull;&bull;&bull;',
+                notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
                 error: '{{tmpl "timestamp"}}<div class="error">' +
                     '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
                     '</div>',
@@ -70,15 +71,15 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 outgoingPrivateMsg: '{{tmpl "timestamp"}}<div class="privateMsg">' +
-                    '<span class="prefix">&rarr; *<span class="nick color${self.getColorizeNumber(msg)}">${msg.info.target}</span>*</span> ' +
+                    '<span class="prefix">&#x21E8; &bull;<span class="nick color${self.getColorizeNumber(msg)}">${msg.info.target}</span>&bull;</span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 outgoingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg action">' +
-                    '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; * <span class="nick">${msg.prefixNick}</span></span> ' +
+                    '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick">${msg.prefixNick}</span></span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 outgoingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg action">' +
-                    '<span class="prefix">&rarr; *<span class="nick color${self.getColorizeNumber(msg)}">${msg.info.target}</span>* <span class="nick">${msg.prefixNick}</span></span> ' +
+                    '<span class="prefix">&#x21E8; &bull;<span class="nick color${self.getColorizeNumber(msg)}">${msg.info.target}</span>&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 outgoingChannelNotice: '{{tmpl "timestamp"}}<div class="channelNotice">' +
@@ -94,15 +95,15 @@ $.fn.chatmore = function (p1, p2) {
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 incomingPrivateMsg: '{{tmpl "timestamp"}}<div class="privateMsg">' +
-                    '<span class="prefix">*<span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span>*</span> ' +
+                    '<span class="prefix">&bull;<span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span>&bull;</span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 incomingChannelAction: '{{tmpl "timestamp"}}<div class="channelMsg action">' +
-                    '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; * <span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span></span> ' +
+                    '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span></span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 incomingPrivateAction: '{{tmpl "timestamp"}}<div class="privateMsg action">' +
-                    '<span class="prefix">* <span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span></span> ' +
+                    '<span class="prefix">&bull; <span class="nick color${self.getColorizeNumber(msg)}">${msg.prefixNick}</span></span> ' +
                     '<span class="message">${msg.info.text}</span>' +
                     '</div>',
                 incomingPrivateNotice: '{{tmpl "timestamp"}}<div class="privateNotice">' +
@@ -115,7 +116,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</div>',
                 queryOff: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if /^[#&+!]/.test(prevTarget)}}' +
+                    '{{if self.isChannel(prevTarget)}}' +
                         'You are no longer talking on channel <span class="channel">${prevTarget}</span>' +
                     '{{else}}' +
                         'Ending conversation with <span class="nick">${prevTarget}</span>' +
@@ -123,12 +124,12 @@ $.fn.chatmore = function (p1, p2) {
                     '</div>',
                 query: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if /^[#&+!]/.test(target)}}' +
+                    '{{if self.isChannel(target)}}' +
                         'You are now talking on channel <span class="channel">${target}</span>' +
                     '{{else}}' +
                         'Starting conversation with <span class="nick">${target}</span>' +
                     '{{/if}}' +
-                    '</div>',
+                    '</span></div>',
                 queryOffChannel: '{{tmpl "timestamp"}}<div class="queryMsg">' +
                     '{{tmpl "notePrefix"}} <span class="message">You are no longer talking to channel <span class="channel">${channel}</span></span>' +
                     '</div>',
@@ -142,19 +143,20 @@ $.fn.chatmore = function (p1, p2) {
                     '{{tmpl "notePrefix"}} <span class="message">Starting conversation with <span class="nick">${nick}</span></span>' +
                     '</div>',
                 join: '{{tmpl "timestamp"}}<div class="JOIN">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message"><span class="nick">${msg.prefixNick}</span> <span class="message">(${msg.prefixUser}@${msg.prefixHost}) has joined the channel</span>' +
+                    '<span class="prefix">&lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    '<span class="message"><span class="nick">${msg.prefixNick}</span> (${msg.prefixUser}@${msg.prefixHost}) has joined the channel</span>' +
                     '</div>',
                 leave: '{{tmpl "timestamp"}}<div class="PART">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
                     '<span class="message"><span class="nick">${msg.prefixNick}</span> has left the channel{{if !!msg.info.comment}}: ${msg.info.comment}{{/if}}</span>' +
                     '</div>',
                 kick: '{{tmpl "timestamp"}}<div class="KICK">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${channel}</span>&gt;</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${channel}</span>&gt;</span> ' +
                     '<span class="message"><span class="nick">${op}</span> has kicked <span class="nick">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
                     '</div>',
-                nick: '{{tmpl "timestamp"}}<div class="NICK">{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if self.stricmp(self.irc.state().nick.toLowerCase(), msg.prefixNick.toLowerCase()) == 0}}' +
+                nick: '{{tmpl "timestamp"}}<div class="NICK">' +
+                    '{{tmpl "notePrefix"}} <span class="message">' +
+                    '{{if self.stricmp(self.irc.state().nick, msg.prefixNick) == 0}}' +
                         'Nick changed to <span class="nick">${msg.info.nick}</span>' +
                     '{{else}}' +
                         '<span class="nick">${msg.prefixNick}</span> is now known as <span class="nick">${msg.info.nick}</span>' +
@@ -164,15 +166,15 @@ $.fn.chatmore = function (p1, p2) {
                     '{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${msg.info.nick}</span> is already in use.</span>' +
                     '</div>',
                 notopic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
                     '<span class="message">No topic is set</span>' +
                     '</div>',
                 topic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
                     '<span class="message">The current topic is: <span class="topicMessage">${msg.info.topic}</span></span>' +
                     '</div>',
                 changeTopic: '{{tmpl "timestamp"}}<div class="TOPIC">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> <span class="message"><span class="nick">${msg.prefixNick}</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> <span class="message"><span class="nick">${msg.prefixNick}</span> ' +
                     '{{if msg.info.topic == ""}}' +
                         'has cleared the topic' +
                     '{{else}}' +
@@ -180,7 +182,7 @@ $.fn.chatmore = function (p1, p2) {
                     '{{/if}}' +
                     '</span></div>',
                 topicSetBy: '{{tmpl "timestamp"}}<div class="TOPIC">' +
-                    '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
                     '<span class="message">Topic set by <span class="nick">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
                     '</div>',
                 serverTime: '{{tmpl "timestamp"}}<div class="TIME">' +
@@ -359,7 +361,7 @@ $.fn.chatmore = function (p1, p2) {
                         'If channel omitted, leaves channel currently selected by /query.'
                     ],
                     parseParam: function (param, meta) {
-                        if (param === undefined) {
+                        if (param == '') {
                             if (self.irc.target() === undefined) {
                                 meta.error = self.cmdDefs['leave'].helpUsage;
                                 return false;
@@ -410,22 +412,26 @@ $.fn.chatmore = function (p1, p2) {
                         if (self.isChannel(meta.target)) {
                             self.irc.sendChannelAction(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelAction', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
                         else {
                             self.irc.sendPrivateAction(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateAction', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
@@ -512,22 +518,26 @@ $.fn.chatmore = function (p1, p2) {
                         if (self.isChannel(meta.target)) {
                             self.irc.sendChannelMsg(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelMsg', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
                         else {
                             self.irc.sendPrivateMsg(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateMsg', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
@@ -582,22 +592,26 @@ $.fn.chatmore = function (p1, p2) {
                         if (self.isChannel(meta.target)) {
                             self.irc.sendChannelNotice(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelNotice', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
                         else {
                             self.irc.sendPrivateNotice(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateNotice', {
-                                prefixNick: self.irc.state().nick,
-                                prefixUser: self.irc.state().ident,
-                                info: {
-                                    target: meta.target,
-                                    text: meta.message
+                                msg: {
+                                    prefixNick: self.irc.state().nick,
+                                    prefixUser: self.irc.state().ident,
+                                    info: {
+                                        target: meta.target,
+                                        text: meta.message
+                                    }
                                 }
                             });
                         }
