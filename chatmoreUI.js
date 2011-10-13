@@ -181,7 +181,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</span></div>',
                 topicSetBy: '{{tmpl "timestamp"}}<div class="TOPIC">' +
                     '<span class="prefix">*** &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message">Topic set by <span class="nick">${msg.prefixNick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
+                    '<span class="message">Topic set by <span class="nick">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
                     '</div>',
                 serverTime: '{{tmpl "timestamp"}}<div class="TIME">' +
                     '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${msg.info.server}</span>: <span class="time">${msg.info.timeString}</span></span>' +
