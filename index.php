@@ -66,9 +66,9 @@ if (array_key_exists('x', $_GET)) {
                 <div class="userEntryModeLine">
                     <div class="activationIndicator"></div>
                     <div class="nickLabel nick"></div>
-                    <span class="targetFragment" style="display:none">
+                    <div class="targetFragment" style="display:none">
                         <div class="targetLabel"></div>
-                    </span>
+                    </div>
                 </div>
                 <div class="userEntryLine">
                     <input type="text" class="userEntry" />

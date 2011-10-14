@@ -654,6 +654,70 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     border: 0;
 }
 
+.chatmore .nick.color0 {
+    color: #800000;
+}
+
+.chatmore .nick.color1 {
+    color: #400080;
+}
+
+.chatmore .nick.color2 {
+    color: #408000;
+}
+
+.chatmore .nick.color3 {
+    color: #008080;
+}
+
+.chatmore .nick.color4 {
+    color: #802a00;
+}
+
+.chatmore .nick.color5 {
+    color: #008000;
+}
+
+.chatmore .nick.color6 {
+    color: #804000;
+}
+
+.chatmore .nick.color7 {
+    color: #004080;
+}
+
+.chatmore .nick.color8 {
+    color: #800080;
+}
+
+.chatmore .nick.color9 {
+    color: #00802a;
+}
+
+.chatmore .nick.color10 {
+    color: #000080;
+}
+
+.chatmore .nick.color11 {
+    color: #008040;
+}
+
+.chatmore .nick.color12 {
+    color: #800040;
+}
+
+.chatmore .nick.color13 {
+    color: #808000;
+}
+
+.chatmore .nick.color14 {
+    color: #2a0080;
+}
+
+.chatmore .nick.color15 {
+    color: #404040;
+}
+
 .chatmore .nick:hover, .chatmore .nick:active {
     cursor: pointer;
 }
@@ -726,10 +790,10 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 
 .chatmore .ircConsole .content .timestamp {
     color: #404040;
-    display: block;
+    /*display: block;*/
     float: left;
     width: 55px;
-    font-size: 0.85em;
+    font: 0.8em monospace;
 }
 
 .chatmore .ircConsole .content .line {
@@ -775,5 +839,5 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 }
 
 .chatmore .ircConsole .content .MODE .modeString {
-    font-family: "Courier New", monospace;
+    font-family: monospace;
 }

@@ -500,7 +500,7 @@ class spIrcClient
             else {
                 // Save user mode in state.
                 if (!isset($this->state->users[$target])) {
-                    $this->state->users[$target] = new spIrcUserDesc();
+                    $this->state->addUser($target);
                 }
                 
                 $this->state->users[$target]->mode = $msg['info']['mode'];
@@ -515,19 +515,20 @@ class spIrcClient
                 $this->state->isNickValid = true;
             }
             
-            // Adjust user list.
+            // Adjust channel members.
             $nick = $msg['info']['nick'];
             $oldNick = $msg['info']['oldNick'];
-            $this->state->users[$nick] = $this->state->users[$oldNick];
-            unset($this->state->users[$oldNick]);
             
-            // Adjust channel members.
             foreach ($this->state->channels as $channel) {
                 if (isset($channel->members[$oldNick])) {
                     $channel->members[$nick] = $channel->members[$oldNick];
-                    unset($channel->members[$oldNick]);
+                    $channel->removeMember($oldNick);
                 }
             }
+            
+            // Adjust user list.
+            $this->state->users[$nick] = $this->state->users[$oldNick];
+            $this->state->removeUser($oldNick);
             
             $this->state->isModified = true;
             break;
@@ -537,14 +538,13 @@ class spIrcClient
             $nick = $msg['prefixNick'];
             
             if (!isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel] = new spIrcChannelDesc();
+                $this->state->addChannel($channel);
                 
                 // Get channel mode.
                 $this->sendRawMsg("MODE $channel\r\n");
             }
             
-            $memberDesc = new spIrcChannelMemberDesc();
-            $this->state->channels[$channel]->members[$nick] = $memberDesc;
+            $this->state->channels[$channel]->addMember($nick);
             
             $this->state->isModified = true;
             break;
@@ -555,11 +555,11 @@ class spIrcClient
             $nick = $msg['prefixNick'];
             if ($nick == $this->state->nick) {
                 // Current user leaving channel, remove channel from state.
-                unset($this->state->channels[$channel]);
+                $this->state->removeChannel($channel);
             }
             else {
                 // Another user leaving channel, remove member form channel state.
-                unset($this->state->channels[$channel]->members[$nick]);
+                $this->state->channels[$channel]->removeMember($nick);
             }
             $this->state->isModified = true;
             break;
@@ -569,10 +569,10 @@ class spIrcClient
                 $channel = $kick['channel'];
                 $nick = $kick['nick'];
                 if ($nick == $this->state->nick) {
-                    unset($this->state->channels[$channel]);
+                    $this->state->removeChannel($channel);
                 }
                 else {
-                    unset($this->state->channels[$channel]->members[$nick]);
+                    $this->state->channels[$channel]->removeMember($nick);
                 }
                 $this->state->isModified = true;
             }
@@ -581,54 +581,56 @@ class spIrcClient
         case 'QUIT':
             // Remove user from state.
             $nick = $msg['prefixNick'];
-            unset($this->state->users[$nick]);
-            
-            foreach ($this->state->channels as $channelDesc) {
-                unset($channelDesc->members[$nick]);
+
+            foreach ($this->state->channels as $channel) {
+                $channel->removeMember($nick);
             }
 
+            $this->state->removeUser($nick);
             $this->state->isModified = true;
             break;
             
         case self::RPL_TOPIC:
-            $this->state->channels[$msg['info']['channel']]->topic = $msg['info']['topic'];
-            $this->state->isModified = true;
+            $channel = $msg['info']['channel'];
+            if (isset($this->state->channels[$channel])) {
+                $this->state->channels[$channel]->topic = $msg['info']['topic'];
+                $this->state->isModified = true;
+            }
             break;
             
         case self::RPL_NOTOPIC:
-            $this->state->channels[$msg['info']['channel']]->topic = null;
-            $this->state->isModified = true;
+            $channel = $msg['info']['channel'];
+            if (isset($this->state->channels[$channel])) {
+                $this->state->channels[$channel]->topic = null;
+                $this->state->isModified = true;
+            }
             break;
             
         case 333: // topic reply set by/timestamp.
             $channel = $msg['info']['channel'];
-            $this->state->channels[$channel]->topicSetByNick = $msg['info']['setByNick'];
-            $this->state->channels[$channel]->topicSetTime = $msg['info']['setTime'];
-            $this->state->isModified = true;
+            
+            if (isset($this->state->channels[$channel])) {
+                $this->state->channels[$channel]->topicSetByNick = $msg['info']['setByNick'];
+                $this->state->channels[$channel]->topicSetTime = $msg['info']['setTime'];
+                $this->state->isModified = true;
+            }
             break;
             
         case self::RPL_NAMREPLY: // NAMES list.
             $channel = $msg['info']['channel'];
             
-            if (!isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel] = new spIrcChannelDesc();
-            }
+            $channelDesc = $this->state->addChannel($channel);
             
             // TODO: Support multiple 353's that are commited on 366.
-            $channelDesc = $this->state->channels[$channel];
             $channelDesc->visibility = $msg['info']['visibility'];
-            $channelDesc->members = array();
+            $channelDesc->clearMembers();
             
             foreach ($msg['info']['names'] as $name) {
                 $nick = $name['nick'];
                 
-                $memberDesc = new spIrcChannelMemberDesc();
+                $this->state->addUser($nick);
+                $memberDesc = $channelDesc->addMember($nick);
                 $memberDesc->mode = $name['mode'];
-                $this->state->channels[$channel]->members[$nick] = $memberDesc;
-            
-                if (!isset($this->state->users[$nick])) {
-                    $this->state->users[$nick] = new spIrcUserDesc();
-                }
             }
             
             $this->state->isModified = true;
@@ -651,10 +653,7 @@ class spIrcClient
             // If channel is listed as joined channel, remove it.
             $channel = $msg['info']['channel'];
             
-            if (isset($this->state->channels[$channel])) {
-                unset($this->state->channels[$channel]);
-                $this->state->isModified = true;
-            }
+            $this->state->removeChannel($channel);
             break;
         }
         

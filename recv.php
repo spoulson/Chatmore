@@ -47,10 +47,14 @@ if (isset($_SESSION['irc'])) {
                         // Check for change in state.
                         if ($state->isModified) {
                             // Send client state.
-                            $data[] = array(
-                                'type' => spIrcClient::CLMSG_TYPE_STATE,
-                                'state' => $state
-                            );
+                            $data = array_merge(
+                                array(
+                                    array(
+                                        'type' => spIrcClient::CLMSG_TYPE_STATE,
+                                        'state' => $state
+                                    )
+                                ),
+                                $data);
                         }
                     }
                 }
