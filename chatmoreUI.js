@@ -219,38 +219,38 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('TOPIC ' + self.irc.target() + ' :');
                     }
                 },
-                connect: {
-                    helpUsage: 'Usage: /connect &lt;server&gt; [port]',
-                    helpText: 'Connect to IRC server',
-                    parseParam: function (param, meta) {
-                        var m = /^(\S+)(\s+(\d+))?\s*$/.exec(param);
-                        if (m === null) {
-                            meta.error = self.cmdDefs['connect'].helpUsage;
-                            return false;
-                        }
+                // connect: {
+                    // helpUsage: 'Usage: /connect &lt;server&gt; [port]',
+                    // helpText: 'Connect to IRC server',
+                    // parseParam: function (param, meta) {
+                        // var m = /^(\S+)(\s+(\d+))?\s*$/.exec(param);
+                        // if (m === null) {
+                            // meta.error = self.cmdDefs['connect'].helpUsage;
+                            // return false;
+                        // }
                         
-                        meta.server = m[1];
-                        meta.port = m[3] === undefined ? 6667 : m[3];
-                    },
-                    exec: function (meta) {
-                        var connectFunc = function () {
-                            self.irc.deactivateClient();
+                        // meta.server = m[1];
+                        // meta.port = m[3] === undefined ? 6667 : m[3];
+                    // },
+                    // exec: function (meta) {
+                        // var connectFunc = function () {
+                            // self.irc.deactivateClient();
                             
-                            // Connect to server.
-                            self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname, { mustMatchServer: true });
-                            self.irc.activateClient();
-                        };
+                            // // Connect to server.
+                            // self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname, { mustMatchServer: true });
+                            // self.irc.activateClient();
+                        // };
                         
-                        if (self.irc.isActivated()) {
-                            // /quit, wait a moment, then deactivate and reconnect.
-                            self.sendLine('/quit');
-                            setTimeout(connectFunc, 1000);
-                        }
-                        else {
-                            connectFunc();
-                        }
-                    }
-                },
+                        // if (self.irc.isActivated()) {
+                            // // /quit, wait a moment, then deactivate and reconnect.
+                            // self.sendLine('/quit');
+                            // setTimeout(connectFunc, 1000);
+                        // }
+                        // else {
+                            // connectFunc();
+                        // }
+                    // }
+                // },
                 help: {
                     helpUsage: 'Usage: /help &lt;command&gt;',
                     helpText: [
@@ -258,7 +258,7 @@ $.fn.chatmore = function (p1, p2) {
                         'Commands:',
                         ' clear - Clear the chat console',
                         ' cleartopic - Clear the channel\'s topic',
-                        ' connect - Connect to IRC server',
+                        //' connect - Connect to IRC server',
                         ' join - Join a channel',
                         ' kick - Kick user from channel',
                         ' leave - Leave a channel',
@@ -269,6 +269,7 @@ $.fn.chatmore = function (p1, p2) {
                         ' notice - Send a notice to a nick or channel',
                         ' query - Select a target for messaging',
                         ' quit - Quit IRC session',
+                        ' quote - Send raw IRC message',
                         ' time - Get the server time',
                         ' topic - Get or set the channel\'s topic',
                         ' who - Get info on a nick'
@@ -648,8 +649,8 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('QUIT :' + comment);
                     }
                 },
-                raw: {
-                    helpUsage: 'Usage: /raw &gt;IRC request message&lt;',
+                quote: {
+                    helpUsage: 'Usage: /quote &gt;IRC request message&lt;',
                     helpText: 'Send a raw IRC request based on RFC2812.',
                     parseParam: function (param, meta) {
                         meta.param = param;
@@ -848,18 +849,32 @@ $.fn.chatmore = function (p1, p2) {
             linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
 
             // Decorate nicks found in text with span.
-            decorateNicks: function (html, nicks, channel) {
-                if (nicks.length == 0) return html;
+            decorateNicks: function (html, channel) {
+                var nicks = undefined;
+                if (self.irc.state() !== undefined) {
+                    nicks = $.map(self.irc.state().users, function (val, key) { return key; });
+                }
+
+                if (nicks === undefined || nicks.length == 0) return html;
                 
                 // Convert array of nicks to regex expression.
                 var nickExpr = $.map(nicks, function (nick) {
                     // Escape regex symbols.
-                    return nick.replace(/([?*|.()\[\]{}\\])/, "\\$1");
+                    return nick.replace(/([?*|.^$()\[\]{}\\/])/, "\\$1");
                 }).join('|');
                 var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
                 return html.replace(re, function (nick) {
+                    var colorizeNumber = undefined;
                     if (channel != '') {
-                        var colorizeNumber = self.irc.state().channels[channel].members[nick].colorizeNumber;
+                        if (window.console) console.log('channel/nick: ' + channel + '/' + nick);
+                        // Lookup nick's colorize number for given channel.
+                        if (self.irc.state().channels[channel] !== undefined &&
+                            self.irc.state().channels[channel].members[nick] !== undefined) {
+                            colorizeNumber = self.irc.state().channels[channel].members[nick].colorizeNumber;
+                        }
+                    }
+                    
+                    if (colorizeNumber !== undefined) {
                         return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>'
                     }
                     else {
@@ -895,10 +910,7 @@ $.fn.chatmore = function (p1, p2) {
                     element.closest('.channelMsg,.PRIVMSG,.TOPIC,.serverMsg,.clientMsg').find('.message')
                         .html(function (i, html) {
                             html = self.linkifyURLs(html);
-                            if (self.irc.state() !== undefined) {
-                                var nicks = $.map(self.irc.state().users, function (val, key) { return key; });
-                                html = self.decorateNicks(html, nicks, channel);
-                            }
+                            html = self.decorateNicks(html, channel);
                             html = self.decorateChannels(html);
                             return html;
                         });
@@ -1209,7 +1221,6 @@ $.fn.chatmore = function (p1, p2) {
         // Track browser window focus.
         $(window)
             .focus(function () {
-                if (window.console) console.log('focus');
                 // Restore title when user comes back to the window.
                 setTimeout(function () {
                     document.title = self.defaultTitle;
