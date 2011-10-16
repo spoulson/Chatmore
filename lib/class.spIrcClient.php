@@ -396,7 +396,6 @@ class spIrcClient
                 'channel' => $msgParams[2],
                 'names' => $names
             );
-            log::info('RPL_NAMREPLY: ' . var_export($msg, true));
             break;
             
         case self::RPL_NOTOPIC:
