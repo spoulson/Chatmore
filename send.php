@@ -11,10 +11,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
-$data = array(
-    'success' => false,
-    'message' => null
-);
+$data = array();
 
 if (isset($_SESSION['irc'])) {
     $state =& $_SESSION['irc'];
@@ -30,25 +27,45 @@ if (isset($_SESSION['irc'])) {
                 $ircbot->sendRawMsg("$raw\r\n");
                 $ircbot->flushSendBuffer();
                 $ircbot->disconnect();
-                $data['success'] = true;
-                $data['message'] = "OK";
             }
             else {
-                $data['message'] = "Error: Nothing to send, 'msg' parameter is empty.";
+                // Empty message.
+                $data[] = array(
+                    'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                    'message' => 'Nothing to send, \'msg\' parameter is empty.',
+                    'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+                );
             }        
         }
         else {
-            $data['message'] = "Error: Connection not open, unable to connect to socket.";
+            // Unable to connect to socket.
+            $data[] = array(
+                'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                'message' => 'Connection not open.  Unable to connect to socket.',
+                'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+            );
         }
     }
     else {
-        $data['message'] = "Error: Connection not open, socket no longer available.";
+        // Socket no longer available.
+        unset($_SESSION['irc']);
+        $data[] = array(
+            'type' => spIrcClient::CLMSG_TYPE_SERVER,
+            'message' => 'Connection not open.  Socket no longer available.',
+            'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+        );
     }
 }
 else {
-    $data['message'] = "Error: Connection not open, no session.";
+    // No session.
+    $data[] = array(
+        'type' => spIrcClient::CLMSG_TYPE_SERVER,
+        'message' => 'Connection not open.  No session.',
+        'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
+    );
 }
 
 @ob_end_clean();
 echo json_encode($data);
+exit;
 ?>

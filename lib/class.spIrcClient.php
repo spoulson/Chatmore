@@ -483,7 +483,7 @@ class spIrcClient
 
         switch ($msg['command']) {
         case 'PING':
-            $this->pong($msg);
+            $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
             break;
             
         case 'MODE':
@@ -510,27 +510,12 @@ class spIrcClient
             
         case 'NICK':
             if ($msg['prefixNick'] == $this->state->nick) {
-                // Client user changed nick.
+                // Change current user's nick.
                 $this->state->nick = $msg['info']['nick'];
                 $this->state->isNickValid = true;
             }
             
-            // Adjust channel members.
-            $nick = $msg['info']['nick'];
-            $oldNick = $msg['info']['oldNick'];
-            
-            foreach ($this->state->channels as $channel) {
-                if (isset($channel->members[$oldNick])) {
-                    $channel->members[$nick] = $channel->members[$oldNick];
-                    $channel->removeMember($oldNick);
-                }
-            }
-            
-            // Adjust user list.
-            $this->state->users[$nick] = $this->state->users[$oldNick];
-            $this->state->removeUser($oldNick);
-            
-            $this->state->isModified = true;
+            $this->renameNick($msg['info']['oldNick'], $msg['info']['nick']);
             break;
 
         case 'JOIN':
@@ -610,8 +595,8 @@ class spIrcClient
             $channel = $msg['info']['channel'];
             
             if (isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel]->topicSetByNick = $msg['info']['setByNick'];
-                $this->state->channels[$channel]->topicSetTime = $msg['info']['setTime'];
+                $this->state->channels[$channel]->topicSetByNick = $msg['info']['nick'];
+                $this->state->channels[$channel]->topicSetTime = $msg['info']['time'];
                 $this->state->isModified = true;
             }
             break;
@@ -766,17 +751,13 @@ class spIrcClient
 	public function sendRawMsg($line)
 	{
         $this->socketSendBuffer .= $line;
-        
         //log::info("Sent: " . $line);
 	}
     
     public function isChannel($target) {
         return preg_match("/^[#&+!][^\s,:\cg]+/", $target);
     }
-	
-    //
-    // Client commands
-    //
+    
     public function register($nick, $ident, $realname) {
         $this->state->nick = $nick;
         $this->state->isNickValid = false;
@@ -785,53 +766,25 @@ class spIrcClient
         $this->state->realname = $realname;
         
         $this->sendRawMsg("USER " . $this->state->ident . " 0 * :" . $this->state->realname . "\r\n");
-        $this->setNick($this->state->nick);
+        $this->sendRawMsg("NICK $nick\r\n");
         $this->flushSendBuffer();
     }
 
-	public function setNick($nick) {
-        $this->state->nick = $nick;
-        $this->sendRawMsg("NICK $nick\r\n");
-    }
-    
-    public function who($mask = null) {
-        if (empty($mask))
-            $this->sendRawMsg("WHO\r\n");
-        else
-            $this->sendRawMsg("WHO $mask\r\n");
-    }
-    
-	public function joinChannel($channel) {
-        $this->sendRawMsg("JOIN :$channel\r\n");
-    }
-    
-	public function leaveChannel($channel) {
-        $this->sendRawMsg("PART :$channel\r\n");
-    }
-
-	public function listChannels() {
-        $this->sendRawMsg("LIST\r\n");
-    }
-    
-	public function getTopic($channel) {
-        $this->sendRawMsg("TOPIC $channel\r\n");
-    }
-
-    // Send message text to a user or channel.
-	public function msg($target, $text) {
-        $this->sendRawMsg("PRIVMSG $target :$text\r\n");
-    }
-
-    // Response to a PING message.
-    // Expects $msg['info']['ping'] to contain ping parameter.
-	public function pong($msg) {
-        $param = $msg['info']['ping'];
-        $this->sendRawMsg("PONG :$param\r\n");
-    }
-    
-	public function quit($quitMsg = "") {
-        $this->sendRawMsg("QUIT :$quitMsg\r\n");
+    // Handle renaming of a nick of any user.
+    public function renameNick($oldNick, $newNick) {
+        // Adjust channel members.
+        foreach ($this->state->channels as $channel) {
+            if (isset($channel->members[$oldNick])) {
+                $channel->members[$newNick] = $channel->members[$oldNick];
+                $channel->removeMember($oldNick);
+            }
+        }
+        
+        // Adjust user list.
+        $this->state->users[$newNick] = $this->state->users[$oldNick];
+        $this->state->removeUser($oldNick);
+        
+        $this->state->isModified = true;
     }
 }
-
 ?>

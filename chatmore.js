@@ -16,6 +16,7 @@ function chatmore(element, server, port, nick, realname, options) {
     local = {
         pollHandle: undefined,
         pollXhr: undefined,
+        pauseRecv: false,
         lastRecvTime: undefined,
         state: undefined,
         isActivated: false,
@@ -192,31 +193,36 @@ function chatmore(element, server, port, nick, realname, options) {
                     
                         // Repeatedly poll for IRC activity.
                         var pollFunc = function () {
-                            local.pollHandle = undefined;
-                            local.pollXhr = $.ajax('recv.php', {
-                                cache: false,
-                                dataType: 'json',
-                                success: function (data) {
-                                    // Validate data is an array.
-                                    if (typeof(data) == 'object') {
-                                        local.processMessages.call(obj, data);
-                                    }
-                                    else {
-                                        // Data is invalid!
-                                        if (window.console) {
-                                            console.log('Got invalid data:');
-                                            console.log(data);
+                            if (local.pauseRecv) {
+                                setTimeout(pollFunc, 100);
+                            }
+                            else {
+                                local.pollHandle = undefined;
+                                local.pollXhr = $.ajax('recv.php', {
+                                    cache: false,
+                                    dataType: 'json',
+                                    success: function (data) {
+                                        // Validate data is an array.
+                                        if (typeof(data) == 'object') {
+                                            local.processMessages.call(obj, data);
+                                        }
+                                        else {
+                                            // Data is invalid!
+                                            if (window.console) {
+                                                console.log('Got invalid data:');
+                                                console.log(data);
+                                            }
+                                        }
+                                    },
+                                    complete: function () {
+                                        // Schedule next poll.
+                                        local.pollXhr = undefined;
+                                        if (local.isActivated) {
+                                            local.pollHandle = setTimeout(pollFunc, 100);
                                         }
                                     }
-                                },
-                                complete: function () {
-                                    // Schedule next poll.
-                                    local.pollXhr = undefined;
-                                    if (local.isActivated) {
-                                        local.pollHandle = setTimeout(pollFunc, 100);
-                                    }
-                                }
-                            });
+                                });
+                            }
                         };
                         setTimeout(pollFunc, 0);
                         $(element).trigger('activatedClient', [
@@ -259,15 +265,38 @@ function chatmore(element, server, port, nick, realname, options) {
     this.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
+        // Abort waiting recv.php call before sending message.
+        // BUG: Aborting an ajax call doesn't stop the server request thread.
+        // Server continues waiting for socket activity, then when it receives data, it can't send it back to the client.
+        //local.pauseRecv = true;
+        //if (local.pollXhr !== undefined) local.pollXhr.abort();
+        
         $.ajax('send.php', {
             async: true,
             type: 'POST',
+            dataType: 'json',
             cache: false,
             data: { msg: rawMsg },
-            success: function () {
+            success: function (data) {
                 if (postCallback) postCallback(rawMsg);
                 $(element).trigger('sentMsg', [ rawMsg ]);
-            }
+                
+                // Validate data is an array.
+                if (typeof(data) == 'object') {
+                    local.processMessages.call(obj, data);
+                }
+                else {
+                    // Data is invalid!
+                    if (window.console) {
+                        console.log('Got invalid data:');
+                        console.log(data);
+                    }
+                }
+            }//,
+            // complete: function () {
+                // // Resume recv.php calls.
+                // local.pauseRecv = false;
+            // }
         });
     };
 

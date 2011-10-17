@@ -19,6 +19,7 @@ if (isset($_SESSION['irc'])) {
     // Resuming a session.
     $state =& $_SESSION['irc'];
     $socketFile = $state->getPrimarySocketFilename();
+    
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile, $state);
 
@@ -36,26 +37,11 @@ if (isset($_SESSION['irc'])) {
                     $msg = $ircbot->parseMsg($line);
                     
                     if ($msg !== false) {
-                        $prevState = clone $state;
-                        
                         $msg['type'] = spIrcClient::CLMSG_TYPE_RECV;
                         $data[] = $msg;
                         
                         // Do default processing on the message.
                         $ircbot->processMsg($msg);
-                        
-                        // Check for change in state.
-                        if ($state->isModified) {
-                            // Send client state.
-                            $data = array_merge(
-                                array(
-                                    array(
-                                        'type' => spIrcClient::CLMSG_TYPE_STATE,
-                                        'state' => $state
-                                    )
-                                ),
-                                $data);
-                        }
                     }
                 }
                 
@@ -67,6 +53,19 @@ if (isset($_SESSION['irc'])) {
                 $messageCount < 200 &&                  // Break if too many messages.  Endless loop?
                 $ircbot->isConnected());                // Break if disconnected.
 
+            // Check for change in state.
+            if ($state->isModified) {
+                // Send client state as first response message.
+                $data = array_merge(
+                    array(
+                        array(
+                            'type' => spIrcClient::CLMSG_TYPE_STATE,
+                            'state' => $state
+                        )
+                    ),
+                    $data);
+            }
+
             $ircbot->disconnect();
         }
         else {
@@ -74,7 +73,7 @@ if (isset($_SESSION['irc'])) {
             $data = array(
                 array(
                     'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                    'message' => 'Connection not open.',
+                    'message' => 'Connection not open.  Unable to connect to socket.',
                     'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
                 )
             );
@@ -86,7 +85,7 @@ if (isset($_SESSION['irc'])) {
         $data = array(
             array(
                 'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                'message' => 'Connection not open.',
+                'message' => 'Connection not open.  Socket no longer available.',
                 'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
             )
         );
@@ -97,7 +96,7 @@ else {
     $data = array(
         array(
             'type' => spIrcClient::CLMSG_TYPE_SERVER,
-            'message' => 'Connection not open.',
+            'message' => 'Connection not open.  No session.',
             'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
         )
     );
@@ -109,5 +108,4 @@ else {
 @ob_end_clean();
 echo json_encode($data);
 exit;
-
 ?>

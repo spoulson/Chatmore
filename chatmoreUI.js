@@ -353,7 +353,7 @@ $.fn.chatmore = function (p1, p2) {
                         'If channel omitted, leaves channel currently selected by /query.'
                     ],
                     parseParam: function (param, meta) {
-                        if (param == '') {
+                        if (param === undefined) {
                             if (self.irc.target() === undefined) {
                                 meta.error = self.cmdDefs['leave'].helpUsage;
                                 return false;
