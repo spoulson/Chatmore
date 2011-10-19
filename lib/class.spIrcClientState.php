@@ -70,13 +70,15 @@ class spIrcClientState
         $this->users = array();
     }
     
-    // Simple checksum on a string or number.
+    // Get FNV-1 hash on a string or number.
     // $hash is a previous hash to build upon.
-    public static function getCheckSum($n, $hash = 0) {
+    public static function getFNV1($n, $hash = 2166136261) {
         if (is_numeric($n)) {
             while ($n > 0) {
                 $octet = $n & 0xff;
-                $hash += $octet;
+                $hash *= 16777619;
+                $hash ^= $octet;
+                $hash &= 0xffffffff;
                 $n >>= 8;
                 $n &= 0x00ffffff;
             }
@@ -84,7 +86,8 @@ class spIrcClientState
         else {
             $len = strlen($n);
             for ($i = 0; $i < $len; $i++) {
-                $hash += ord(substr($n, $i, 1));
+                $hash *= 16777619;
+                $hash ^= ord(substr($n, $i, 1));
                 $hash &= 0xffffffff;
             }
         }
@@ -95,6 +98,8 @@ class spIrcClientState
 
 // Describes a channel on the IRC network.
 class spIrcChannelDesc {
+    const COLORIZE_MIN = 0;
+    const COLORIZE_MAX = 31;
     public $mode;
     
     // = public, * private, @ secret
@@ -105,25 +110,16 @@ class spIrcChannelDesc {
     public $topicSetTime;       // Epoch timestamp
     public $members = array();  // Array of $nick => spIrcChannelMemberDesc objects
     
-    public $allColors = array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
-    public $colors;
-    
-    public function spIrcChannelDesc() {
-        $this->colors = array_merge($this->allColors, array());
-    }
-    
     public function addMember($nick) {
         if (!isset($this->members[$nick])) {
             $member = new spIrcChannelMemberDesc();
             
             // Generate colorize number based on nick.
-            $nickHash = spIrcClientState::getCheckSum($nick);
-            $colorizeIdx = $nickHash % count($this->colors);
-            $colorizeNumberArr = array_splice($this->colors, $colorizeIdx, 1);
-            if (count($this->colors) == 0) $this->colors = array_merge($this->allColors, array());
-            
-            $member->colorizeNumber = $colorizeNumberArr[0];
+            $nickHash = spIrcClientState::getFNV1($nick);
+            $member->colorizeNumber = $nickHash % (self::COLORIZE_MAX - self::COLORIZE_MIN + 1) + self::COLORIZE_MIN;
             $this->members[$nick] = $member;
+
+            log::info("colorize $nick: " . $member->colorizeNumber . ", checksum: $nickHash");
         }
         
         return $this->members[$nick];
@@ -135,7 +131,6 @@ class spIrcChannelDesc {
     
     public function clearMembers() {
         $this->members = array();
-        $this->colors = array_merge($this->allColors, array());
     }
 }
 

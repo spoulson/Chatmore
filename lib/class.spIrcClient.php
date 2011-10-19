@@ -192,7 +192,7 @@ class spIrcClient
         global $ircConfig;
         $m = array();
         $msg = null;
-        log::info('Parsing: ' . $line);
+        //log::info('Parsing: ' . $line);
         
         // Parse raw message for prefix, command, and params.
         if (!preg_match("/^(:(\S+)\s+)?(\w+)(\s+(.+?))?\r\n$/", $line, $m)) return false;

@@ -718,6 +718,70 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     color: #404040;
 }
 
+.chatmore .nick.color16 {
+    color: #a00000;
+}
+
+.chatmore .nick.color17 {
+    color: #8000a0;
+}
+
+.chatmore .nick.color18 {
+    color: #80a000;
+}
+
+.chatmore .nick.color19 {
+    color: #00a0a0;
+}
+
+.chatmore .nick.color20 {
+    color: #a04c00;
+}
+
+.chatmore .nick.color21 {
+    color: #00a000;
+}
+
+.chatmore .nick.color22 {
+    color: #a08000;
+}
+
+.chatmore .nick.color23 {
+    color: #0080a0;
+}
+
+.chatmore .nick.color24 {
+    color: #a000a0;
+}
+
+.chatmore .nick.color25 {
+    color: #00a04a;
+}
+
+.chatmore .nick.color26 {
+    color: #0000a0;
+}
+
+.chatmore .nick.color27 {
+    color: #00a080;
+}
+
+.chatmore .nick.color28 {
+    color: #a00080;
+}
+
+.chatmore .nick.color29 {
+    color: #a0a000;
+}
+
+.chatmore .nick.color30 {
+    color: #4a00a0;
+}
+
+.chatmore .nick.color31 {
+    color: #808080;
+}
+
 .chatmore .nick:hover, .chatmore .nick:active {
     cursor: pointer;
 }
