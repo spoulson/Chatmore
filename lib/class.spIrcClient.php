@@ -480,6 +480,9 @@ class spIrcClient
     // Process an incoming message with default logic.
     public function processMsg($msg) {
         //log::info('Processing message: ' . $msg['raw']);
+        
+        // Ensure user is in user state.
+        if (!empty($msg['prefixNick'])) $this->state->addUser($msg['prefixNick']);
 
         switch ($msg['command']) {
         case 'PING':
@@ -499,10 +502,7 @@ class spIrcClient
             }
             else {
                 // Save user mode in state.
-                if (!isset($this->state->users[$target])) {
-                    $this->state->addUser($target);
-                }
-                
+                $this->state->addUser($target);
                 $this->state->users[$target]->mode = $msg['info']['mode'];
                 $this->state->isModified = true;
             }
@@ -530,8 +530,7 @@ class spIrcClient
             }
             
             $this->state->channels[$channel]->addMember($nick);
-            
-            $this->state->isModified = true;
+            //$this->state->isModified = true;
             break;
             
         case 'PART':
@@ -546,7 +545,7 @@ class spIrcClient
                 // Another user leaving channel, remove member form channel state.
                 $this->state->channels[$channel]->removeMember($nick);
             }
-            $this->state->isModified = true;
+            //$this->state->isModified = true;
             break;
             
         case 'KICK':
@@ -559,7 +558,7 @@ class spIrcClient
                 else {
                     $this->state->channels[$channel]->removeMember($nick);
                 }
-                $this->state->isModified = true;
+                //$this->state->isModified = true;
             }
             break;
             
@@ -572,7 +571,7 @@ class spIrcClient
             }
 
             $this->state->removeUser($nick);
-            $this->state->isModified = true;
+            //$this->state->isModified = true;
             break;
             
         case self::RPL_TOPIC:

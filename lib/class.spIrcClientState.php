@@ -40,7 +40,9 @@ class spIrcClientState
     
     public function addChannel($channel) {
         if (!isset($this->channels[$channel])) {
-            $this->channels[$channel] = new spIrcChannelDesc();
+            log::info("addChannel($channel)");
+            $this->channels[$channel] = new spIrcChannelDesc($this);
+            $this->isModified = true;
         }
         
         return $this->channels[$channel];
@@ -48,29 +50,48 @@ class spIrcClientState
     
     public function addUser($nick) {
         if (!isset($this->users[$nick])) {
-            $this->users[$nick] = new spIrcUserDesc();
+            log::info("addUser($nick)");
+            $this->users[$nick] = new spIrcUserDesc($this);
+            $this->isModified = true;
         }
         
         return $this->users[$nick];
     }
     
     public function removeChannel($channel) {
-        unset($this->channels[$channel]);
+        if (isset($this->channels[$channel])) {
+            log::info("removeChannel($channel)");
+            unset($this->channels[$channel]);
+            $this->isModified = true;
+        }
     }
     
     public function removeUser($nick) {
-        unset($this->users[$nick]);
+        if (isset($this->users[$nick])) {
+            log::info("removeUser($nick)");
+            unset($this->users[$nick]);
+            $this->isModified = true;
+        }
     }
 
     public function clearChannels() {
-        $this->channels = array();
+        if (count($this->channels) > 0) {
+            log::info('clearChannels()');
+            $this->channels = array();
+            $this->isModified = true;
+        }
     }
     
     public function clearUsers() {
-        $this->users = array();
+        if (count($this->users) > 0) {
+            log::info('clearUsers()');
+            $this->users = array();
+            $this->isModified = true;
+        }
     }
     
     // Get FNV-1 hash on a string or number.
+    // http://isthe.com/chongo/tech/comp/fnv/
     // $hash is a previous hash to build upon.
     public static function getFNV1($n, $hash = 2166136261) {
         if (is_numeric($n)) {
@@ -110,27 +131,44 @@ class spIrcChannelDesc {
     public $topicSetTime;       // Epoch timestamp
     public $members = array();  // Array of $nick => spIrcChannelMemberDesc objects
     
+    private $state;
+    
+    public function spIrcChannelDesc($state) {
+        $this->state =& $state;
+    }
+    
     public function addMember($nick) {
         if (!isset($this->members[$nick])) {
-            $member = new spIrcChannelMemberDesc();
+            log::info("addMember($nick)");
+            $member = new spIrcChannelMemberDesc($this->state);
             
             // Generate colorize number based on nick.
             $nickHash = spIrcClientState::getFNV1($nick);
             $member->colorizeNumber = $nickHash % (self::COLORIZE_MAX - self::COLORIZE_MIN + 1) + self::COLORIZE_MIN;
             $this->members[$nick] = $member;
 
-            log::info("colorize $nick: " . $member->colorizeNumber . ", checksum: $nickHash");
+            $this->state->isModified = true;
+            
+            //log::info("colorize $nick: " . $member->colorizeNumber . ", checksum: $nickHash");
         }
         
         return $this->members[$nick];
     }
     
     public function removeMember($nick) {
-        unset($this->members[$nick]);
+        if (isset($this->members[$nick])) {
+            log::info("removeMember($nick)");
+            unset($this->members[$nick]);
+            $this->state->isModified = true;
+        }
     }
     
     public function clearMembers() {
-        $this->members = array();
+        if (count($this->members) > 0) {
+            log::info("clearMembers()");
+            $this->members = array();
+            $this->state->isModified = true;
+        }
     }
 }
 
@@ -145,6 +183,12 @@ class spIrcChannelMemberDesc {
     public $mode = '';
     
     public $colorizeNumber = 0;
+    
+    private $state;
+    
+    public function spIrcChannelMemberDesc($state) {
+        $this->state =& $state;
+    }
 }
 
 // Describes a user on the IRC network.
@@ -152,6 +196,12 @@ class spIrcUserDesc {
     public $realname;
     public $host;
     public $mode;
+    
+    private $state;
+    
+    public function spIrcUserDesc($state) {
+        $this->state =& $state;
+    }
 }
 
 ?>

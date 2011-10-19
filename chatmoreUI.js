@@ -841,21 +841,62 @@ $.fn.chatmore = function (p1, p2) {
             },
                                     
             // Convert URL patterns into HTML links.
-            linkifyURLs: function (html) {
-                // TODO: HTML escapting issues when URL contains ampersands in querystring.
-                return html.replace(self.linkifyRegex, '<a href="$1" target="_blank">$1</a>');
+            linkifyURLs: function (el) {
+                var nodes = self.findTextNodes(el);
+                
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    var modified = false;
+                    var html = $(node).text().replace(self.linkifyRegex, function (m, url) {
+                        modified = true;
+                        var n = $('<div/>')
+                            .append($('<a/>')
+                                .attr('href', url)
+                                .attr('target', '_blank')
+                                .text(url));
+                        return n.html();
+                    });
+                    
+                    if (modified) {
+                        var newNode = $('<span/>').append(html);
+                        $(node).replaceWith(newNode);
+                    }
+                    return;
+                };
             },
             //             [-scheme---------][-hostname------------][-port][-path------------][-querystring------------------------------------------------][-anchor----]
             linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
 
+            // Equivalent of find("*"), but only returns text nodes.
+            findTextNodes: function (node) {
+                var next;
+                var nodes = [];
+ 
+                if (node.nodeType === 1) {
+                    // Element node.
+                    if (node = node.firstChild) {
+                        do {
+                            next = node.nextSibling;
+                            nodes = nodes.concat(self.findTextNodes(node));
+                        } while (node = next);
+                    }
+                }
+                else if (node.nodeType === 3) {
+                    // Text node.
+                    nodes.push(node);
+                }
+                
+                return nodes;
+            },
+
             // Decorate nicks found in text with span.
-            decorateNicks: function (html, channel) {
+            decorateNicks: function (el, channel) {
                 var nicks = undefined;
                 if (self.irc.state() !== undefined) {
                     nicks = $.map(self.irc.state().users, function (val, key) { return key; });
                 }
 
-                if (nicks === undefined || nicks.length == 0) return html;
+                if (nicks === undefined || nicks.length == 0) return;
                 
                 // Convert array of nicks to regex expression.
                 var nickExpr = $.map(nicks, function (nick) {
@@ -863,29 +904,55 @@ $.fn.chatmore = function (p1, p2) {
                     return nick.replace(/([?*|.^$()\[\]{}\\/])/, "\\$1");
                 }).join('|');
                 var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
-                return html.replace(re, function (nick) {
-                    var colorizeNumber = undefined;
-                    if (channel != '') {
-                        if (window.console) console.log('channel/nick: ' + channel + '/' + nick);
-                        // Lookup nick's colorize number for given channel.
-                        if (self.irc.state().channels[channel] !== undefined &&
-                            self.irc.state().channels[channel].members[nick] !== undefined) {
-                            colorizeNumber = self.irc.state().channels[channel].members[nick].colorizeNumber;
+                
+                var nodes = self.findTextNodes(el);
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    var modified = false;
+                    var html = $(node).text().replace(re, function (m, nick) {
+                        var colorizeNumber = undefined;
+                        if (channel !== undefined && self.isChannel(channel)) {
+                            // Lookup nick's colorize number for given channel.
+                            if (self.irc.state().channels[channel] !== undefined &&
+                                self.irc.state().channels[channel].members[nick] !== undefined) {
+                                colorizeNumber = self.irc.state().channels[channel].members[nick].colorizeNumber;
+                            }
                         }
-                    }
-                    
-                    if (colorizeNumber !== undefined) {
-                        return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>'
-                    }
-                    else {
-                        return '<span class="nick">' + nick + '</span>'
-                    }
-                });
-            },
+                        
+                        modified = true;
 
+                        if (colorizeNumber !== undefined) {
+                            return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>'
+                        }
+                        else {
+                            return '<span class="nick">' + nick + '</span>'
+                        }
+                    });
+                    
+                    if (modified) {
+                        var newNode = $('<span/>').append(html);
+                        $(node).replaceWith(newNode);
+                    }
+                };
+            },
             // Decorate channel-like text with span.
-            decorateChannels: function (html) {
-                return html.replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, '$1<span class="channel">$2</span>');
+            decorateChannels: function (el) {
+                var nodes = self.findTextNodes(el);
+                for (var i = 0; i < nodes.length; i++) {
+                    var node = nodes[i];
+                    var modified = false;
+                    
+                    var html = $(node).text().replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
+                        modified = true;
+                        
+                        return text + '<span class="channel">' + channel + '</span>';
+                    });
+                    
+                    if (modified) {
+                        var newNode = $('<span/>').append(html);
+                        $(node).replaceWith(newNode);
+                    }
+                }
             },
             
             clearSelection: function () {
@@ -908,11 +975,10 @@ $.fn.chatmore = function (p1, p2) {
                     // Auto decorate nicks and channels in message.
                     var channel = element.find('.prefix .channel').text();
                     element.closest('.channelMsg,.PRIVMSG,.TOPIC,.serverMsg,.clientMsg').find('.message')
-                        .html(function (i, html) {
-                            html = self.linkifyURLs(html);
-                            html = self.decorateNicks(html, channel);
-                            html = self.decorateChannels(html);
-                            return html;
+                        .each(function () {
+                            self.linkifyURLs(this);
+                            self.decorateNicks(this);
+                            self.decorateChannels(this);
                         });
                     
                     // Add doubleclick handler on nick and channel to auto-query.
