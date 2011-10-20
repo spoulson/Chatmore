@@ -265,12 +265,6 @@ function chatmore(element, server, port, nick, realname, options) {
     this.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
-        // Abort waiting recv.php call before sending message.
-        // BUG: Aborting an ajax call doesn't stop the server request thread.
-        // Server continues waiting for socket activity, then when it receives data, it can't send it back to the client.
-        //local.pauseRecv = true;
-        //if (local.pollXhr !== undefined) local.pollXhr.abort();
-        
         $.ajax('send.php', {
             async: true,
             type: 'POST',
@@ -292,11 +286,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         console.log(data);
                     }
                 }
-            }//,
-            // complete: function () {
-                // // Resume recv.php calls.
-                // local.pauseRecv = false;
-            // }
+            }
         });
     };
 

@@ -43,6 +43,7 @@ $.fn.chatmore = function (p1, p2) {
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
+            //expectCommands: [],                 // Array of command => callback($command) for specialized command processing.
 
             // IRC client message templates.
             tmpls: {
@@ -160,7 +161,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</span>',
                 topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message">The current topic is: <span class="topicMessage">${msg.info.topic}</span></span>' +
+                    '<span class="message"><span class="no-decorate">The current topic is:</span> <span class="topicMessage">${msg.info.topic}</span></span>' +
                     '</span>',
                 changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
@@ -193,6 +194,17 @@ $.fn.chatmore = function (p1, p2) {
                         'user <span class="nick">${msg.info.target}</span> ' +
                         'by <span class="nick">${msg.prefixNick}</span></span>' +
                     '{{/if}}' +
+                    '</span>',
+                // names: '{{tmpl "timestamp"}}<span class="NAMES">' +
+                    // '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
+                    // '<span class="message">Users in channel: ' +
+                    // '{{each(i,name) msg.info.names.sort(function (a, b) { return self.stricmp(a, b); })}}' +
+                        // '<span class="mode">${name.mode}</span><span class="nick">${name.nick}</span> ' +
+                    // '{{/each}}' +
+                    // '</span>' +
+                    // '</span>',
+                list: '{{tmpl "timestamp"}}<span class="LIST">' +
+                    '{{tmpl "notePrefix"}} <span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): <span class="message">${msg.info.topic}</span>' +
                     '</span>'
             },
             
@@ -262,6 +274,7 @@ $.fn.chatmore = function (p1, p2) {
                         ' join - Join a channel',
                         ' kick - Kick user from channel',
                         ' leave - Leave a channel',
+                        ' list - Get channel listing',
                         ' me - Send an action message',
                         ' motd - Get the server message of the day',
                         ' msg - Send a private message',
@@ -381,6 +394,59 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendMsg('PART ' + meta.channel);
                     }
                 },
+                list: {
+                    helpUsage: 'Usage: /list [#channel [, #channel ...] ] [server]',
+                    helpText: 'Get channel listing.',
+                    parseParam: function (param, meta) {
+                        if (param === undefined) {
+                            // No parameters.
+                        }
+                        else {
+                            // Parse form: channels and server.
+                            var m = /^([#&+!][^\s,:\cg]+(\s*,\s*[#&+!][^\s,:\cg]+)*)(\s+(\S+))?\s*$/.exec(param);
+                            if (m !== null) {
+                                meta.channels = m[1].split(/\s*,\s*/);
+                                
+                                if (m[4] !== undefined) {
+                                    meta.server = m[4];
+                                }
+                            }
+                            else {
+                                // Parse form: server only
+                                m = /^(\S+)\s*$/.exec(param);
+                                if (m !== null) {
+                                    meta.server = m[1];
+                                }
+                                else {
+                                    // Unable to parse parameters.
+                                    meta.error = self.cmdDefs['list'].helpUsage;
+                                    return false;
+                                }
+                            }
+                        }
+                        
+                        if (!self.irc.isActivated()) {
+                            meta.error = 'Error: Must be connected to get the channel listing.';
+                            return false;
+                        }
+                    },
+                    exec: function (meta) {
+                        if (meta.channels !== undefined) {
+                            if (meta.server !== undefined) {
+                                self.irc.sendMsg('LIST ' + meta.channels.join(',') + ' ' + meta.server);
+                            }
+                            else {
+                                self.irc.sendMsg('LIST ' + meta.channels.join(','));
+                            }
+                        }
+                        else if (meta.server !== undefined) {
+                            self.irc.sendMsg('LIST ' + meta.server);
+                        }
+                        else {
+                            self.irc.sendMsg('LIST');
+                        }
+                    }
+                },
                 me: {
                     helpUsage: 'Usage: /me &lt;message&gt;',
                     helpText: 'Send an action message to currently selected channel or nick.',
@@ -430,7 +496,7 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 },
                 mode: {
-                    helpUsage: 'Usage: /mode &lt;nick | channel&gt; [ &lt;+mode | -mode&gt; [parameters] ]',
+                    helpUsage: 'Usage: /mode &lt;nick | #channel&gt; [ &lt;+mode | -mode&gt; [parameters] ]',
                     helpText: [
                         'Get or change user or channel mode.',
                         'Available user modes: http://tools.ietf.org/html/rfc2812#section-3.1.5',
@@ -935,6 +1001,7 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 };
             },
+
             // Decorate channel-like text with span.
             decorateChannels: function (el) {
                 var nodes = self.findTextNodes(el);
@@ -974,7 +1041,7 @@ $.fn.chatmore = function (p1, p2) {
                     
                     // Auto decorate nicks and channels in message.
                     var channel = element.find('.prefix .channel').text();
-                    element.closest('.channelMsg,.PRIVMSG,.TOPIC,.serverMsg,.clientMsg').find('.message')
+                    element.closest('.channelMsg,.PRIVMSG,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
                         .each(function () {
                             self.linkifyURLs(this);
                             self.decorateNicks(this);
@@ -1458,9 +1525,19 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('nickInUse', { msg: msg });
                         break;
                         
+                    case '322': // RPL_LIST
+                        self.writeTmpl('list', { msg: msg });
+                        break;
+                        
+                    // case '353': // RPL_NAMREPLY
+                        // if (window.console) console.log(msg);
+                        // self.writeTmpl('names', { msg: msg });
+                        // break;
+                        
                     // Disregard these messages.
                     case '004': // RPL_MYINFO
                     case '005': // RPL_BOUNCE
+                    case '323': // RPL_LISTEND
                     case '353': // RPL_NAMREPLY
                     case '366': // RPL_ENDOFNAMES
                         break;

@@ -28,6 +28,9 @@ class spIrcClient
     const RPL_LUSERCHANNELS = 254;
     const RPL_LUSERME = 255;
     const RPL_ENDOFWHO = 315;
+    const RPL_LISTSTART = 321;
+    const RPL_LIST = 322;
+    const RPL_LISTEND = 323;
     const RPL_CHANNELMODEIS = 324;
     const RPL_WHOREPLY = 352;
     const RPL_NAMREPLY = 353;
@@ -195,7 +198,7 @@ class spIrcClient
         //log::info('Parsing: ' . $line);
         
         // Parse raw message for prefix, command, and params.
-        if (!preg_match("/^(:(\S+)\s+)?(\w+)(\s+(.+?))?\r\n$/", $line, $m)) return false;
+        if (!preg_match("/^(:(\S+)\s+)?(\w+)(\s+(.+?))?[ ]*\r\n$/", $line, $m)) return false;
         $params = $m[5];
         $msg = array(
             'prefix' => isset($m[2]) ? $m[2] : null,
@@ -264,14 +267,14 @@ class spIrcClient
             break;
         
         case 'JOIN':
-            if (!preg_match("/^:?([#&+!][^\s,:\cg]+)\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/^:?([#&+!][^\s,:\cg]+)$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1]
             );
             break;
             
         case 'PART':
-            if (!preg_match("/^(\\S+)(\\s+:(.+))?\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/^(\\S+)(\\s+:(.+))?$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1]
             );
@@ -432,11 +435,21 @@ class spIrcClient
             break;
             
         case self::RPL_CHANNELMODEIS:
-            if (!preg_match("/\S+\s+([#&+!][^\s,:\cg]+)\s+(\S+(\s+\S+)?)\s*$/", $params, $msgParams)) return false;
+            if (!preg_match("/\S+\s+([#&+!][^\s,:\cg]+)\s+(\S+(\s+\S+)?)$/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'mode' => $msgParams[2]
             );
+            break;
+            
+        case self::RPL_LIST:
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+(\d+)\s+:(.*)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'channel' => $msgParams[1],
+                'memberCount' => $msgParams[2],
+                'topic' => $msgParams[3]
+            );
+            log::info(var_export($msg, true));
             break;
             
         case self::ERR_NOSUCHCHANNEL:
@@ -463,6 +476,10 @@ class spIrcClient
             );
             break;
 
+        // Disregard these messages.
+        case self::RPL_LISTSTART:
+            return false;
+            
         default:
             // All other messages parsed as a simple text message.
             if (!preg_match("/^(\S+)\s+:(.*)/", $params, $msgParams)) return false;
@@ -472,7 +489,8 @@ class spIrcClient
             );
             break;
         }
-
+        
+        $msg['type'] = self::CLMSG_TYPE_RECV;
         //log::info('Parsed message: ' . var_export($msg, true));
         return $msg;
     }
@@ -763,6 +781,10 @@ class spIrcClient
         $this->state->ident = $ident;
         $this->state->host = null;
         $this->state->realname = $realname;
+        
+        log::info(sprintf('Registering user "%s" (%s) on IRC server %s:%d, from host %s (%s:%d)',
+            $nick, $realname, $this->state->server, $this->state->port,
+            $_SERVER['REMOTE_HOST'], $_SERVER['REMOTE_ADDR'], $_SERVER['REMOTE_PORT']));
         
         $this->sendRawMsg("USER " . $this->state->ident . " 0 * :" . $this->state->realname . "\r\n");
         $this->sendRawMsg("NICK $nick\r\n");

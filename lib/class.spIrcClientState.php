@@ -23,9 +23,13 @@ class spIrcClientState
     
     public $channels = array(); // Array of $channel => spIrcChannelDesc objects.
     public $users = array();    // Array of $nick => spIrcUserDesc objects.
+
+    // Localized server state.
+    public $local;
     
     public function spIrcClientState() {
         $this->sessionId = uniqid('', true);
+        $this->local = new spIrcServerLocalState();
     }
     
     public function getPrimarySocketFilename() {
@@ -90,6 +94,16 @@ class spIrcClientState
         }
     }
     
+    // Prepare state object to send to client.
+    public function toClientState() {
+        $clientState = clone $this;
+        
+        // Remove localized server state from object.
+        unset($clientState->local);
+        
+        return $clientState;
+    }
+    
     // Get FNV-1 hash on a string or number.
     // http://isthe.com/chongo/tech/comp/fnv/
     // $hash is a previous hash to build upon.
@@ -115,6 +129,11 @@ class spIrcClientState
         
         return $hash;
     }
+}
+
+// Server state for use for server side processing only.
+class spIrcServerLocalState {
+    // Reserved for now.
 }
 
 // Describes a channel on the IRC network.

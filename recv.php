@@ -37,8 +37,10 @@ if (isset($_SESSION['irc'])) {
                     $msg = $ircbot->parseMsg($line);
                     
                     if ($msg !== false) {
-                        $msg['type'] = spIrcClient::CLMSG_TYPE_RECV;
-                        $data[] = $msg;
+                        if ($msg['type'] == spIrcClient::CLMSG_TYPE_RECV) {
+                            // If message type is RECV, it can be sent to the client.
+                            $data[] = $msg;
+                        }
                         
                         // Do default processing on the message.
                         $ircbot->processMsg($msg);
@@ -60,7 +62,7 @@ if (isset($_SESSION['irc'])) {
                     array(
                         array(
                             'type' => spIrcClient::CLMSG_TYPE_STATE,
-                            'state' => $state
+                            'state' => $state->toClientState()
                         )
                     ),
                     $data);
