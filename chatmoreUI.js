@@ -1591,6 +1591,10 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('deactivatingClient', function () {
+                self.ircElement
+                    .removeClass('activated')
+                    .addClass('deactivated');
+                
                 if (self.enableAutoReactivate) {
                     // Attempt reactivation.
                     if (self.reactivateAttempts < self.maxReactivateAttempts) {
