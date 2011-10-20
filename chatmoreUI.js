@@ -1275,11 +1275,8 @@ $.fn.chatmore = function (p1, p2) {
                                 .find('.leaveButton')
                                     .click(function () {
                                         if (self.irc.isActivated()) {
-                                            // Update UI and leave the channel.
-                                            $(this).parent('li')
-                                                .slideUp(400, 'swing', function () {
-                                                    self.sendLine('/leave ' + channel);
-                                                });
+                                            $(this).parent('li').addClass('leaving');
+                                            self.sendLine('/leave ' + channel);
                                         }
                                     })
                                     .end()

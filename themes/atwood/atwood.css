@@ -812,6 +812,10 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     padding-bottom: 6px;
 }
 
+.chatmore .sideBar ul.channelList > li.leaving {
+    background-image: url(images/leaving.png);
+}
+
 .chatmore .sideBar ul.channelList > li .channel {
     float: left;
 }
