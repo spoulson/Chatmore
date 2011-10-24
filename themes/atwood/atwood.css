@@ -820,6 +820,14 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     float: left;
 }
 
+.chatmore .sideBar .channelList .memberCount {
+    float: left;
+    padding-left: 6px;
+    font-size: 0.80em;
+    font-weight: normal;
+    color: black;
+}
+
 .chatmore .sideBar .channelList .leaveButton {
     float: left;
     width: 16px;

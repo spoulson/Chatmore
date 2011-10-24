@@ -47,7 +47,7 @@ $.fn.chatmore = function (p1, p2) {
 
             // IRC client message templates.
             tmpls: {
-                timestamp: '<span class="timestamp">[${self.getTimestamp()}]&nbsp;</span>',
+                timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
                 bullet: '&bull;&bull;&bull;',
                 notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
                 error: '{{tmpl "timestamp"}}<span class="error">' +
@@ -157,24 +157,30 @@ $.fn.chatmore = function (p1, p2) {
                     '</span>',
                 notopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message">No topic is set</span>' +
+                    '<span class="message no-decorate">No topic is set</span>' +
                     '</span>',
                 topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message"><span class="no-decorate">The current topic is:</span> <span class="topicMessage">${msg.info.topic}</span></span>' +
+                    '<span class="message">' +
+                    '{{if msg.info.topic !== null}}' +
+                        '<span class="no-decorate">The current topic is:</span> <span class="topicMessage">${msg.info.topic}</span>' +
+                    '{{else}}' +
+                        '<span class="message no-decorate">No topic is set</span>' +
+                    '{{/if}}' +
+                    '</span>' +
                     '</span>',
                 changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message"><span class="nick${self.getColorizeCSSClass(msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> ' +
+                    '<span class="message"><span class="no-decorate"><span class="nick ${self.getColorizeCSSClass(msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> ' +
                     '{{if msg.info.topic == ""}}' +
-                        'has cleared the topic' +
+                        'has cleared the topic</span>' +
                     '{{else}}' +
-                        'has changed the topic to: <span class="topicMessage">${msg.info.topic}</span>' +
+                        'has changed the topic to: </span><span class="topicMessage">${msg.info.topic}</span>' +
                     '{{/if}}' +
                     '</span></span>',
                 topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    '<span class="message">Topic set by <span class="nick">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
+                    '<span class="message no-decorate">Topic set by <span class="nick ${self.getColorizeCSSClass(msg.info.nick, msg.info.channel)}">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
                     '</span>',
                 serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
                     '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${msg.info.server}</span>: <span class="time">${msg.info.timeString}</span></span>' +
@@ -204,7 +210,7 @@ $.fn.chatmore = function (p1, p2) {
                     // '</span>' +
                     // '</span>',
                 list: '{{tmpl "timestamp"}}<span class="LIST">' +
-                    '{{tmpl "notePrefix"}} <span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): <span class="message">${msg.info.topic}</span>' +
+                    '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${msg.info.topic}</span>' +
                     '</span>'
             },
             
@@ -829,9 +835,13 @@ $.fn.chatmore = function (p1, p2) {
                 self.ircElement.find('.userEntry').val('');
             },
 
-            getTimestamp: function () {
+            getShortTimestamp: function () {
                 var d = new Date();
                 return d.getHours() + ':' + self.padZero(d.getMinutes(), 2);
+            },
+
+            getLongTimestamp: function () {
+                return new Date().toLocaleString();
             },
             
             padZero: function (n, digits) {
@@ -905,10 +915,46 @@ $.fn.chatmore = function (p1, p2) {
                     return undefined;
                 }
             },
-                                    
+            
+            // Equivalent of find("*"), but only returns text nodes.
+            findTextNodes: function (node, predicate) {
+                var next;
+                var nodes = [];
+ 
+                if (node.nodeType === 1) {
+                    // Element node.
+                    if (node = node.firstChild) {
+                        do {
+                            next = node.nextSibling;
+                            nodes = nodes.concat(self.findTextNodes(node, predicate));
+                        } while (node = next);
+                    }
+                }
+                else if (node.nodeType === 3) {
+                    // Text node.
+                    if (predicate === undefined || predicate(node)) {
+                        nodes.push(node);
+                    }
+                }
+                
+                return nodes;
+            },
+
+            findTextNodesForDecoration: function (el) {
+                return self.findTextNodes(el, function (node) {
+                    // Exclude already decorated elements.
+                    // Exclude elements tagged with no-decorate class.
+                    if ($(node).parent('a,.channel,.nick').length != 0 ||
+                        $(node).parents('.no-decorate').length != 0)
+                        return false;
+                    else
+                        return true;
+                });
+            },
+            
             // Convert URL patterns into HTML links.
             linkifyURLs: function (el) {
-                var nodes = self.findTextNodes(el);
+                var nodes = self.findTextNodesForDecoration(el);
                 
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
@@ -927,33 +973,10 @@ $.fn.chatmore = function (p1, p2) {
                         var newNode = $('<span/>').append(html);
                         $(node).replaceWith(newNode);
                     }
-                    return;
                 };
             },
             //             [-scheme---------][-hostname------------][-port][-path------------][-querystring------------------------------------------------][-anchor----]
             linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
-
-            // Equivalent of find("*"), but only returns text nodes.
-            findTextNodes: function (node) {
-                var next;
-                var nodes = [];
- 
-                if (node.nodeType === 1) {
-                    // Element node.
-                    if (node = node.firstChild) {
-                        do {
-                            next = node.nextSibling;
-                            nodes = nodes.concat(self.findTextNodes(node));
-                        } while (node = next);
-                    }
-                }
-                else if (node.nodeType === 3) {
-                    // Text node.
-                    nodes.push(node);
-                }
-                
-                return nodes;
-            },
 
             // Decorate nicks found in text with span.
             decorateNicks: function (el, channel) {
@@ -971,7 +994,8 @@ $.fn.chatmore = function (p1, p2) {
                 }).join('|');
                 var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
                 
-                var nodes = self.findTextNodes(el);
+                var nodes = self.findTextNodesForDecoration(el);
+                
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     var modified = false;
@@ -1004,7 +1028,8 @@ $.fn.chatmore = function (p1, p2) {
 
             // Decorate channel-like text with span.
             decorateChannels: function (el) {
-                var nodes = self.findTextNodes(el);
+                var nodes = self.findTextNodesForDecoration(el);
+                
                 for (var i = 0; i < nodes.length; i++) {
                     var node = nodes[i];
                     var modified = false;
@@ -1041,11 +1066,11 @@ $.fn.chatmore = function (p1, p2) {
                     
                     // Auto decorate nicks and channels in message.
                     var channel = element.find('.prefix .channel').text();
-                    element.closest('.channelMsg,.PRIVMSG,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
+                    element.closest('.channelMsg,.privateMsg,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
                         .each(function () {
                             self.linkifyURLs(this);
-                            self.decorateNicks(this);
                             self.decorateChannels(this);
+                            self.decorateNicks(this, channel);
                         });
                     
                     // Add doubleclick handler on nick and channel to auto-query.
@@ -1250,6 +1275,29 @@ $.fn.chatmore = function (p1, p2) {
                     channelDesc.members[nick].colorizeNumber : undefined;
             },
             
+            // Get length of an object array.
+            // Based on: http://stackoverflow.com/questions/5223/length-of-javascript-associative-array
+            getLength: function (obj) {
+                if (obj.length) {
+                    // Non-object array.
+                    return obj.length;
+                }
+                else if (Object.keys) {
+                    // Object
+                    return Object.keys(obj).length;
+                }
+                else {
+                    // Object.  Manually counting elements.
+                    var size = 0;
+                    
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) size++;
+                    }
+                    
+                    return size;
+                }
+            },
+            
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
                     if (self.irc.state() === undefined) {
@@ -1266,10 +1314,11 @@ $.fn.chatmore = function (p1, p2) {
 
                         $.each(self.getJoinedChannels(), function (i, channel) {
                             var channelDesc = self.irc.state().channels[channel];
-                            var channelElement = $('<li><span class="channel">' + channel + '</span><span class="leaveButton" title="Leave channel"></span></li>')
+                            var memberCount = self.getLength(channelDesc.members);
+                            var channelElement = $('<li><span class="channel">' + channel + '</span><span class="memberCount">(' + memberCount + ')</span><span class="leaveButton" title="Leave channel"></span></li>')
                                 // Set topic as tooltip.
                                 .find('.channel')
-                                    .attr('title', channelDesc.topic)
+                                    .attr('title', channelDesc.topic !== null ? channelDesc.topic : 'No topic set')
                                     .end()
                                 // Setup leave channel icon.
                                 .find('.leaveButton')

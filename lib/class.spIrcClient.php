@@ -402,7 +402,7 @@ class spIrcClient
             break;
             
         case self::RPL_NOTOPIC:
-            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
                 'topic' => null
@@ -410,10 +410,10 @@ class spIrcClient
             break;
             
         case self::RPL_TOPIC:
-            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:(.*)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
-                'topic' => $msgParams[2]
+                'topic' => !empty($msgParams[2]) ? $msgParams[2] : null
             );
             break;
             
@@ -595,7 +595,8 @@ class spIrcClient
         case self::RPL_TOPIC:
             $channel = $msg['info']['channel'];
             if (isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel]->topic = $msg['info']['topic'];
+                $topic = $msg['info']['topic'];
+                $this->state->channels[$channel]->topic = !empty($topic) ? $topic : null;
                 $this->state->isModified = true;
             }
             break;
