@@ -54,7 +54,7 @@ Startup with defaults.
 
 http://server/chatmore/?server=irc.example.com  
 http://server/chatmore/?server=irc.example.com&nick=yournick  
-http://server/chatmore/?server=irc.example.com&nick=yournick#channel
+http://server/chatmore/?server=irc.example.com&nick=yournick#channel  
 http://server/chatmore/?server=irc.example.com&nick=yournick#channel,#channel2
 
 Connect to IRC server name.  
