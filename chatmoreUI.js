@@ -11,7 +11,6 @@ $.fn.chatmore = function (p1, p2) {
         if (options.realname === undefined) options.realname = options.nick;
         if (options.port === undefined) options.port = 6667;
         if (options.title === undefined) options.title = document.title;
-        if (options.notificationTitle === undefined) options.notificationTitle = 'A new message has arrived! -- ' + options.title;
         if (options.quitMessage === undefined) options.quitMessage = 'Chatmore IRC client';
         if (options.reactivateAttempts === undefined) options.reactivateAttempts = 6;
         if (options.reactivateDelay === undefined) options.reactivateDelay = 10;
@@ -29,8 +28,8 @@ $.fn.chatmore = function (p1, p2) {
 
             quitMessage: options.quitMessage,
             defaultTitle: options.title,
-            notificationTitle: options.notificationTitle,
             isWindowFocused: true,
+            notificationMessageCount: 0,        // Number of messages received while not focused on browser.
             prevState: undefined,
             msgSenders: [],                     // History of private message senders for autocomplete.
             autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
@@ -43,10 +42,13 @@ $.fn.chatmore = function (p1, p2) {
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
-            //expectCommands: [],                 // Array of command => callback($command) for specialized command processing.
 
             // IRC client message templates.
             tmpls: {
+                title: '<span>{{if messageCount == 1}}A new message has arrived! -- ' +
+                    '{{else messageCount > 1}}${messageCount} new messages have arrived! -- ' +
+                    '{{/if}}' +
+                    '${defaultTitle}</span>',
                 timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
                 bullet: '&bull;&bull;&bull;',
                 notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
@@ -1297,7 +1299,17 @@ $.fn.chatmore = function (p1, p2) {
                     return size;
                 }
             },
-            
+
+            // Update browser title from template.
+            refreshTitle: function () {
+                var newTitle = $.tmpl('title', {
+                    defaultTitle: self.defaultTitle,
+                    messageCount: self.notificationMessageCount
+                }).text();
+
+                if (newTitle != document.title) document.title = newTitle;
+            },
+
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
                     if (self.irc.state() === undefined) {
@@ -1402,7 +1414,8 @@ $.fn.chatmore = function (p1, p2) {
             .focus(function () {
                 // Restore title when user comes back to the window.
                 setTimeout(function () {
-                    document.title = self.defaultTitle;
+                    self.notificationMessageCount = 0;
+                    self.refreshTitle();
                 }, 200);
                 
                 if (!self.isWindowFocused) {
@@ -1454,7 +1467,8 @@ $.fn.chatmore = function (p1, p2) {
                     case 'PRIVMSG':
                         // Update title when new messages arrive and user isn't focused on the browser.
                         if (!self.isWindowFocused) {
-                            document.title = self.notificationTitle;
+                            self.notificationMessageCount++;
+                            self.refreshTitle();
                         }
                         
                         if (self.stricmp(msg.info.target, self.irc.state().nick) == 0) {
@@ -1471,7 +1485,8 @@ $.fn.chatmore = function (p1, p2) {
                     case 'NOTICE':
                         // Update title when new messages arrive and user isn't focused on the browser.
                         if (!self.isWindowFocused) {
-                            document.title = self.notificationTitle;
+                            self.notificationMessageCount++;
+                            self.refreshTitle();
                         }
 
                         if (self.stricmp(msg.info.target, self.irc.state().nick) == 0) {
