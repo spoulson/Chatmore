@@ -8,20 +8,21 @@ require_once 'class.spIrcClient.php';
 $timeout = $ircConfig['recv_timeout'];
 
 set_time_limit($timeout/1000 + 5);
+
 session_start();
+$session = new spIrcSessionDAL_SQLite($sessionDbFilename, $_GET['id']);
+$state = $session->load();
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
-if (isset($_SESSION['irc'])) {
-    // Resuming a session.
-    $state =& $_SESSION['irc'];
-    $socketFile = $state->getPrimarySocketFilename();
-    
+if ($state !== null) {
+    $socketFile = $state->primarySocketFilename;
+
     if (file_exists($socketFile)) {
-        $ircbot = new spIrcClient($socketFile, $state);
+        $ircbot = new spIrcClient($socketFile);
 
         if ($ircbot->isConnected()) {
             $data = array();
@@ -55,19 +56,6 @@ if (isset($_SESSION['irc'])) {
                 $messageCount < 200 &&                  // Break if too many messages.  Endless loop?
                 $ircbot->isConnected());                // Break if disconnected.
 
-            // Check for change in state.
-            if ($state->isModified) {
-                // Send client state as first response message.
-                $data = array_merge(
-                    array(
-                        array(
-                            'type' => spIrcClient::CLMSG_TYPE_STATE,
-                            'state' => $state->toClientState()
-                        )
-                    ),
-                    $data);
-            }
-
             $ircbot->disconnect();
         }
         else {
@@ -83,7 +71,7 @@ if (isset($_SESSION['irc'])) {
     }
     else {
         // Socket no longer available.
-        unset($_SESSION['irc']);
+        $session->delete();
         $data = array(
             array(
                 'type' => spIrcClient::CLMSG_TYPE_SERVER,
@@ -103,11 +91,11 @@ else {
         )
     );
 }
-
 //log::info("Returned message(s): " . var_export($data, true));
 
 // Send received messages data as JSON.
 @ob_end_clean();
 echo json_encode($data);
+
 exit;
 ?>

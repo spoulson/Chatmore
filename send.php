@@ -5,6 +5,8 @@ require_once 'config.php';
 require_once 'class.spIrcClient.php';
 
 session_start();
+$session = new spIrcSessionDAL_SQLite($sessionDbFilename, $_GET['id']);
+$state = $session->load();
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -13,12 +15,11 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 $data = array();
 
-if (isset($_SESSION['irc'])) {
-    $state =& $_SESSION['irc'];
-    $socketFile = $state->getSecondarySocketFilename();
+if ($state !== null) {
+    $socketFile = $state->secondarySocketFilename;
     
     if (file_exists($socketFile)) {
-        $ircbot = new spIrcClient($socketFile, $state);
+        $ircbot = new spIrcClient($socketFile);
         
         if ($ircbot->isConnected()) {
             $raw = $_POST['msg'];
@@ -48,7 +49,8 @@ if (isset($_SESSION['irc'])) {
     }
     else {
         // Socket no longer available.
-        unset($_SESSION['irc']);
+        //unset($_SESSION[$clientStateKey]);
+        $session->delete();
         $data[] = array(
             'type' => spIrcClient::CLMSG_TYPE_SERVER,
             'message' => 'Connection not open.  Socket no longer available.',
@@ -64,6 +66,8 @@ else {
         'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
     );
 }
+
+//log::info("Returned message(s): " . var_export($data, true));
 
 @ob_end_clean();
 echo json_encode($data);

@@ -148,7 +148,7 @@ $.fn.chatmore = function (p1, p2) {
                     '</span>',
                 nick: '{{tmpl "timestamp"}}<span class="NICK">' +
                     '{{tmpl "notePrefix"}} <span class="message">' +
-                    '{{if self.stricmp(self.irc.state().nick, msg.prefixNick) == 0}}' +
+                    '{{if self.stricmp(self.irc.state.nick, msg.prefixNick) == 0}}' +
                         'Nick changed to <span class="nick">${msg.info.nick}</span>' +
                     '{{else}}' +
                         '<span class="nick">${msg.prefixNick}</span> is now known as <span class="nick">${msg.info.nick}</span>' +
@@ -164,7 +164,7 @@ $.fn.chatmore = function (p1, p2) {
                 topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
                     '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
                     '<span class="message">' +
-                    '{{if msg.info.topic !== null}}' +
+                    '{{if msg.info.topic !== undefined}}' +
                         '<span class="no-decorate">The current topic is:</span> <span class="topicMessage">${msg.info.topic}</span>' +
                     '{{else}}' +
                         '<span class="message no-decorate">No topic is set</span>' +
@@ -479,8 +479,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendChannelAction(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelAction', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -492,8 +492,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendPrivateAction(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateAction', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -585,8 +585,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendChannelMsg(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelMsg', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -598,8 +598,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendPrivateMsg(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateMsg', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -659,8 +659,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendChannelNotice(meta.target, meta.message);
                             self.writeTmpl('outgoingChannelNotice', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -672,8 +672,8 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.sendPrivateNotice(meta.target, meta.message);
                             self.writeTmpl('outgoingPrivateNotice', {
                                 msg: {
-                                    prefixNick: self.irc.state().nick,
-                                    prefixUser: self.irc.state().ident,
+                                    prefixNick: self.irc.state.nick,
+                                    prefixUser: self.irc.state.ident,
                                     info: {
                                         target: meta.target,
                                         text: meta.message
@@ -878,7 +878,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             addToMsgSenders: function (nick) {
-                if (self.stricmp(nick, self.irc.state().nick) != 0) {
+                if (self.stricmp(nick, self.irc.state.nick) != 0) {
                     self.msgSenders = $.grep(self.msgSenders, function (val) {
                         // Remove from array, if exists.
                         return self.stricmp(val, nick) != 0;
@@ -983,8 +983,8 @@ $.fn.chatmore = function (p1, p2) {
             // Decorate nicks found in text with span.
             decorateNicks: function (el, channel) {
                 var nicks = undefined;
-                if (self.irc.state() !== undefined) {
-                    nicks = $.map(self.irc.state().users, function (val, key) { return key; });
+                if (self.irc.state !== undefined) {
+                    nicks = $.map(self.irc.state.users, function (val, key) { return key; });
                 }
 
                 if (nicks === undefined || nicks.length == 0) return;
@@ -1005,9 +1005,9 @@ $.fn.chatmore = function (p1, p2) {
                         var colorizeNumber = undefined;
                         if (channel !== undefined && self.isChannel(channel)) {
                             // Lookup nick's colorize number for given channel.
-                            if (self.irc.state().channels[channel] !== undefined &&
-                                self.irc.state().channels[channel].members[nick] !== undefined) {
-                                colorizeNumber = self.irc.state().channels[channel].members[nick].colorizeNumber;
+                            if (self.irc.state.channels[channel] !== undefined &&
+                                self.irc.state.channels[channel].members[nick] !== undefined) {
+                                colorizeNumber = self.irc.state.channels[channel].members[nick].colorizeNumber;
                             }
                         }
                         
@@ -1083,13 +1083,13 @@ $.fn.chatmore = function (p1, p2) {
                     // Detect if my nick was mentioned in a channel message.
                     element.closest('.channelMsg').find('.message .nick')
                         .filter(function () {
-                            return self.irc.state() !== undefined && self.stricmp($(this).text(), self.irc.state().nick) == 0;
+                            return self.irc.state !== undefined && self.stricmp($(this).text(), self.irc.state.nick) == 0;
                         })
                         .first()
                         .filter(function () {
                             // Check if this message is written by me.  If I wrote it, skip highlighting.
                             var prefixNick = element.find('.prefix .nick').text();
-                            return self.irc.state() !== undefined && self.stricmp(prefixNick, self.irc.state().nick) != 0;
+                            return self.irc.state !== undefined && self.stricmp(prefixNick, self.irc.state.nick) != 0;
                         })
                         .each(function () {
                             element.closest('.channelMsg').addClass('nickHighlight');
@@ -1180,10 +1180,10 @@ $.fn.chatmore = function (p1, p2) {
                     // Unselect doubleclicked text.
                     self.clearSelection();
 
-                    if (self.irc.state() !== undefined && target != self.irc.state().nick) {
+                    if (self.irc.state !== undefined && self.stricmp(target, self.irc.state.nick) != 0) {
                         if (self.isChannel(target)) {
                             // Check if joined to this channel.
-                            if (self.irc.state() !== undefined && self.irc.state().channels[target] === undefined)
+                            if (self.irc.state !== undefined && self.irc.state.channels[target] === undefined)
                                 self.sendLine('/join ' + target);
                             else
                                 self.queryTarget(target);
@@ -1198,7 +1198,7 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             joinChannel: function (channel, key) {
-                if (self.irc.state().channels[channel] !== undefined) {
+                if (self.irc.state.channels[channel] !== undefined) {
                     // If already joined to this channel, just query it.
                     self.queryTarget(channel);
                 }
@@ -1215,32 +1215,51 @@ $.fn.chatmore = function (p1, p2) {
             queryTarget: function (target) {
                 var prevTarget = self.irc.target();
                 
-                self.irc.target(target);
+                if (target !== prevTarget) {
+                    self.irc.target(target);
 
-                self.writeTmpl(target === undefined ? 'queryOff' : 'query', {
-                    target: target,
-                    prevTarget: prevTarget
-                });
+                    self.writeTmpl(target === undefined ? 'queryOff' : 'query', {
+                        target: target,
+                        prevTarget: prevTarget
+                    });
 
-                // Update user mode line.
-                self.ircElement.find('.targetFragment').fadeOut(null, function () {
-                    self.ircElement.find('.targetLabel').text(target);
-                    if (target !== undefined && target !== null) {
-                        var isChannel = self.isChannel(target);
-                        self.ircElement.find('.targetLabel')
-                            .removeClass(isChannel ? 'nick' : 'channel')
-                            .addClass(isChannel ? 'channel' : 'nick');
-
-                        self.ircElement.find('.targetFragment').fadeIn();
-                    }
-                });
+                    // Update user mode line.
+                    self.ircElement.find('.targetFragment').fadeOut(null, function () {
+                        self.ircElement.find('.targetLabel').text(target);
+                        if (target !== undefined && target !== null) {
+                            var isChannel = self.isChannel(target);
+                            self.ircElement.find('.targetLabel')
+                                .removeClass(isChannel ? 'nick' : 'channel')
+                                .addClass(isChannel ? 'channel' : 'nick');
+    
+                            self.ircElement.find('.targetFragment').fadeIn();
+                        }
+                    });
+                }
             },
             
+            // Handle renaming of a nick of any user.
+            renameNick: function (oldNick, newNick) {
+                // Adjust channel members.
+                $.each(self.irc.state.channels, function (i, channel) {
+                    if (channel.members[oldNick] !== undefined) {
+                        channel.members[newNick] = channel.members[oldNick];
+                        channel.removeMember(oldNick);
+                    }
+                });
+                
+                // Adjust user list.
+                self.irc.state.users[newNick] = self.irc.state.users[oldNick];
+                self.irc.state.removeUser(oldNick);
+                
+                self.irc.state.isModified = true;
+            },
+    
             getJoinedChannels: function () {
                 var channels = [];
                 
-                if (self.irc.state() !== undefined) {
-                    for (var channel in self.irc.state().channels) {
+                if (self.irc.state !== undefined) {
+                    for (var channel in self.irc.state.channels) {
                         channels.push(channel);
                     }
                 }
@@ -1251,8 +1270,8 @@ $.fn.chatmore = function (p1, p2) {
             getChannelMembers: function (channel) {
                 var members = [];
                 
-                if (self.irc.state() !== undefined) {
-                    var channelDesc = self.irc.state().channels[channel];
+                if (self.irc.state !== undefined) {
+                    var channelDesc = self.irc.state.channels[channel];
                     
                     if (channelDesc !== undefined) {
                         for (var member in channelDesc.members) {
@@ -1270,7 +1289,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             getColorizeNumber: function (nick, channel) {
-                var channelDesc = self.irc.state().channels[channel];
+                var channelDesc = self.irc.state.channels[channel];
                 if (channelDesc === undefined) return;
                 
                 return channelDesc.members[nick] !== undefined ?
@@ -1299,7 +1318,17 @@ $.fn.chatmore = function (p1, p2) {
                     return size;
                 }
             },
-
+            
+            // Clone an object or array structure.
+            // Based on: http://my.opera.com/GreyWyvern/blog/show.dml/1725165
+            clone: function(obj) {
+                var newObj = (obj instanceof Array) ? [] : {};
+                for (key in obj) {
+                    newObj[key] = (obj[key] && typeof obj[key] === "object") ? self.clone(obj[key]) : obj[key];
+                }
+                return newObj;
+            },
+            
             // Update browser title from template.
             refreshTitle: function () {
                 var newTitle = $.tmpl('title', {
@@ -1312,11 +1341,11 @@ $.fn.chatmore = function (p1, p2) {
 
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
-                    if (self.irc.state() === undefined) {
+                    /*if (self.irc.state === undefined) {
                         // If no state data, clear everything.
                         self.ircElement.find('.sideBar ul.channelList').empty();
                     }
-                    else {
+                    else {*/
                         // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
                         // such as incoming messages and user actions both changing state.
                         var channelList = self.ircElement.find('.sideBar ul.channelList');
@@ -1325,12 +1354,12 @@ $.fn.chatmore = function (p1, p2) {
                         channelList.empty();
 
                         $.each(self.getJoinedChannels(), function (i, channel) {
-                            var channelDesc = self.irc.state().channels[channel];
+                            var channelDesc = self.irc.state.channels[channel];
                             var memberCount = self.getLength(channelDesc.members);
                             var channelElement = $('<li><span class="channel">' + channel + '</span><span class="memberCount">(' + memberCount + ')</span><span class="leaveButton" title="Leave channel"></span></li>')
                                 // Set topic as tooltip.
                                 .find('.channel')
-                                    .attr('title', channelDesc.topic !== null ? channelDesc.topic : 'No topic set')
+                                    .attr('title', (channelDesc.topic !== undefined) ? channelDesc.topic : 'No topic set')
                                     .end()
                                 // Setup leave channel icon.
                                 .find('.leaveButton')
@@ -1346,7 +1375,6 @@ $.fn.chatmore = function (p1, p2) {
                             var memberList = $('<ul class="memberList"/>')
                                 .appendTo(channelElement);
                                 
-                            
                             $.each(self.getChannelMembers(channel), function (i, member) {
                                 var memberDesc = channelDesc.members[member];
                                 var colorizeNumber = memberDesc.colorizeNumber;
@@ -1362,7 +1390,7 @@ $.fn.chatmore = function (p1, p2) {
                         channelList.find('.nick,.channel')
                             .hover(self.hoverClickableHandler, self.leaveClickableHandler)
                             .dblclick(self.dblclickChannelNickHandler);
-                    }
+                    /*}*/
                 }
             },
         
@@ -1433,36 +1461,40 @@ $.fn.chatmore = function (p1, p2) {
                 self.writeTmpl(type, { message: message });
             })
             .bind('processingMessage', function (e, msg) {
-                switch (msg.type) {
-                case 'state':
-                    self.prevState = self.irc.state();
-                    break;
-                }
+                //switch (msg.type) {
+                //case 'state':
+                //    self.prevState = self.irc.state;
+                //    break;
+                //}
             })
             .bind('processedMessage', function (e, msg) {
                 switch (msg.type) {
-                case 'state':
-                    var state = self.irc.state();
-                    self.nick = state.nick;
-                    self.realname = state.realname;
+                // Server no longer sends client state.
+                //case 'state':
+                //    var state = self.irc.state;
+                //    self.nick = state.nick;
+                //    self.realname = state.realname;
                     
-                    if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
-                        // Nick changed.
-                        var nickLabel = self.ircElement.find('.nickLabel');
-                        nickLabel.fadeOut(null, function () {
-                            nickLabel.text(self.nick);
-                            nickLabel.fadeIn();
-                        });
-                    }
+                //    if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
+                //        // Nick changed.
+                //        var nickLabel = self.ircElement.find('.nickLabel');
+                //        nickLabel.fadeOut(null, function () {
+                //            nickLabel.text(self.nick);
+                //            nickLabel.fadeIn();
+                //        });
+                //    }
 
-                    // Auto-query first channel if selected channel is no longer joined.
-                    if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
-                        self.queryTarget(self.getJoinedChannels()[0]);
-                    }
+                //    // Auto-query first channel if selected channel is no longer joined.
+                //    if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
+                //        self.queryTarget(self.getJoinedChannels()[0]);
+                //    }
                     
-                    break;
-
+                //    break;
+                
                 case 'recv':
+                    // Ensure user is in user state.
+                    self.irc.state.addUser(msg.prefixNick);
+
                     switch (msg.command) {
                     case 'PRIVMSG':
                         // Update title when new messages arrive and user isn't focused on the browser.
@@ -1471,7 +1503,7 @@ $.fn.chatmore = function (p1, p2) {
                             self.refreshTitle();
                         }
                         
-                        if (self.stricmp(msg.info.target, self.irc.state().nick) == 0) {
+                        if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
                             self.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', { msg: msg });
                             if (!msg.info.isAction) {
                                 // Add this sender to the history of senders.
@@ -1481,7 +1513,7 @@ $.fn.chatmore = function (p1, p2) {
                         else
                             self.writeTmpl(msg.info.isAction ? 'incomingChannelAction' : 'incomingChannelMsg', { msg: msg });
                         break;
-                        
+                    
                     case 'NOTICE':
                         // Update title when new messages arrive and user isn't focused on the browser.
                         if (!self.isWindowFocused) {
@@ -1489,7 +1521,7 @@ $.fn.chatmore = function (p1, p2) {
                             self.refreshTitle();
                         }
 
-                        if (self.stricmp(msg.info.target, self.irc.state().nick) == 0) {
+                        if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
                             self.writeTmpl('incomingPrivateNotice', { msg: msg });
 
                             // Add this sender to the history of senders.
@@ -1501,9 +1533,18 @@ $.fn.chatmore = function (p1, p2) {
                         
                     case 'JOIN':
                         self.writeTmpl('join', { msg: msg });
+
+                        if (self.irc.state.channels[msg.info.channel] === undefined) {
+                            self.irc.state.addChannel(msg.info.channel);
+                            
+                            // Get channel mode.
+                            self.irc.sendMsg('MODE ' + msg.info.channel);
+                        }
                         
+                        self.irc.state.channels[msg.info.channel].addMember(msg.prefixNick);
+
                         // Auto-query newly joined channel.
-                        if (self.stricmp(msg.prefixNick, self.irc.state().nick) == 0) {
+                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
                             self.queryTarget(msg.info.channel);
                         }
 
@@ -1511,6 +1552,17 @@ $.fn.chatmore = function (p1, p2) {
                         
                     case 'PART':
                         self.writeTmpl('leave', { msg: msg });
+                        
+                        // Clean up state when leaving channel.
+                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
+                            // Current user leaving channel, remove channel from state.
+                            self.irc.state.removeChannel(msg.info.channel);
+                        }
+                        else {
+                            // Another user leaving channel, remove member form channel state.
+                            self.irc.state.channels[msg.info.channel].removeMember(msg.prefixNick);
+                        }
+                        
                         break;
                         
                     case 'KICK':
@@ -1521,15 +1573,46 @@ $.fn.chatmore = function (p1, p2) {
                                 op: msg.prefixNick,
                                 comment: msg.info.comment
                             });
+                            
+                            if (self.stricmp(kick.nick, self.irc.state.nick) == 0) {
+                                self.irc.state.removeChannel(kick.channel);
+                            }
+                            else {
+                                self.irc.state.channels[kick.channel].removeMember(kick.nick);
+                            }
                         });
+
                         break;
                         
                     case 'MODE':
                         self.writeTmpl('mode', { msg: msg });
+                        
+                        if (self.isChannel(msg.info.target)) {
+                            if (self.irc.state.channels[msg.info.target] !== undefined) {
+                                // Request fully qualified channel mode string.
+                                self.irc.sendMsg('MODE ' + msg.info.target);
+                                
+                                // Get channel members to capture possible user flag changes.
+                                self.irc.sendMsg('NAMES ' + msg.info.target);
+                            }
+                        }
+                        else {
+                            // Save user mode in state.
+                            self.irc.state.addUser(msg.info.target);
+                            self.irc.state.users[msg.info.target].mode = msg.info.mode;
+                            self.irc.state.isModified = true;
+                        }
                         break;
                     
                     case 'NICK':
                         self.writeTmpl('nick', { msg: msg });
+                        
+                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
+                            // Change current user's nick.
+                            self.irc.state.nick = msg.info.nick;
+                        }
+                        
+                        self.renameNick(msg.info.oldNick, msg.info.nick);
                         
                         // If selected target's nick changes, update target.
                         if (self.irc.target() !== undefined && self.stricmp(msg.prefixNick, self.irc.target()) == 0) {
@@ -1543,6 +1626,14 @@ $.fn.chatmore = function (p1, p2) {
                         
                     case 'QUIT':
                         self.writeTmpl('quit', { msg: msg });
+                        
+                        // Remove user from state.
+                        $.each(self.irc.state.channels, function (i, channel) {
+                            channel.removeMember(msg.prefixNick);
+                        });
+                        
+                        self.irc.state.removeUser(msg.prefixNick);
+            
                         break;
                         
                     case 'ERROR':
@@ -1566,16 +1657,40 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('serverMsgNumber', { msg: msg });
                         break;
                         
+                    case '324': // RPL_CHANNELMODEIS
+                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
+                            // Only update state if joined to this channel.
+                            self.irc.state.channels[msg.info.channel].mode = msg.info.mode;
+                            self.irc.state.isModified = true;
+                        }
+                        break;
+                        
                     case '331': // RPL_NOTOPIC
                         self.writeTmpl('notopic', { msg: msg });
+                        
+                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
+                            self.irc.state.channels[msg.info.channel].topic = undefined;
+                            self.irc.state.isModified = true;
+                        }
                         break;
                         
                     case '332': // RPL_TOPIC
                         self.writeTmpl('topic', { msg: msg });
+                        
+                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
+                            self.irc.state.channels[msg.info.channel].topic = (msg.info.topic != '') ? msg.info.topic : undefined;
+                            self.irc.state.isModified = true;
+                        }
                         break;
                         
                     case '333': // Topic set by
                         self.writeTmpl('topicSetBy', { msg: msg });
+                        
+                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
+                            self.irc.state.channels[msg.info.channel].topicSetByNick = msg.info.nick;
+                            self.irc.state.channels[msg.info.channel].topicSetTime= msg.info.time;
+                            self.irc.state.isModified = true;
+                        }
                         break;
                         
                     case '391': // RPL_TIME
@@ -1590,10 +1705,31 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('list', { msg: msg });
                         break;
                         
-                    // case '353': // RPL_NAMREPLY
+                    case '353': // RPL_NAMREPLY
                         // if (window.console) console.log(msg);
                         // self.writeTmpl('names', { msg: msg });
-                        // break;
+
+                        var channelDesc = self.irc.state.addChannel(msg.info.channel);
+                        
+                        // TODO: Support multiple 353's that are commited on 366.
+                        channelDesc.visibility = msg.info.visibility;
+                        channelDesc.clearMembers();
+                        
+                        $.each(msg.info.names, function (i, name) {
+                            self.irc.state.addUser(name.nick);
+                            memberDesc = channelDesc.addMember(name.nick);
+                            memberDesc.mode = name.mode;
+                        });
+                        
+                        self.irc.state.isModified = true;
+                        break;
+                        
+                    case '403': // ERR_NOSUCHCHANNEL
+                        self.writeTmpl('serverMsg', { message: msg.info.message });
+                        
+                        // If channel is listed as joined channel, remove it.
+                        self.irc.state.removeChannel(msg.info.channel);
+                        break;
                         
                     // Disregard these messages.
                     case '004': // RPL_MYINFO
@@ -1613,8 +1749,29 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
-                if (window.console) console.log(self.irc.state());
+                if (window.console) console.log(self.irc.state);
+                
+                var state = self.irc.state;
+                self.nick = state.nick;
+                self.realname = state.realname;
+                
+                if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
+                    // Nick changed.
+                    var nickLabel = self.ircElement.find('.nickLabel');
+                    nickLabel.fadeOut(null, function () {
+                        nickLabel.text(self.nick);
+                        nickLabel.fadeIn();
+                    });
+                }
+
+                // Auto-query first channel if selected channel is no longer joined.
+                if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
+                    self.queryTarget(self.getJoinedChannels()[0]);
+                }
+                
                 self.refreshSideBar();
+                
+                self.prevState = self.clone(self.irc.state);
             })
             .bind('sendMsg', function (e, rawMsg) {
                 if (window.console) console.log('Sent: ' + rawMsg);
@@ -1741,7 +1898,7 @@ $.fn.chatmore = function (p1, p2) {
                             }
                             
                             if (self.autoCompletePrefix !== undefined) {
-                                var myNick = self.irc.state().nick;
+                                var myNick = self.irc.state.nick;
                                 
                                 if (self.isChannel(self.autoCompletePrefix)) {
                                     // When string looks like a channel, autocomplete from joined channel list.

@@ -12,6 +12,7 @@ else {
 }
 
 $tmpDir = dirname($_SERVER['SCRIPT_FILENAME']) . '/tmp';
+$sessionDbFilename = $tmpDir . '/session.db';
 
 set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
 ini_set('error_log', "$tmpDir/php_errors.log");
@@ -26,6 +27,8 @@ ini_set('session.cookie_path', $scriptPath);
 // in a separate request.
 ini_set('session.save_handler', 'sqlite');
 ini_set('session.save_path', "$tmpDir/php.sess.db");
+
+require_once('class.spIrcSessionDAL_SQLite.php');
 
 // IRC client's server-side configuration.
 $ircConfig = array(

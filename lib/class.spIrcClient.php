@@ -2,20 +2,21 @@
 // http://tools.ietf.org/html/rfc2812
 
 require_once 'class.log.php';
-require_once 'class.spIrcClientState.php';
+require_once 'class.spIrcSessionModel.php';
 
 class spIrcClient
 {
     // Message types returned from AJAX calls.
     const CLMSG_TYPE_SERVER = 'servermsg';   // PHP server message
-    const CLMSG_TYPE_STATE = 'state';        // IRC client state
     const CLMSG_TYPE_RECV = 'recv';          // Received IRC message
 
     // Message codes associated with CLMSG_TYPE_SERVER messages.
     const CLMSG_CONNECTION_READY = 200;
+    const CLMSG_SESSION_ID = 300;
     const CLMSG_CONNECTION_NOT_OPEN = 400;
+    const CLMSG_CONNECTION_ALREADY_ACTIVE = 401;
     const CLMSG_TIMEOUT_ON_OPEN = 500;
-
+    
     // IRC server message codes.
     const RPL_WELCOME = 001;
     const RPL_YOURHOST = 002;
@@ -46,12 +47,9 @@ class spIrcClient
     private $isConnected = false;
 
     // IRC socket.
-	private $socket;
+    private $socket;
     private $socketFile;
     
-    // spIrcClientState object.
-    private $state;
-
     private $socketReadBuffer = null;
     private $socketSendBuffer = null;
     
@@ -61,13 +59,10 @@ class spIrcClient
     public $connectAttemptDelay = 500;  // in milliseconds
     
     // Constructor.
-	public function spIrcClient($socketFile, &$state) {
+    public function spIrcClient($socketFile) {
         $this->socketFile = $socketFile;
-        $this->state =& $state;
-        $this->state->isModified = false;
-        
         $this->connectSocket();
-	}
+    }
 
     // Check $this->isConnected for success status.
     private function connectSocket() {
@@ -499,164 +494,9 @@ class spIrcClient
     public function processMsg($msg) {
         //log::info('Processing message: ' . $msg['raw']);
         
-        // Ensure user is in user state.
-        if (!empty($msg['prefixNick'])) $this->state->addUser($msg['prefixNick']);
-
         switch ($msg['command']) {
         case 'PING':
             $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
-            break;
-            
-        case 'MODE':
-            $target = $msg['info']['target'];
-            if ($this->isChannel($target)) {
-                if (isset($this->state->channels[$target])) {
-                    // Request fully qualified channel mode string.
-                    $this->sendRawMsg("MODE $target\r\n");
-
-                    // Get channel members to capture possible user flag changes.
-                    $this->sendRawMsg("NAMES $target\r\n");
-                }
-            }
-            else {
-                // Save user mode in state.
-                $this->state->addUser($target);
-                $this->state->users[$target]->mode = $msg['info']['mode'];
-                $this->state->isModified = true;
-            }
-            break;
-            
-        case 'NICK':
-            if ($msg['prefixNick'] == $this->state->nick) {
-                // Change current user's nick.
-                $this->state->nick = $msg['info']['nick'];
-                $this->state->isNickValid = true;
-            }
-            
-            $this->renameNick($msg['info']['oldNick'], $msg['info']['nick']);
-            break;
-
-        case 'JOIN':
-            $channel = $msg['info']['channel'];
-            $nick = $msg['prefixNick'];
-            
-            if (!isset($this->state->channels[$channel])) {
-                $this->state->addChannel($channel);
-                
-                // Get channel mode.
-                $this->sendRawMsg("MODE $channel\r\n");
-            }
-            
-            $this->state->channels[$channel]->addMember($nick);
-            //$this->state->isModified = true;
-            break;
-            
-        case 'PART':
-            // Clean up state when leaving a channel.
-            $channel = $msg['info']['channel'];
-            $nick = $msg['prefixNick'];
-            if ($nick == $this->state->nick) {
-                // Current user leaving channel, remove channel from state.
-                $this->state->removeChannel($channel);
-            }
-            else {
-                // Another user leaving channel, remove member form channel state.
-                $this->state->channels[$channel]->removeMember($nick);
-            }
-            //$this->state->isModified = true;
-            break;
-            
-        case 'KICK':
-            foreach ($msg['info']['kicks'] as $kick) {
-                $channel = $kick['channel'];
-                $nick = $kick['nick'];
-                if ($nick == $this->state->nick) {
-                    $this->state->removeChannel($channel);
-                }
-                else {
-                    $this->state->channels[$channel]->removeMember($nick);
-                }
-                //$this->state->isModified = true;
-            }
-            break;
-            
-        case 'QUIT':
-            // Remove user from state.
-            $nick = $msg['prefixNick'];
-
-            foreach ($this->state->channels as $channel) {
-                $channel->removeMember($nick);
-            }
-
-            $this->state->removeUser($nick);
-            //$this->state->isModified = true;
-            break;
-            
-        case self::RPL_TOPIC:
-            $channel = $msg['info']['channel'];
-            if (isset($this->state->channels[$channel])) {
-                $topic = $msg['info']['topic'];
-                $this->state->channels[$channel]->topic = !empty($topic) ? $topic : null;
-                $this->state->isModified = true;
-            }
-            break;
-            
-        case self::RPL_NOTOPIC:
-            $channel = $msg['info']['channel'];
-            if (isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel]->topic = null;
-                $this->state->isModified = true;
-            }
-            break;
-            
-        case 333: // topic reply set by/timestamp.
-            $channel = $msg['info']['channel'];
-            
-            if (isset($this->state->channels[$channel])) {
-                $this->state->channels[$channel]->topicSetByNick = $msg['info']['nick'];
-                $this->state->channels[$channel]->topicSetTime = $msg['info']['time'];
-                $this->state->isModified = true;
-            }
-            break;
-            
-        case self::RPL_NAMREPLY: // NAMES list.
-            $channel = $msg['info']['channel'];
-            
-            $channelDesc = $this->state->addChannel($channel);
-            
-            // TODO: Support multiple 353's that are commited on 366.
-            $channelDesc->visibility = $msg['info']['visibility'];
-            $channelDesc->clearMembers();
-            
-            foreach ($msg['info']['names'] as $name) {
-                $nick = $name['nick'];
-                
-                $this->state->addUser($nick);
-                $memberDesc = $channelDesc->addMember($nick);
-                $memberDesc->mode = $name['mode'];
-            }
-            
-            $this->state->isModified = true;
-            break;
-
-        case self::RPL_CHANNELMODEIS:
-            $channel = $msg['info']['channel'];
-            
-            if (isset($this->state->channels[$channel])) {
-                // Only update state if joined to this channel.
-                $this->state->channels[$channel]->mode = $msg['info']['mode'];
-                $this->state->isModified = true;
-            }
-            break;
-        
-        case self::ERR_NOTREGISTERED: // ERR_NOTREGISTERED.
-            break;
-            
-        case self::ERR_NOSUCHCHANNEL:
-            // If channel is listed as joined channel, remove it.
-            $channel = $msg['info']['channel'];
-            
-            $this->state->removeChannel($channel);
             break;
         }
         
@@ -764,49 +604,16 @@ class spIrcClient
         }
     }
 
-	// Send raw message.
+    // Send raw message.
     // Message line must end with \r\n.
-	public function sendRawMsg($line)
-	{
+    public function sendRawMsg($line)
+    {
         $this->socketSendBuffer .= $line;
         //log::info("Sent: " . $line);
-	}
+    }
     
     public function isChannel($target) {
         return preg_match("/^[#&+!][^\s,:\cg]+/", $target);
-    }
-    
-    public function register($nick, $ident, $realname) {
-        $this->state->nick = $nick;
-        $this->state->isNickValid = false;
-        $this->state->ident = $ident;
-        $this->state->host = null;
-        $this->state->realname = $realname;
-        
-        log::info(sprintf('Registering user "%s" (%s) on IRC server %s:%d, from host %s (%s:%d)',
-            $nick, $realname, $this->state->server, $this->state->port,
-            $_SERVER['REMOTE_HOST'], $_SERVER['REMOTE_ADDR'], $_SERVER['REMOTE_PORT']));
-        
-        $this->sendRawMsg("USER " . $this->state->ident . " 0 * :" . $this->state->realname . "\r\n");
-        $this->sendRawMsg("NICK $nick\r\n");
-        $this->flushSendBuffer();
-    }
-
-    // Handle renaming of a nick of any user.
-    public function renameNick($oldNick, $newNick) {
-        // Adjust channel members.
-        foreach ($this->state->channels as $channel) {
-            if (isset($channel->members[$oldNick])) {
-                $channel->members[$newNick] = $channel->members[$oldNick];
-                $channel->removeMember($oldNick);
-            }
-        }
-        
-        // Adjust user list.
-        $this->state->users[$newNick] = $this->state->users[$oldNick];
-        $this->state->removeUser($oldNick);
-        
-        $this->state->isModified = true;
     }
 }
 ?>
