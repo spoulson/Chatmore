@@ -3,14 +3,13 @@ function chatmoreState() {
     var colorizeMin = 0;
     var colorizeMax = 31;
     
-    // Get FNV-1 hash on a string or number.
+    // Get FNV-1 hash on a string.
     // http://isthe.com/chongo/tech/comp/fnv/
-    // hash is a previous hash to build upon.
+    // 'hash' is a previous hash to chain.
     var getFNV1 = function (n, hash) {
         if (hash === undefined) hash = 2166136261;
         
-        var len = n.length;
-        for (var i = 0; i < len; i++) {
+        for (var i = 0; i < n.length; i++) {
             hash *= 16777619;
             hash ^= n.charCodeAt(i);
             hash &= 0xffffffff;
@@ -28,9 +27,14 @@ function chatmoreState() {
     };
 
     state.isModified = false;
+    
+    // isActivated = true when init.php returns successful connection message.
     state.isActivated = false;
-    state.registrationAttemptCount = 0
+    
+    // isRegistered = true when welcome message is received, indicating nickname is valid.
     state.isRegistered = false;
+    state.registrationAttemptCount = 0;
+
     state.nick = undefined;
     state.ident = undefined;
     state.realname = undefined;

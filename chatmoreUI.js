@@ -46,7 +46,7 @@ $.fn.chatmore = function (p1, p2) {
                 title: '<span>{{if messageCount == 1}}A new message has arrived! -- ' +
                     '{{else messageCount > 1}}${messageCount} new messages have arrived! -- ' +
                     '{{/if}}' +
-                    '${defaultTitle}</span>',
+                    '${defaultTitle} - ${self.irc.state.server}:${self.irc.state.port}</span>',
                 timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
                 bullet: '&bull;&bull;&bull;',
                 notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
@@ -1333,6 +1333,7 @@ $.fn.chatmore = function (p1, p2) {
             // Update browser title from template.
             refreshTitle: function () {
                 var newTitle = $.tmpl('title', {
+                    self: self,
                     defaultTitle: self.defaultTitle,
                     messageCount: self.notificationMessageCount
                 }).text();
