@@ -4,8 +4,7 @@
 require_once 'class.log.php';
 require_once 'class.spIrcSessionModel.php';
 
-class spIrcClient
-{
+class spIrcClient {
     // Message types returned from AJAX calls.
     const CLMSG_TYPE_SERVER = 'servermsg';   // PHP server message
     const CLMSG_TYPE_RECV = 'recv';          // Received IRC message

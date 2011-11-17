@@ -5,13 +5,13 @@ class log {
     
     public static function info($message) {
         if (!self::$showInfo) return;
-        $script = $_SERVER['SCRIPT_NAME'];
-        error_log(">>> " . $script . "(" . getmypid() . "): $message");
+        error_log(sprintf('>>> %s(%d): %s',
+            $_SERVER['SCRIPT_NAME'], getmypid(), $message));
     }
 
     public static function error($message) {
-        $script = $_SERVER['SCRIPT_NAME'];
-        error_log("*** $script: $message");
+        error_log(sprintf('*** %s(%d): %s',
+            $_SERVER['SCRIPT_NAME'], getmypid(), $message));
     }
 }
 ?>
