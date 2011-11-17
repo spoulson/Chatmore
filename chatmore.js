@@ -17,16 +17,15 @@ function chatmore(element, server, port, nick, realname, options) {
         pollHandle: undefined,
         pollXhr: undefined,
         pauseRecv: false,
-        lastRecvTime: undefined,
-        sessionId: undefined,
-        isActivated: false,
+        mustMatchServer: false,
+        maxRegistrationAttempts: 3,
         
         // Process incoming messages.
         processMessages: function (data) {
             if (data === undefined) return false;
             
             // Timestamp when last received message processing occurs.
-            local.lastRecvTime = new Date().getTime();
+            self.state.lastRecvTime = new Date().getTime();
             
             $.each(data, function (key, msg) {
                 $(element).trigger('processingMessage', [ msg ]);
@@ -35,7 +34,37 @@ function chatmore(element, server, port, nick, realname, options) {
                 case 'recv':
                     if (window.console) {
                         if (msg.raw !== undefined) console.log(msg.raw);
-                        // console.log(msg);
+                        console.log(msg);
+                    }
+                    
+                    switch (msg.command) {
+                    case '001': // Welcome
+                        // If we get the welcome message, we are successfully registered.
+                        if (!self.state.isRegistered) {
+                            self.state.isRegistered = true;
+                            self.state.isModified = true;
+                        }
+                        break;
+                        
+                    case '433': // ERR_NICKNAMEINUSE
+                        // If nick collision before successful registration, modify nick and try again.
+                        if (!self.state.isRegistered) {
+                            if (self.state.registrationAttemptCount < local.maxRegistrationAttempts) {
+                                if (self.state.baseNick === undefined) self.state.baseNick = self.state.nick;
+                                self.state.nick = '' + self.state.baseNick + '_' + self.state.registrationAttemptCount;
+                                self.state.registrationAttemptCount++;
+                                self.state.isModified = true;
+                                
+                                $(element).trigger('localMessage', [ null, 'clientMsg', { code: 'R1' } ]);
+                                
+                                self.sendMsg('NICK ' + self.state.nick);
+                            }
+                            else {
+                                // Trigger error message when connection attempts max out.
+                                $(element).trigger('localMessage', [ null, 'error', { code: 'RE1', maxRegistrationAttempts: local.maxRegistrationAttempts } ]);
+                            }
+                        }
+                        break;
                     }
                     break;
                 
@@ -50,11 +79,11 @@ function chatmore(element, server, port, nick, realname, options) {
                     }
 
                     if (msg.code == 300) { // define session key
-                        local.sessionId = msg.sessionId;
-                        if (window.console) console.log('Session Key: ' + local.sessionId);
+                        self.state.sessionId = msg.sessionId;
+                        if (window.console) console.log('Session Key: ' + self.state.sessionId);
                     }
                     else if (msg.code >= 400) {
-                        if (local.isActivated && msg.code == 400) {
+                        if (self.state.isActivated && msg.code == 400) {
                             self.deactivateClient();
                         }
                     }
@@ -95,13 +124,9 @@ function chatmore(element, server, port, nick, realname, options) {
         }
     };
     
-    this.isActivated = function () {
-        return local.isActivated;
-    };
-    
     this.activateClient = function () {
-        local.isActivated = false;
-        local.lastRecvTime = undefined;
+        self.state.isActivated = false;
+        self.state.lastRecvTime = undefined;
         
         $(element).trigger('activatingClient', [
             'start',
@@ -132,7 +157,7 @@ function chatmore(element, server, port, nick, realname, options) {
             server: self.state.server,
             port: self.state.port
         };
-        if (options.mustMatchServer) initCheckPostData.mustMatchServer = true;
+        if (local.mustMatchServer) initCheckPostData.mustMatchServer = true;
         
         $.ajax(
             'init.php?server=' + self.state.server + '&port=' + self.state.port,
@@ -196,10 +221,10 @@ function chatmore(element, server, port, nick, realname, options) {
             server: self.state.server,
             port: self.state.port
         };
-        if (options.mustMatchServer) initPostData.mustMatchServer = true;
+        if (local.mustMatchServer) initPostData.mustMatchServer = true;
         
         $.ajax(
-            'init.php?id=' + local.sessionId + '&server=' + self.state.server + '&port=' + self.state.port,
+            'init.php?id=' + self.state.sessionId + '&server=' + self.state.server + '&port=' + self.state.port,
             {
                 type: 'POST',
                 cache: false,
@@ -215,7 +240,7 @@ function chatmore(element, server, port, nick, realname, options) {
                             undefined,
                             { server: self.state.server, port: self.state.port }
                         ]);
-                        local.isActivated = true;
+                        self.state.isActivated = true;
                         
                         // Register with IRC server.
                         self.register(self.state.nick, self.state.realname);
@@ -229,7 +254,7 @@ function chatmore(element, server, port, nick, realname, options) {
                                 local.pollHandle = undefined;
                                 local.pollXhr = $.ajax('recv.php', {
                                     cache: false,
-                                    data: { id: local.sessionId },
+                                    data: { id: self.state.sessionId },
                                     dataType: 'json',
                                     success: function (data) {
                                         // Validate data is an array.
@@ -247,7 +272,7 @@ function chatmore(element, server, port, nick, realname, options) {
                                     complete: function () {
                                         // Schedule next poll.
                                         local.pollXhr = undefined;
-                                        if (local.isActivated) {
+                                        if (self.state.isActivated) {
                                             local.pollHandle = setTimeout(pollFunc, 100);
                                         }
                                     }
@@ -273,10 +298,10 @@ function chatmore(element, server, port, nick, realname, options) {
     };
 
     this.deactivateClient = function () {
-        if (local.isActivated) {
+        if (self.state.isActivated) {
             $(element).trigger('deactivatingClient');
             
-            local.isActivated = false;
+            self.state.isActivated = false;
             
             // Ensure any running ajax call is aborted and stops recurring.
             if (local.pollHandle !== undefined) clearTimeout(local.pollHandle);
@@ -292,7 +317,7 @@ function chatmore(element, server, port, nick, realname, options) {
     this.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
-        $.ajax('send.php?id=' + local.sessionId, {
+        $.ajax('send.php?id=' + self.state.sessionId, {
             async: true,
             type: 'POST',
             dataType: 'json',
@@ -321,12 +346,14 @@ function chatmore(element, server, port, nick, realname, options) {
         self.state.nick = nick;
         self.state.ident = Math.floor(Math.random() * 100000000);
         self.state.realname = realname;
+        self.state.isRegistered = false;
+        self.state.registrationAttemptCount = 1;
         self.state.isModified = true;
         
-        if (window.console) console.log('Registering user "' + nick + '" (' + realname + ') on IRC server "' + self.state.server + ':' + self.state.port + '"');
+        if (window.console) console.log('Registering user "' + self.state.nick + '" (' + self.state.realname + ') on IRC server "' + self.state.server + ':' + self.state.port + '"');
         
-        this.sendMsg('USER ' + self.state.ident + ' 0 * :' + realname);
-        this.sendMsg('NICK ' + nick);
+        this.sendMsg('USER ' + self.state.ident + ' 0 * :' + self.state.realname);
+        this.sendMsg('NICK ' + self.state.nick);
     };
     
     this.sendChannelMsg = function (channel, message) {
@@ -354,4 +381,8 @@ function chatmore(element, server, port, nick, realname, options) {
     this.sendPrivateNotice = function (nick, message) {
         this.sendMsg('NOTICE ' + nick + ' ' + message);
     };
+    
+    // Merge options into properties.
+    if (options.mustMatchServer !== undefined) local.mustMatchServer = options.mustMatchServer;
+    if (options.maxRegistrationAttempts !== undefined) local.maxRegistrationAttempts = options.maxRegistrationAttempts;
 }

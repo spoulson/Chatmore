@@ -28,11 +28,20 @@ function chatmoreState() {
     };
 
     state.isModified = false;
+    state.isActivated = false;
+    state.registrationAttemptCount = 0
+    state.isRegistered = false;
     state.nick = undefined;
     state.ident = undefined;
     state.realname = undefined;
     state.channels = {};
     state.users = {};
+    
+    // Epoch time of last message from recv.php.
+    state.lastRecvTime = undefined;
+    
+    // Session id returned from init.php during activation.
+    state.sessionId = undefined;
 
     state.addChannel = function (channel) {
         if (state.channels[channel] === undefined) {

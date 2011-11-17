@@ -211,6 +211,9 @@ $.fn.chatmore = function (p1, p2) {
                     // '</span>',
                 list: '{{tmpl "timestamp"}}<span class="LIST">' +
                     '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${msg.info.topic}</span>' +
+                    '</span>',
+                retryRegistration: '{{tmpl "timestamp"}}<span class="clientMsg">' +
+                    '{{tmpl "notePrefix"}} <span class="message no-decorate">Retrying registration with nickname <span class="nick">${self.irc.state.nick}</span></span>' +
                     '</span>'
             },
             
@@ -228,7 +231,7 @@ $.fn.chatmore = function (p1, p2) {
                     helpUsage: 'Usage: /cleartopic',
                     helpText: 'Clear the selected channel\'s topic',
                     parseParam: function (param, meta) {
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to clear the topic.';
                             return false;
                         }
@@ -259,7 +262,7 @@ $.fn.chatmore = function (p1, p2) {
                             // self.irc.activateClient();
                         // };
                         
-                        // if (self.irc.isActivated()) {
+                        // if (self.irc.state.isActivated) {
                             // // /quit, wait a moment, then deactivate and reconnect.
                             // self.sendLine('/quit');
                             // setTimeout(connectFunc, 1000);
@@ -329,7 +332,7 @@ $.fn.chatmore = function (p1, p2) {
                         meta.channel = params[0].replace(/^([^#&+!])/, '#$1');
                         if (params[1] !== undefined) meta.key = params[1];
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to join a channel.';
                             return false;
                         }
@@ -353,7 +356,7 @@ $.fn.chatmore = function (p1, p2) {
                         meta.nick = m[1];
                         meta.comment = m[3];
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to kick a user.';
                             return false;
                         }
@@ -388,7 +391,7 @@ $.fn.chatmore = function (p1, p2) {
                             if (m[3] !== undefined) meta.comment = m[3];
                         }
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to leave a channel.';
                             return false;
                         }
@@ -431,7 +434,7 @@ $.fn.chatmore = function (p1, p2) {
                             }
                         }
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to get the channel listing.';
                             return false;
                         }
@@ -467,7 +470,7 @@ $.fn.chatmore = function (p1, p2) {
                         meta.target = self.irc.target();
                         meta.message = param;
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to send an action message.';
                             return false;
                         }
@@ -521,7 +524,7 @@ $.fn.chatmore = function (p1, p2) {
                         if (m[3] !== undefined)
                             meta.modes = m[3].split(/\s+/);
                     
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to change mode.';
                             return false;
                         }
@@ -542,7 +545,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         meta.server = param;
                     
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to get server motd.';
                             return false;
                         }
@@ -573,7 +576,7 @@ $.fn.chatmore = function (p1, p2) {
                         meta.target = m[1];
                         meta.message = m[2];
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to send a message.';
                             return false;
                         }
@@ -619,7 +622,7 @@ $.fn.chatmore = function (p1, p2) {
                         var params = param.split(/\s+/, 1);
                         meta.nick = params[0];
 
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to change your nickname.';
                             return false;
                         }
@@ -647,7 +650,7 @@ $.fn.chatmore = function (p1, p2) {
                         meta.target = m[1];
                         meta.message = m[2];
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to send a notice.';
                             return false;
                         }
@@ -693,7 +696,7 @@ $.fn.chatmore = function (p1, p2) {
                         var params = param.split(/\s+/, 1);
                         meta.target = params[0];
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to query a target.';
                             return false;
                         }
@@ -708,7 +711,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         meta.comment = param;
                     
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to quit.';
                             return false;
                         }
@@ -727,7 +730,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         meta.param = param;
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to send a raw IRC request.';
                             return false;
                         }
@@ -745,7 +748,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         meta.server = param;
                     
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to get server time.';
                             return false;
                         }
@@ -766,7 +769,7 @@ $.fn.chatmore = function (p1, p2) {
                             return false;
                         }
                         
-                        if (!self.irc.isActivated()) {
+                        if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to get or set the topic.';
                             return false;
                         }
@@ -816,7 +819,7 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 }
                 // Send text to selected target.
-                else if (self.irc.isActivated()) {
+                else if (self.irc.state.isActivated) {
                     // Sanitize input.
                     if (self.irc.target() !== undefined) {
                         text = text.replace(/([\n\r])/gm, '');
@@ -1122,11 +1125,9 @@ $.fn.chatmore = function (p1, p2) {
                 self.incrementNotificationMessageCount();
 
                 data['self'] = self;
-                return self.writeLine(
-                    $('<div/>')
-                        .append($.tmpl(templateName, data))
-                        .html()
-                );
+                var el = $('<div/>')
+                    .append($.tmpl(templateName, data));
+                return self.writeLine(el.html());
             },
 
             // Resize elements to proper alignment based on ircConsole's dimensions.
@@ -1168,7 +1169,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             dblclickChannelNickHandler: function () {
-                if (self.irc.isActivated()) {
+                if (self.irc.state.isActivated) {
                     // Get text of element, ignoring child elements.
                     var target = $(this)
                         .clone()
@@ -1372,7 +1373,7 @@ $.fn.chatmore = function (p1, p2) {
                                 // Setup leave channel icon.
                                 .find('.leaveButton')
                                     .click(function () {
-                                        if (self.irc.isActivated()) {
+                                        if (self.irc.state.isActivated) {
                                             $(this).parent('li').addClass('leaving');
                                             self.sendLine('/leave ' + channel);
                                         }
@@ -1465,17 +1466,44 @@ $.fn.chatmore = function (p1, p2) {
         
         // Setup chatmore event handlers.
         self.ircElement
-            .bind('localMessage', function (e, message, type) {
-                self.writeTmpl(type, { message: message });
+            .bind('localMessage', function (e, message, type, data) {
+                switch (data.code) {
+                case 'R1':
+                    // Retrying registration with new nick.
+                    self.writeTmpl('retryRegistration', {});
+                    break;
+                    
+                case 'RE1':
+                    // Registration failed.  Abort activation.
+                    var message = data.maxRegistrationAttempts > 1 ?
+                        'Registration failed.  Unable to register with a unique nickname after ' + data.maxRegistrationAttempts + ' attempts.  Please reconnect with a unique nickname.' :
+                        'Registration failed.  Please reconnect with a unique nickname.';
+                    self.writeTmpl(type, { message: message });
+                        
+                    self.enableAutoReactivate = false;
+                    self.deactivateClient();
+                    break;
+                
+                default:
+                    self.writeTmpl(type, { message: message });
+                }
             })
-            //.bind('processingMessage', function (e, msg) {
-            //})
-            .bind('processedMessage', function (e, msg) {
+            .bind('processingMessage', function (e, msg) {
                 switch (msg.type) {
                 case 'recv':
                     // Ensure user is in user state.
                     self.irc.state.addUser(msg.prefixNick);
 
+                    switch (msg.command) {
+                    case '433': // ERR_NICKNAMEINUSE
+                        self.writeTmpl('nickInUse', { msg: msg });
+                        break;
+                    }
+                }
+            })
+            .bind('processedMessage', function (e, msg) {
+                switch (msg.type) {
+                case 'recv':
                     switch (msg.command) {
                     case 'PRIVMSG':
                         if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
@@ -1626,6 +1654,10 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('serverMsgNumber', { msg: msg });
                         break;
                         
+                    case '322': // RPL_LIST
+                        self.writeTmpl('list', { msg: msg });
+                        break;
+                        
                     case '324': // RPL_CHANNELMODEIS
                         if (self.irc.state.channels[msg.info.channel] !== undefined) {
                             // Only update state if joined to this channel.
@@ -1662,18 +1694,6 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         break;
                         
-                    case '391': // RPL_TIME
-                        self.writeTmpl('serverTime', { msg: msg });
-                        break;
-                        
-                    case '433': // ERR_NICKNAMEINUSE
-                        self.writeTmpl('nickInUse', { msg: msg });
-                        break;
-                        
-                    case '322': // RPL_LIST
-                        self.writeTmpl('list', { msg: msg });
-                        break;
-                        
                     case '353': // RPL_NAMREPLY
                         // if (window.console) console.log(msg);
                         // self.writeTmpl('names', { msg: msg });
@@ -1693,19 +1713,24 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.state.isModified = true;
                         break;
                         
+                    case '391': // RPL_TIME
+                        self.writeTmpl('serverTime', { msg: msg });
+                        break;
+                        
                     case '403': // ERR_NOSUCHCHANNEL
                         self.writeTmpl('serverMsg', { message: msg.info.message });
                         
                         // If channel is listed as joined channel, remove it.
                         self.irc.state.removeChannel(msg.info.channel);
                         break;
-                        
+
                     // Disregard these messages.
                     case '004': // RPL_MYINFO
                     case '005': // RPL_BOUNCE
                     case '323': // RPL_LISTEND
                     case '353': // RPL_NAMREPLY
                     case '366': // RPL_ENDOFNAMES
+                    case '433': // ERR_NICKNAMEINUSE (handled in processingMessage)
                         break;
                         
                     default:
@@ -1825,7 +1850,7 @@ $.fn.chatmore = function (p1, p2) {
                     // Tab.
                     if (e.preventDefault) e.preventDefault();   // Firefox: block default Tab functionality.
                     
-                    if (self.irc.isActivated()) {
+                    if (self.irc.state.isActivated) {
                         var userEntry = $(this).val();
                         
                         if (userEntry == '' || self.autoCompleteReplyIndex !== undefined) {
