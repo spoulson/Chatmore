@@ -22,8 +22,6 @@ $.fn.chatmore = function (p1, p2) {
             // Private members.
             //
             ircElement: $(this),
-            nick: options.nick,
-            realname: options.realname,
             irc: undefined,
 
             quitMessage: options.quitMessage,
@@ -1121,6 +1119,8 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             writeTmpl: function (templateName, data) {
+                self.incrementNotificationMessageCount();
+
                 data['self'] = self;
                 return self.writeLine(
                     $('<div/>')
@@ -1339,6 +1339,14 @@ $.fn.chatmore = function (p1, p2) {
                 if (newTitle != document.title) document.title = newTitle;
             },
 
+            // Update title when notifications occur and user isn't focused on the browser.
+            incrementNotificationMessageCount: function () {
+                if (!self.isWindowFocused) {
+                    self.notificationMessageCount++;
+                    self.refreshTitle();
+                }
+            },
+
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
                     /*if (self.irc.state === undefined) {
@@ -1460,49 +1468,16 @@ $.fn.chatmore = function (p1, p2) {
             .bind('localMessage', function (e, message, type) {
                 self.writeTmpl(type, { message: message });
             })
-            .bind('processingMessage', function (e, msg) {
-                //switch (msg.type) {
-                //case 'state':
-                //    self.prevState = self.irc.state;
-                //    break;
-                //}
-            })
+            //.bind('processingMessage', function (e, msg) {
+            //})
             .bind('processedMessage', function (e, msg) {
                 switch (msg.type) {
-                // Server no longer sends client state.
-                //case 'state':
-                //    var state = self.irc.state;
-                //    self.nick = state.nick;
-                //    self.realname = state.realname;
-                    
-                //    if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
-                //        // Nick changed.
-                //        var nickLabel = self.ircElement.find('.nickLabel');
-                //        nickLabel.fadeOut(null, function () {
-                //            nickLabel.text(self.nick);
-                //            nickLabel.fadeIn();
-                //        });
-                //    }
-
-                //    // Auto-query first channel if selected channel is no longer joined.
-                //    if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
-                //        self.queryTarget(self.getJoinedChannels()[0]);
-                //    }
-                    
-                //    break;
-                
                 case 'recv':
                     // Ensure user is in user state.
                     self.irc.state.addUser(msg.prefixNick);
 
                     switch (msg.command) {
                     case 'PRIVMSG':
-                        // Update title when new messages arrive and user isn't focused on the browser.
-                        if (!self.isWindowFocused) {
-                            self.notificationMessageCount++;
-                            self.refreshTitle();
-                        }
-                        
                         if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
                             self.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', { msg: msg });
                             if (!msg.info.isAction) {
@@ -1515,12 +1490,6 @@ $.fn.chatmore = function (p1, p2) {
                         break;
                     
                     case 'NOTICE':
-                        // Update title when new messages arrive and user isn't focused on the browser.
-                        if (!self.isWindowFocused) {
-                            self.notificationMessageCount++;
-                            self.refreshTitle();
-                        }
-
                         if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
                             self.writeTmpl('incomingPrivateNotice', { msg: msg });
 
@@ -1752,14 +1721,12 @@ $.fn.chatmore = function (p1, p2) {
                 if (window.console) console.log(self.irc.state);
                 
                 var state = self.irc.state;
-                self.nick = state.nick;
-                self.realname = state.realname;
                 
-                if (self.prevState === undefined || self.stricmp(self.nick, self.prevState.nick) != 0) {
+                if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) != 0) {
                     // Nick changed.
                     var nickLabel = self.ircElement.find('.nickLabel');
                     nickLabel.fadeOut(null, function () {
-                        nickLabel.text(self.nick);
+                        nickLabel.text(state.nick);
                         nickLabel.fadeIn();
                     });
                 }
@@ -2000,7 +1967,7 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, self.nick, self.realname, {
+            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, options.nick, options.realname, {
                 mustMatchServer: options.mustMatchServer
             });
             self.irc.activateClient();

@@ -207,7 +207,7 @@ class spIrcClient
         
         // Parse prefix.
         $m = array();
-        if (preg_match("/^(.+?)((!([^@\s]+))?@([\w-\.]+))?$/", $msg['prefix'], $m)) {
+        if (preg_match("/^(.+?)((!([^@\s]+))?@(\S+))?$/", $msg['prefix'], $m)) {
             $msg['prefixNick'] = $m[1];
             if (isset($m[4])) $msg['prefixUser'] = $m[4];
             if (isset($m[5])) $msg['prefixHost'] = $m[5];

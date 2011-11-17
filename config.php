@@ -18,7 +18,7 @@ set_include_path(get_include_path() . PATH_SEPARATOR . 'lib');
 ini_set('error_log', "$tmpDir/php_errors.log");
 ini_set('error_reporting', E_ALL);
 ini_set('log_errors', true);
-ini_set('session.cookie_path', $scriptPath);
+//ini_set('session.cookie_path', $scriptPath);
 
 // Use SQLite session save handler.
 // Cannot use the 'files' session save handler.
