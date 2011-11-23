@@ -834,8 +834,6 @@ $.fn.chatmore = function (p1, p2) {
                 else {
                     self.writeTmpl('error', { message: 'Error: Cannot send message, client not activated.' });
                 }
-                
-                self.ircElement.find('.userEntry').val('');
             },
 
             getShortTimestamp: function () {
@@ -1348,59 +1346,181 @@ $.fn.chatmore = function (p1, p2) {
                     self.refreshTitle();
                 }
             },
+            
+            acceptAutoComplete: function () {
+                if (window.console) console.log('acceptAutoComplete()');
+                if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                    self.ircElement.find('.userEntry').each(function () {
+                        // Move caret to end of selection.
+                        this.selectionStart = this.selectionEnd;
+        
+                        // Clear autocomplete state.
+                        self.autoCompleteReplyIndex = undefined;
+                        self.autoCompletePrefix = undefined;
+                    });
+                }
+            },
+            
+            rejectAutoComplete: function () {
+                if (window.console) console.log('rejectAutoComplete()');
+                if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                    self.ircElement.find('.userEntry').each(function () {
+                        // Remove autocomplete suggestion.
+                        var s = $(this).val();
+                        var s1 = this.selectionStart > 1 ? s.substr(0, this.selectionStart) : '';
+                        var s2 = this.selectionEnd < s.length ? s.substr(this.selectionEnd) : '';
+                        console.log('s1: "' + s1 + '", s2: "' + s2 + '"');
+                        var caretPos = this.selectionStart;
+                        
+                        $(this).val(s1 + s2);
+                        this.selectionStart = caretPos;
+                        this.selectionEnd = caretPos;
+                    });
+                    
+                    self.autoCompleteReplyIndex = undefined;
+                    self.autoCompletePrefix = undefined;
+                }
+            },
+            
+            incrementAutoComplete: function () {
+                if (window.console) console.log('incrementAutoComplete()');
+                var userEntry = self.ircElement.find('.userEntry');
+                var s = userEntry.val();
+                    
+                if (s == '' || self.autoCompleteReplyIndex !== undefined) {
+                    // When user entry is blank, autocomplete as reply to recent private message senders.
+                    if (self.msgSenders.length) {
+                        if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
+                        
+                        // Quick send message to next recent sender.
+                        var s = '/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ';
+                        userEntry.val(s);
+                        userEntry[0].selectionStart = 0;
+                        userEntry[0].selectionEnd = s.length;
+                        
+                        self.autoCompleteReplyIndex++;
+                        if (self.autoCompleteReplyIndex >= self.msgSenders.length) self.autoCompleteReplyIndex = 0;
+                    }
+                }
+                else {
+                    // Autocomplete.
+                    var caretPos = userEntry[0].selectionEnd;
+                    if (self.autoCompletePrefix === undefined) {
+                        // Advance caret to end of word.
+                        var m1 = s.substr(caretPos).match(/^\S+/);
+                        if (m1 != null) caretPos += m1[0].length;
+                        
+                        // Get last word of user entry, up to the caret position.
+                        var m2 = /\S+$/.exec(s.substr(0, caretPos));
+                        if (m2 !== null) {
+                            self.autoCompletePrefix = m2[0];
+                            self.autoCompleteSuggest = undefined;
+                        }
+                    }
+                    else {
+                        // Delete selected text from last suggestion.
+                        var s1 = '';
+                        if (userEntry[0].selectionStart > 0) s1 += s.substr(0, userEntry[0].selectionStart);
+                        if (userEntry[0].selectionEnd < s.length) s1 += s.substr(userEntry[0].selectionEnd);
+                        s = s1;
+                        userEntry[0].selectionEnd = userEntry[0].selectionStart;
+                        caretPos = userEntry[0].selectionStart;
+                    }
+                    
+                    if (self.autoCompletePrefix !== undefined) {
+                        var myNick = self.irc.state.nick;
+                        
+                        if (self.isChannel(self.autoCompletePrefix)) {
+                            // When string looks like a channel, autocomplete from joined channel list.
+                            var channels = $.grep(self.getJoinedChannels(), function (val) {
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
+                            });
+                            
+                            self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
+                                
+                            // Replace last word with autoCompleteSuggest.
+                            if (self.autoCompleteSuggest !== undefined) {
+                                var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
+                                s = s1 + s.substr(caretPos);
+                                userEntry.val(s);
+    
+                                // Select suggested portion of autocomplete.
+                                userEntry[0].selectionStart = s1.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
+                                userEntry[0].selectionEnd = s1.length;
+                            }
+                        }
+                        else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
+                            // When a channel is selected, autocomplete that channel's users.
+                            var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
+                            });
+                            
+                            self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
+                                
+                            // Replace last word with autoCompleteSuggest.
+                            if (self.autoCompleteSuggest !== undefined) {
+                                var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
+                                var wordpos = s1.length - self.autoCompleteSuggest.length;
+                                // If this is the only word on the line, assume it's to address the suggested user.
+                                if (wordpos == 0) s1 += ': ';
+                                s = s1 + s.substr(caretPos);
+                                userEntry.val(s);
+    
+                                // Select suggested portion of autocomplete.
+                                userEntry[0].selectionStart = wordpos + self.autoCompletePrefix.length;
+                                userEntry[0].selectionEnd = s1.length;
+                            }
+                        }
+                    }
+                }
+            },
 
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
-                    /*if (self.irc.state === undefined) {
-                        // If no state data, clear everything.
-                        self.ircElement.find('.sideBar ul.channelList').empty();
-                    }
-                    else {*/
-                        // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
-                        // such as incoming messages and user actions both changing state.
-                        var channelList = self.ircElement.find('.sideBar ul.channelList');
-                        var originalScrollTop = channelList.get(0).scrollTop;
+                    // TODO: Incrementally update channel/member lists to avoid rendering flaws of concurrent actions,
+                    // such as incoming messages and user actions both changing state.
+                    var channelList = self.ircElement.find('.sideBar ul.channelList');
+                    var originalScrollTop = channelList[0].scrollTop;
                         
-                        channelList.empty();
+                    channelList.empty();
 
-                        $.each(self.getJoinedChannels(), function (i, channel) {
-                            var channelDesc = self.irc.state.channels[channel];
-                            var memberCount = self.getLength(channelDesc.members);
-                            var channelElement = $('<li><span class="channel">' + channel + '</span><span class="memberCount">(' + memberCount + ')</span><span class="leaveButton" title="Leave channel"></span></li>')
-                                // Set topic as tooltip.
-                                .find('.channel')
-                                    .attr('title', (channelDesc.topic !== undefined) ? channelDesc.topic : 'No topic set')
-                                    .end()
-                                // Setup leave channel icon.
-                                .find('.leaveButton')
-                                    .click(function () {
-                                        if (self.irc.state.isActivated) {
-                                            $(this).parent('li').addClass('leaving');
-                                            self.sendLine('/leave ' + channel);
-                                        }
-                                    })
-                                    .end()
-                                .appendTo(channelList);
+                    $.each(self.getJoinedChannels(), function (i, channel) {
+                        var channelDesc = self.irc.state.channels[channel];
+                        var memberCount = self.getLength(channelDesc.members);
+                        var channelElement = $('<li><span class="channel">' + channel + '</span><span class="memberCount">(' + memberCount + ')</span><span class="leaveButton" title="Leave channel"></span></li>')
+                            // Set topic as tooltip.
+                            .find('.channel')
+                                .attr('title', (channelDesc.topic !== undefined) ? channelDesc.topic : 'No topic set')
+                                .end()
+                            // Setup leave channel icon.
+                            .find('.leaveButton')
+                                .click(function () {
+                                    if (self.irc.state.isActivated) {
+                                        $(this).parent('li').addClass('leaving');
+                                        self.sendLine('/leave ' + channel);
+                                    }
+                                })
+                                .end()
+                            .appendTo(channelList);
+                        
+                        var memberList = $('<ul class="memberList"/>')
+                            .appendTo(channelElement);
                             
-                            var memberList = $('<ul class="memberList"/>')
-                                .appendTo(channelElement);
-                                
-                            $.each(self.getChannelMembers(channel), function (i, member) {
-                                var memberDesc = channelDesc.members[member];
-                                var colorizeNumber = memberDesc.colorizeNumber;
-                                $('<li><span class="mode">' + memberDesc.mode + '</span><span class="nick color' + colorizeNumber + '">' + member + '</span></li>')
-                                    .appendTo(memberList);
-                            });
+                        $.each(self.getChannelMembers(channel), function (i, member) {
+                            var memberDesc = channelDesc.members[member];
+                            var colorizeNumber = memberDesc.colorizeNumber;
+                            $('<li><span class="mode">' + memberDesc.mode + '</span><span class="nick color' + colorizeNumber + '">' + member + '</span></li>')
+                                .appendTo(memberList);
                         });
-                        
-                        // Scroll back to original spot.
-                        channelList.get(0).scrollTop = originalScrollTop;
-                        
-                        // Apply doubleclick handler to channels and nicks.
-                        channelList.find('.nick,.channel')
-                            .hover(self.hoverClickableHandler, self.leaveClickableHandler)
-                            .dblclick(self.dblclickChannelNickHandler);
-                    /*}*/
+                    });
+                    
+                    // Scroll back to original spot.
+                    channelList[0].scrollTop = originalScrollTop;
+                    
+                    // Apply doubleclick handler to channels and nicks.
+                    channelList.find('.nick,.channel')
+                        .hover(self.hoverClickableHandler, self.leaveClickableHandler)
+                        .dblclick(self.dblclickChannelNickHandler);
                 }
             },
         
@@ -1834,113 +1954,38 @@ $.fn.chatmore = function (p1, p2) {
         // Setup user entry event handlers.
         self.ircElement.find('.userEntry')
             .click(function (e) {
-                // Clicking on user entry assumes changing selection; clears autocomplete state.
-                self.autoCompleteReplyIndex = undefined;
-                self.autoCompletePrefix = undefined;
+                // Clicking on user entry assumes changing selection; accept autocomplete.
+                self.acceptAutoComplete();
             })
             .keydown(function (e) {
-                if (e.keyCode == '13') {
-                    // Enter.
-                    // Add scratch to user entry history.
-                    self.userEntryHistory.unshift('');
-                    
-                    self.sendLine($(this).val());
-                    return false;
-                }
-                else if (e.keyCode == '9') {
-                    // Tab.
-                    if (e.preventDefault) e.preventDefault();   // Firefox: block default Tab functionality.
-                    
-                    if (self.irc.state.isActivated) {
-                        var userEntry = $(this).val();
-                        
-                        if (userEntry == '' || self.autoCompleteReplyIndex !== undefined) {
-                            if (self.msgSenders.length) {
-                                if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
-                                
-                                // Quick send message to next recent sender.
-                                $(this).val('/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ');
-                                
-                                self.autoCompleteReplyIndex++;
-                                if (self.autoCompleteReplyIndex >= self.msgSenders.length) self.autoCompleteReplyIndex = 0;
-                            }
-                        }
-                        else {
-                            // Autocomplete.
-                            var caretPos = this.selectionEnd;
-                            if (self.autoCompletePrefix === undefined) {
-                                // Advance caret to end of word.
-                                var m1 = userEntry.substr(caretPos).match(/^\S+/);
-                                if (m1 != null) caretPos += m1[0].length;
-                                
-                                // Get last word of user entry, up to the caret position.
-                                var m2 = /\S+$/.exec(userEntry.substr(0, caretPos));
-                                if (m2 !== null) {
-                                    self.autoCompletePrefix = m2[0];
-                                    self.autoCompleteSuggest = undefined;
-                                }
-                            }
-                            else {
-                                // Delete selected text from last suggestion.
-                                var s = '';
-                                if (this.selectionStart > 0) s += userEntry.substr(0, this.selectionStart);
-                                if (this.selectionEnd < userEntry.length) s += userEntry.substr(this.selectionEnd);
-                                userEntry = s;
-                                this.selectionEnd = this.selectionStart;
-                                caretPos = this.selectionStart;
-                            }
-                            
-                            if (self.autoCompletePrefix !== undefined) {
-                                var myNick = self.irc.state.nick;
-                                
-                                if (self.isChannel(self.autoCompletePrefix)) {
-                                    // When string looks like a channel, autocomplete from joined channel list.
-                                    var channels = $.grep(self.getJoinedChannels(), function (val) {
-                                        return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
-                                    });
-                                    
-                                    self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
-                                        
-                                    // Replace last word with autoCompleteSuggest.
-                                    if (self.autoCompleteSuggest !== undefined) {
-                                        var s = userEntry.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                        userEntry = s + userEntry.substr(caretPos);
-                                        $(this).val(userEntry);
-
-                                        // Select suggested portion of autocomplete.
-                                        this.selectionStart = s.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
-                                        this.selectionEnd = s.length;
-                                    }
-                                }
-                                else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
-                                    // When a channel is selected, autocomplete that channel's users.
-                                    var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
-                                        return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
-                                    });
-                                    
-                                    self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
-                                        
-                                    // Replace last word with autoCompleteSuggest.
-                                    if (self.autoCompleteSuggest !== undefined) {
-                                        var s = userEntry.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                        var wordpos = s.length - self.autoCompleteSuggest.length;
-                                        // If this is the only word on the line, assume it's to address the suggested user.
-                                        if (wordpos == 0) s += ': ';
-                                        userEntry = s + userEntry.substr(caretPos);
-                                        $(this).val(userEntry);
-
-                                        // Select suggested portion of autocomplete.
-                                        this.selectionStart = wordpos + self.autoCompletePrefix.length;
-                                        this.selectionEnd = s.length;
-                                    }
-                                }
-                            }
-                        }
+                if (e.keyCode === 13 /* Enter */) {
+                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                        // If presenting an autocomplete, accept it.
+                        self.acceptAutoComplete();
                     }
+                    else {
+                        // Send message.
+                        // Add new scratch line to user entry history.
+                        self.userEntryHistory.unshift('');
                     
+                        self.sendLine($(this).val());
+                        $(this).val('');
+                        
+                        // Reset user entry history index.
+                        self.userEntryHistoryIndex = undefined;
+                    }
                     return false;
                 }
-                else if (e.keyCode == '38' || e.keyCode == '40') {
+                else if (e.keyCode === 27 /* Escape */) {
+                    self.rejectAutoComplete();
+                    return false;
+                }
+                else if (e.keyCode === 9 /* Tab */) {
+                    // TODO: Support Shift+Tab to decrement autocomplete.
+                    self.incrementAutoComplete();
+                    return false;
+                }
+                else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
                     if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
                         // Start browsing history, if any exists.
                         self.userEntryHistoryIndex = 0;
@@ -1973,17 +2018,14 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .keypress(function (e) {
-                if (self.autoCompletePrefix !== undefined) {
-                    // Typing text on an autocomplete suggestion will clear the selection,
-                    // then add the text after the suggestion,
-                    // instead of default of deleting the suggestion before adding the text.
-                    this.selectionStart = this.selectionEnd;
+                // Ignore key codes handled from keyDown event.
+                if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
+                    e.keyCode === 38 || e.keyCode === 40) {
+                   return false;
                 }
-
-                // Test entry activity clears autocomplete state.
-                self.autoCompleteReplyIndex = undefined;
-                self.autoCompletePrefix = undefined;
-                self.userEntryHistoryIndex = undefined;
+                
+                // Typing text will accept a presented autocomplete.
+                self.acceptAutoComplete();
 
                 // Store current entry in first history element as scratch buffer.
                 self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
@@ -1993,7 +2035,7 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement.get(0), options.server, options.port, options.nick, options.realname, {
+            self.irc = new chatmore(self.ircElement[0], options.server, options.port, options.nick, options.realname, {
                 mustMatchServer: options.mustMatchServer
             });
             self.irc.activateClient();
