@@ -189,7 +189,23 @@ class spIrcClient {
         global $ircConfig;
         $m = array();
         $msg = null;
-        //log::info('Parsing: ' . $line);
+        log::info('Parsing: ' . $line);
+        
+        // Ensure UTF-8 encoding.
+        // If non-UTF-8 characters found, convert to best of PHP's ability.
+        if (!mb_detect_encoding($line, 'UTF-8', true)) {
+            $encType = mb_detect_encoding($line, mb_detect_order(), true);
+            if (empty($encType)) {
+                $encType = 'ISO-8891-1';
+                log::info('Non-UTF-8 message found.  Unknown encoding, assuming "' . $encType . '".');
+            }
+            else {
+                 log::info('Non-UTF-8 message found.  Detected "' . $encType . '" encoding.');
+            }
+            log::info('line before: ' . $line);
+            $line = mb_convert_encoding($line, 'UTF-8', $encType);
+            log::info('line after: ' . $line);
+        }
         
         // Parse raw message for prefix, command, and params.
         if (!preg_match("/^(:(\S+)\s+)?(\w+)(\s+(.+?))?[ ]*\r\n$/", $line, $m)) return false;
