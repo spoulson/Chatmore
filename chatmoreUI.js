@@ -1238,22 +1238,6 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             // Handle renaming of a nick of any user.
-            renameNick: function (oldNick, newNick) {
-                // Adjust channel members.
-                $.each(self.irc.state.channels, function (i, channel) {
-                    if (channel.members[oldNick] !== undefined) {
-                        channel.members[newNick] = channel.members[oldNick];
-                        channel.removeMember(oldNick);
-                    }
-                });
-                
-                // Adjust user list.
-                self.irc.state.users[newNick] = self.irc.state.users[oldNick];
-                self.irc.state.removeUser(oldNick);
-                
-                self.irc.state.isModified = true;
-            },
-    
             getJoinedChannels: function () {
                 var channels = [];
                 
@@ -1369,7 +1353,7 @@ $.fn.chatmore = function (p1, p2) {
                         var s = $(this).val();
                         var s1 = this.selectionStart > 1 ? s.substr(0, this.selectionStart) : '';
                         var s2 = this.selectionEnd < s.length ? s.substr(this.selectionEnd) : '';
-                        console.log('s1: "' + s1 + '", s2: "' + s2 + '"');
+                        //console.log('s1: "' + s1 + '", s2: "' + s2 + '"');
                         var caretPos = this.selectionStart;
                         
                         $(this).val(s1 + s2);
@@ -1652,15 +1636,6 @@ $.fn.chatmore = function (p1, p2) {
                     case 'JOIN':
                         self.writeTmpl('join', { msg: msg });
 
-                        if (self.irc.state.channels[msg.info.channel] === undefined) {
-                            self.irc.state.addChannel(msg.info.channel);
-                            
-                            // Get channel mode.
-                            self.irc.sendMsg('MODE ' + msg.info.channel);
-                        }
-                        
-                        self.irc.state.channels[msg.info.channel].addMember(msg.prefixNick);
-
                         // Auto-query newly joined channel.
                         if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
                             self.queryTarget(msg.info.channel);
@@ -1669,18 +1644,7 @@ $.fn.chatmore = function (p1, p2) {
                         break;
                         
                     case 'PART':
-                        self.writeTmpl('leave', { msg: msg });
-                        
-                        // Clean up state when leaving channel.
-                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
-                            // Current user leaving channel, remove channel from state.
-                            self.irc.state.removeChannel(msg.info.channel);
-                        }
-                        else {
-                            // Another user leaving channel, remove member form channel state.
-                            self.irc.state.channels[msg.info.channel].removeMember(msg.prefixNick);
-                        }
-                        
+                        self.writeTmpl('leave', { msg: msg });                        
                         break;
                         
                     case 'KICK':
@@ -1691,47 +1655,16 @@ $.fn.chatmore = function (p1, p2) {
                                 op: msg.prefixNick,
                                 comment: msg.info.comment
                             });
-                            
-                            if (self.stricmp(kick.nick, self.irc.state.nick) == 0) {
-                                self.irc.state.removeChannel(kick.channel);
-                            }
-                            else {
-                                self.irc.state.channels[kick.channel].removeMember(kick.nick);
-                            }
                         });
-
                         break;
                         
                     case 'MODE':
                         self.writeTmpl('mode', { msg: msg });
-                        
-                        if (self.isChannel(msg.info.target)) {
-                            if (self.irc.state.channels[msg.info.target] !== undefined) {
-                                // Request fully qualified channel mode string.
-                                self.irc.sendMsg('MODE ' + msg.info.target);
-                                
-                                // Get channel members to capture possible user flag changes.
-                                self.irc.sendMsg('NAMES ' + msg.info.target);
-                            }
-                        }
-                        else {
-                            // Save user mode in state.
-                            self.irc.state.addUser(msg.info.target);
-                            self.irc.state.users[msg.info.target].mode = msg.info.mode;
-                            self.irc.state.isModified = true;
-                        }
                         break;
                     
                     case 'NICK':
                         self.writeTmpl('nick', { msg: msg });
-                        
-                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
-                            // Change current user's nick.
-                            self.irc.state.nick = msg.info.nick;
-                        }
-                        
-                        self.renameNick(msg.info.oldNick, msg.info.nick);
-                        
+                                                
                         // If selected target's nick changes, update target.
                         if (self.irc.target() !== undefined && self.stricmp(msg.prefixNick, self.irc.target()) == 0) {
                             self.queryTarget(msg.info.nick);
@@ -1744,14 +1677,6 @@ $.fn.chatmore = function (p1, p2) {
                         
                     case 'QUIT':
                         self.writeTmpl('quit', { msg: msg });
-                        
-                        // Remove user from state.
-                        $.each(self.irc.state.channels, function (i, channel) {
-                            channel.removeMember(msg.prefixNick);
-                        });
-                        
-                        self.irc.state.removeUser(msg.prefixNick);
-            
                         break;
                         
                     case 'ERROR':
@@ -1762,6 +1687,7 @@ $.fn.chatmore = function (p1, p2) {
 
                     case '001': // Welcome
                         if (options.channel !== undefined) {
+                            // Autojoin channels found in URL anchor.
                             var channels = typeof(options.channel) == 'string' ? [options.channel] : options.channel;
                             for (var i in channels) {
                                 self.joinChannel(channels[i]);
@@ -1779,40 +1705,16 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('list', { msg: msg });
                         break;
                         
-                    case '324': // RPL_CHANNELMODEIS
-                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
-                            // Only update state if joined to this channel.
-                            self.irc.state.channels[msg.info.channel].mode = msg.info.mode;
-                            self.irc.state.isModified = true;
-                        }
-                        break;
-                        
                     case '331': // RPL_NOTOPIC
                         self.writeTmpl('notopic', { msg: msg });
-                        
-                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
-                            self.irc.state.channels[msg.info.channel].topic = undefined;
-                            self.irc.state.isModified = true;
-                        }
                         break;
                         
                     case '332': // RPL_TOPIC
                         self.writeTmpl('topic', { msg: msg });
-                        
-                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
-                            self.irc.state.channels[msg.info.channel].topic = (msg.info.topic != '') ? msg.info.topic : undefined;
-                            self.irc.state.isModified = true;
-                        }
                         break;
                         
                     case '333': // Topic set by
                         self.writeTmpl('topicSetBy', { msg: msg });
-                        
-                        if (self.irc.state.channels[msg.info.channel] !== undefined) {
-                            self.irc.state.channels[msg.info.channel].topicSetByNick = msg.info.nick;
-                            self.irc.state.channels[msg.info.channel].topicSetTime= msg.info.time;
-                            self.irc.state.isModified = true;
-                        }
                         break;
                         
                     case '391': // RPL_TIME
@@ -1821,15 +1723,13 @@ $.fn.chatmore = function (p1, p2) {
                         
                     case '403': // ERR_NOSUCHCHANNEL
                         self.writeTmpl('serverMsg', { message: msg.info.message });
-                        
-                        // If channel is listed as joined channel, remove it.
-                        self.irc.state.removeChannel(msg.info.channel);
                         break;
 
                     // Disregard these messages.
                     case '004': // RPL_MYINFO
                     case '005': // RPL_BOUNCE
                     case '323': // RPL_LISTEND
+                    case '324': // RPL_CHANNELMODEIS
                     case '353': // RPL_NAMREPLY
                     case '366': // RPL_ENDOFNAMES
                     case '433': // ERR_NICKNAMEINUSE (handled in processingMessage)
@@ -1845,7 +1745,7 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
-                if (window.console) console.log(self.irc.state);
+                if (window.console) console.log(self.clone(self.irc.state));
                 
                 var state = self.irc.state;
                 

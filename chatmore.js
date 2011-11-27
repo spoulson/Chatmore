@@ -19,18 +19,19 @@ function chatmore(element, server, port, nick, realname, options) {
         pauseRecv: false,
         mustMatchServer: false,
         maxRegistrationAttempts: 3,
-        
+
         // Process incoming messages.
         processMessages: function (data) {
             if (data === undefined) return false;
             
             // Timestamp when last received message processing occurs.
             self.state.lastRecvTime = new Date().getTime();
-            self.state.messageCount++;
             
             $.each(data, function (key, msg) {
                 $(element).trigger('processingMessage', [ msg ]);
                 
+                self.state.messageCount++;
+
                 switch (msg.type) {
                 case 'recv':
                     if (window.console) {
@@ -39,6 +40,76 @@ function chatmore(element, server, port, nick, realname, options) {
                     }
                     
                     switch (msg.command) {
+                    case 'JOIN':
+                        if (self.state.channels[msg.info.channel] === undefined) {
+                            self.state.addChannel(msg.info.channel);
+                            
+                            // Get channel mode.
+                            self.sendMsg('MODE ' + msg.info.channel);
+                        }
+                        
+                        self.state.channels[msg.info.channel].addMember(msg.prefixNick);
+                        break;
+                        
+                    case 'PART':
+                        // Clean up state when leaving channel.
+                        if (self.stricmp(msg.prefixNick, self.state.nick) == 0) {
+                            // Current user leaving channel, remove channel from state.
+                            self.state.removeChannel(msg.info.channel);
+                        }
+                        else {
+                            // Another user leaving channel, remove member form channel state.
+                            self.state.channels[msg.info.channel].removeMember(msg.prefixNick);
+                        }
+                        break;
+                        
+                    case 'KICK':
+                        $.each(msg.info.kicks, function (i, kick) {
+                            if (self.stricmp(kick.nick, self.state.nick) == 0) {
+                                self.state.removeChannel(kick.channel);
+                            }
+                            else {
+                                self.state.channels[kick.channel].removeMember(kick.nick);
+                            }
+                        });
+                        break;
+                        
+                    case 'MODE':
+                        if (self.isChannel(msg.info.target)) {
+                            if (self.state.channels[msg.info.target] !== undefined) {
+                                // Request fully qualified channel mode string.
+                                self.sendMsg('MODE ' + msg.info.target);
+                                
+                                // Get channel members to capture possible user flag changes.
+                                self.sendMsg('NAMES ' + msg.info.target);
+                            }
+                        }
+                        else {
+                            // Save user mode in state.
+                            self.state.addUser(msg.info.target);
+                            self.state.users[msg.info.target].mode = msg.info.mode;
+                            self.state.isModified = true;
+                        }
+                        break;
+
+                    case 'NICK':
+                        if (self.stricmp(msg.prefixNick, self.state.nick) == 0) {
+                            // Change current user's nick.
+                            self.state.nick = msg.info.nick;
+                        }
+                        
+                        self.renameNick(msg.info.oldNick, msg.info.nick);
+                        break;
+                        
+                    case 'QUIT':
+                        // Remove user from state.
+                        $.each(self.state.channels, function (i, channel) {
+                            channel.removeMember(msg.prefixNick);
+                        });
+                        
+                        self.state.removeUser(msg.prefixNick);
+                        break;
+
                     case '001': // Welcome
                         // If we get the welcome message, we are successfully registered.
                         if (!self.state.isRegistered) {
@@ -46,13 +117,46 @@ function chatmore(element, server, port, nick, realname, options) {
                             self.state.isModified = true;
                         }
                         break;
+
+                    case '324': // RPL_CHANNELMODEIS
+                        if (self.state.channels[msg.info.channel] !== undefined) {
+                            // Only update state if joined to this channel.
+                            self.state.channels[msg.info.channel].mode = msg.info.mode;
+                            self.state.isModified = true;
+                        }
+                        break;
                         
+                    case '331': // RPL_NOTOPIC
+                        if (self.state.channels[msg.info.channel] !== undefined) {
+                            self.state.channels[msg.info.channel].topic = undefined;
+                            self.state.isModified = true;
+                        }
+                        break;
+                        
+                    case '332': // RPL_TOPIC
+                        if (self.state.channels[msg.info.channel] !== undefined) {
+                            self.state.channels[msg.info.channel].topic = (msg.info.topic != '') ? msg.info.topic : undefined;
+                            self.state.isModified = true;
+                        }
+                        break;
+                        
+                    case '333': // Topic set by
+                        if (self.state.channels[msg.info.channel] !== undefined) {
+                            self.state.channels[msg.info.channel].topicSetByNick = msg.info.nick;
+                            self.state.channels[msg.info.channel].topicSetTime = msg.info.time;
+                            self.state.isModified = true;
+                        }
+                        break;
+                        
+                    case '403': // ERR_NOSUCHCHANNEL
+                        // If channel is listed as joined channel, remove it.
+                        self.state.removeChannel(msg.info.channel);
+                        break;
+
                     case '353': // RPL_NAMREPLY
                         var channelDesc = self.state.addChannel(msg.info.channel);
                         channelDesc.visibility = msg.info.visibility;
-                        if (channelDesc.lastRPL_ENDOFNAMES === undefined ||
-                            channelDesc.lastRPL_NAMREPLY === undefined ||
-                            channelDesc.lastRPL_ENDOFNAMES > channelDesc.lastRPL_NAMREPLY) {
+                        if (channelDesc.lastRPL_NAMREPLY < channelDesc.lastRPL_ENDOFNAMES) {
                             // First RPL_NAMREPLY since last RPL_ENDOFNAMES?  Clear the channel's member listing.
                             channelDesc.clearMembers();
                         }
@@ -133,14 +237,14 @@ function chatmore(element, server, port, nick, realname, options) {
     // Public members.
     //
     // Client state model.  Initialize client state with constructor parameters.
-    this.state = new chatmoreState();
-    this.state.server = server;
-    this.state.port = port;
-    this.state.nick = nick;
-    this.state.realname = realname;
+    self.state = new chatmoreState();
+    self.state.server = server;
+    self.state.port = port;
+    self.state.nick = nick;
+    self.state.realname = realname;
     
     // Get selected target nick or channel, such as by /query command.
-    this.target = function (newTarget) {
+    self.target = function (newTarget) {
         if (newTarget === undefined) {
             return local.target;
         }
@@ -151,7 +255,7 @@ function chatmore(element, server, port, nick, realname, options) {
         }
     };
     
-    this.activateClient = function () {
+    self.activateClient = function () {
         self.state.isActivated = false;
         self.state.lastRecvTime = undefined;
         
@@ -324,7 +428,7 @@ function chatmore(element, server, port, nick, realname, options) {
             });
     };
 
-    this.deactivateClient = function () {
+    self.deactivateClient = function () {
         if (self.state.isActivated) {
             $(element).trigger('deactivatingClient');
             
@@ -341,7 +445,7 @@ function chatmore(element, server, port, nick, realname, options) {
     };
     
     // Send raw message to server.
-    this.sendMsg = function (rawMsg, postCallback) {
+    self.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
         $.ajax('send.php?id=' + self.state.sessionId, {
@@ -369,7 +473,7 @@ function chatmore(element, server, port, nick, realname, options) {
         });
     };
 
-    this.register = function (nick, realname) {
+    self.register = function (nick, realname) {
         self.state.nick = nick;
         self.state.ident = Math.floor(Math.random() * 100000000);
         self.state.realname = realname;
@@ -379,36 +483,60 @@ function chatmore(element, server, port, nick, realname, options) {
         
         if (window.console) console.log('Registering user "' + self.state.nick + '" (' + self.state.realname + ') on IRC server "' + self.state.server + ':' + self.state.port + '"');
         
-        this.sendMsg('USER ' + self.state.ident + ' 0 * :' + self.state.realname);
-        this.sendMsg('NICK ' + self.state.nick);
+        self.sendMsg('USER ' + self.state.ident + ' 0 * :' + self.state.realname);
+        self.sendMsg('NICK ' + self.state.nick);
     };
     
-    this.sendChannelMsg = function (channel, message) {
+    self.sendChannelMsg = function (channel, message) {
         this.sendMsg('PRIVMSG ' + channel + ' ' + message);
     };
 
-    this.sendPrivateMsg = function (nick, message) {
+    self.sendPrivateMsg = function (nick, message) {
         this.sendMsg('PRIVMSG ' + nick + ' ' + message);
     };
     
-    this.sendChannelAction = function (channel, message) {
+    self.sendChannelAction = function (channel, message) {
         var quote = String.fromCharCode(1);
         this.sendMsg('PRIVMSG ' + channel + ' ' + quote + 'ACTION ' + message + quote);
     };
 
-    this.sendPrivateAction = function (nick, message) {
+    self.sendPrivateAction = function (nick, message) {
         var quote = String.fromCharCode(1);
         this.sendMsg('PRIVMSG ' + nick + ' ' + quote + 'ACTION ' + message + quote);
     };
     
-    this.sendChannelNotice = function (channel, message) {
+    self.sendChannelNotice = function (channel, message) {
         this.sendMsg('NOTICE ' + channel + ' ' + message);
     };
 
-    this.sendPrivateNotice = function (nick, message) {
+    self.sendPrivateNotice = function (nick, message) {
         this.sendMsg('NOTICE ' + nick + ' ' + message);
     };
-    
+
+    self.renameNick = function (oldNick, newNick) {
+        // Adjust channel members.
+        $.each(self.state.channels, function (i, channel) {
+            if (channel.members[oldNick] !== undefined) {
+                channel.members[newNick] = channel.members[oldNick];
+                channel.removeMember(oldNick);
+            }
+        });
+        
+        // Adjust user list.
+        self.state.users[newNick] = self.state.users[oldNick];
+        self.state.removeUser(oldNick);
+        
+        self.state.isModified = true;
+    };
+
+    self.stricmp = function (a, b) {
+        return a.toLocaleLowerCase().localeCompare(b.toLocaleLowerCase());
+    };
+
+    self.isChannel = function (target) {
+        return target.match(/^[#&+!][^\s,:\cg]+/);
+    };
+
     // Merge options into properties.
     if (options.mustMatchServer !== undefined) local.mustMatchServer = options.mustMatchServer;
     if (options.maxRegistrationAttempts !== undefined) local.maxRegistrationAttempts = options.maxRegistrationAttempts;

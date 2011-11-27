@@ -43,6 +43,7 @@ function chatmoreState() {
     
     // Epoch time of last message from recv.php.
     state.lastRecvTime = undefined;
+    state.messageCount = 0;
     
     // Session id returned from init.php during activation.
     state.sessionId = undefined;
@@ -115,6 +116,9 @@ function chatmoreState() {
         // Array of $nick => channelMemberDesc objects
         this.members = {};
         
+        this.lastRPL_NAMREPLY = 0;
+        this.lastRPL_ENDOFNAMES = 0;
+        
         this.addMember = function (nick) {
             if (this.members[nick] === undefined) {
                 //if (window.console) console.log('addMember(' + nick + ')');
@@ -128,7 +132,7 @@ function chatmoreState() {
                 
                 state.isModified = true;
                 
-                if (window.console) console.log('colorize ' + nick + ': ' + member.colorizeNumber + ', checksum: ' + nickHash);
+                //if (window.console) console.log('colorize ' + nick + ': ' + member.colorizeNumber + ', checksum: ' + nickHash);
             }
             
             return this.members[nick];
