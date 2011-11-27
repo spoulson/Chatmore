@@ -26,6 +26,7 @@ function chatmore(element, server, port, nick, realname, options) {
             
             // Timestamp when last received message processing occurs.
             self.state.lastRecvTime = new Date().getTime();
+            self.state.messageCount++;
             
             $.each(data, function (key, msg) {
                 $(element).trigger('processingMessage', [ msg ]);
@@ -44,6 +45,32 @@ function chatmore(element, server, port, nick, realname, options) {
                             self.state.isRegistered = true;
                             self.state.isModified = true;
                         }
+                        break;
+                        
+                    case '353': // RPL_NAMREPLY
+                        var channelDesc = self.state.addChannel(msg.info.channel);
+                        channelDesc.visibility = msg.info.visibility;
+                        if (channelDesc.lastRPL_ENDOFNAMES === undefined ||
+                            channelDesc.lastRPL_NAMREPLY === undefined ||
+                            channelDesc.lastRPL_ENDOFNAMES > channelDesc.lastRPL_NAMREPLY) {
+                            // First RPL_NAMREPLY since last RPL_ENDOFNAMES?  Clear the channel's member listing.
+                            channelDesc.clearMembers();
+                        }
+                        
+                        $.each(msg.info.names, function (i, name) {
+                            self.state.addUser(name.nick);
+                            memberDesc = channelDesc.addMember(name.nick);
+                            memberDesc.mode = name.mode;
+                        });
+                        
+                        channelDesc.lastRPL_NAMREPLY = self.state.messageCount;
+                        self.state.isModified = true;
+                        break;
+                        
+                    case '366': // RPL_ENDOFNAMES
+                        // Track last RPL_ENDOFNAMES for the channel.
+                        // Used to terminate RPL_NAMREPLY messages.
+                        self.state.channels[msg.info.channel].lastRPL_ENDOFNAMES = self.state.messageCount;
                         break;
                         
                     case '433': // ERR_NICKNAMEINUSE

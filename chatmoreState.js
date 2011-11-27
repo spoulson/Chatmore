@@ -49,7 +49,7 @@ function chatmoreState() {
 
     state.addChannel = function (channel) {
         if (state.channels[channel] === undefined) {
-            if (window.console) console.log('addchannel(' + channel + ')');
+            //if (window.console) console.log('addchannel(' + channel + ')');
             state.channels[channel] = new channelDesc();
             state.isModified = true;
         }
@@ -59,7 +59,7 @@ function chatmoreState() {
     
     state.addUser = function (nick) {
         if (state.users[nick] === undefined) {
-            if (window.console) console.log('addUser(' + nick + ')');
+            //if (window.console) console.log('addUser(' + nick + ')');
             state.users[nick] = new userDesc();
             state.isModified = true;
         }
@@ -69,7 +69,7 @@ function chatmoreState() {
     
     state.removeChannel = function (channel) {
         if (state.channels[channel] !== undefined) {
-            if (window.console) console.log('removeChannel(' + channel + ')');
+            //if (window.console) console.log('removeChannel(' + channel + ')');
             delete state.channels[channel];
             state.isModified = true;
         }
@@ -77,7 +77,7 @@ function chatmoreState() {
     
     state.removeUser = function (nick) {
         if (state.users[nick] !== undefined) {
-            if (window.console) console.log('removeUser(' + nick + ')');
+            //if (window.console) console.log('removeUser(' + nick + ')');
             delete state.users[nick];
             state.isModified = true;
         }
@@ -85,7 +85,7 @@ function chatmoreState() {
 
     state.clearChannels = function () {
         if (!isArrayEmpty(state.channels)) {
-            if (window.console) console.log('clearChannels()');
+            //if (window.console) console.log('clearChannels()');
             state.channels = {};
             state.isModified = true;
         }
@@ -93,7 +93,7 @@ function chatmoreState() {
     
     state.clearUsers = function () {
         if (!isArrayEmpty(state.users)) {
-            if (window.console) console.log('clearUsers()');
+            //if (window.console) console.log('clearUsers()');
             state.users = {};
             state.isModified = true;
         }
@@ -117,7 +117,7 @@ function chatmoreState() {
         
         this.addMember = function (nick) {
             if (this.members[nick] === undefined) {
-                if (window.console) console.log('addMember(' + nick + ')');
+                //if (window.console) console.log('addMember(' + nick + ')');
                 member = new channelMemberDesc();
                 member.mode = '';
                 
@@ -136,7 +136,7 @@ function chatmoreState() {
         
         this.removeMember = function (nick) {
             if (this.members[nick] !== undefined) {
-                if (window.console) console.log('removeMember(' + nick + ')');
+                //if (window.console) console.log('removeMember(' + nick + ')');
                 delete this.members[nick];
                 state.isModified = true;
             }
@@ -144,7 +144,7 @@ function chatmoreState() {
         
         this.clearMembers = function () {
             if (!isArrayEmpty(this.members)) {
-                if (window.console) console.log('clearMembers()');
+                //if (window.console) console.log('clearMembers()');
                 this.members = {};
                 state.isModified = true;
             }

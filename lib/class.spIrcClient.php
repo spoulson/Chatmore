@@ -411,6 +411,13 @@ class spIrcClient {
             );
             break;
             
+        case self::RPL_ENDOFNAMES:
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'channel' => $msgParams[1]
+            );
+            break;
+            
         case self::RPL_NOTOPIC:
             if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+:/", $params, $msgParams)) return false;
             $msg['info'] = array(

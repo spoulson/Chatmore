@@ -1348,7 +1348,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             acceptAutoComplete: function () {
-                if (window.console) console.log('acceptAutoComplete()');
+                //if (window.console) console.log('acceptAutoComplete()');
                 if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
                     self.ircElement.find('.userEntry').each(function () {
                         // Move caret to end of selection.
@@ -1362,7 +1362,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             rejectAutoComplete: function () {
-                if (window.console) console.log('rejectAutoComplete()');
+                //if (window.console) console.log('rejectAutoComplete()');
                 if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
                     self.ircElement.find('.userEntry').each(function () {
                         // Remove autocomplete suggestion.
@@ -1383,7 +1383,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             incrementAutoComplete: function () {
-                if (window.console) console.log('incrementAutoComplete()');
+                //if (window.console) console.log('incrementAutoComplete()');
                 var userEntry = self.ircElement.find('.userEntry');
                 var s = userEntry.val();
                     
@@ -1813,25 +1813,6 @@ $.fn.chatmore = function (p1, p2) {
                             self.irc.state.channels[msg.info.channel].topicSetTime= msg.info.time;
                             self.irc.state.isModified = true;
                         }
-                        break;
-                        
-                    case '353': // RPL_NAMREPLY
-                        // if (window.console) console.log(msg);
-                        // self.writeTmpl('names', { msg: msg });
-
-                        var channelDesc = self.irc.state.addChannel(msg.info.channel);
-                        
-                        // TODO: Support multiple 353's that are commited on 366.
-                        channelDesc.visibility = msg.info.visibility;
-                        channelDesc.clearMembers();
-                        
-                        $.each(msg.info.names, function (i, name) {
-                            self.irc.state.addUser(name.nick);
-                            memberDesc = channelDesc.addMember(name.nick);
-                            memberDesc.mode = name.mode;
-                        });
-                        
-                        self.irc.state.isModified = true;
                         break;
                         
                     case '391': // RPL_TIME
