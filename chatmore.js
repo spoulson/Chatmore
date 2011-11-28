@@ -36,7 +36,7 @@ function chatmore(element, server, port, nick, realname, options) {
                 case 'recv':
                     if (window.console) {
                         if (msg.raw !== undefined) console.log(msg.raw);
-                        console.log(msg);
+                        //console.log(msg);
                     }
                     
                     switch (msg.command) {

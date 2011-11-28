@@ -2,19 +2,22 @@ $.fn.chatmore = function (p1, p2) {
     // If no arguments provided, default to empty options array.
     if (p1 === undefined) p1 = {};
     
-    if (typeof(p1) == 'object') {
+    if (typeof(p1) === 'object') {
         // Construct UI widget.
-        var options = p1;
+        var userOptions = p1;
         
-        // Default options.
-        if (options.nick === undefined) options.nick = 'user' + Math.floor(Math.random() * 10000);
-        if (options.realname === undefined) options.realname = options.nick;
-        if (options.port === undefined) options.port = 6667;
-        if (options.title === undefined) options.title = document.title;
-        if (options.quitMessage === undefined) options.quitMessage = 'Chatmore IRC client';
-        if (options.reactivateAttempts === undefined) options.reactivateAttempts = 6;
-        if (options.reactivateDelay === undefined) options.reactivateDelay = 10;
-        if (options.mustMatchServer === undefined) options.mustMatchServer = false;
+        // Parse options.
+        var options = {
+            port: 6667,
+            title: document.title,
+            quitMessage: 'Chatmore IRC client',
+            reactivateAttempts: 6,
+            reactivateDelay: 10,
+            mustMatchServer: false
+        };
+        $.extend(options, userOptions);
+        if (userOptions.nick === undefined) options.nick = 'user' + Math.floor(Math.random() * 10000);
+        if (userOptions.realname === undefined) options.realname = userOptions.nick;
         
         var self;
         self = {
@@ -24,8 +27,7 @@ $.fn.chatmore = function (p1, p2) {
             ircElement: $(this),
             irc: undefined,
 
-            quitMessage: options.quitMessage,
-            defaultTitle: options.title,
+            options: options,
             isWindowFocused: true,
             notificationMessageCount: 0,        // Number of messages received while not focused on browser.
             prevState: undefined,
@@ -35,8 +37,6 @@ $.fn.chatmore = function (p1, p2) {
             autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
             enableAutoReactivate: true,
             reactivateAttempts: 0,
-            maxReactivateAttempts: options.reactivateAttempts,
-            reactivateDelay: options.reactivateDelay,   // in seconds.
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
@@ -46,7 +46,7 @@ $.fn.chatmore = function (p1, p2) {
                 title: '<span>{{if messageCount == 1}}A new message has arrived! -- ' +
                     '{{else messageCount > 1}}${messageCount} new messages have arrived! -- ' +
                     '{{/if}}' +
-                    '${defaultTitle} - ${self.irc.state.server}:${self.irc.state.port}</span>',
+                    '${self.options.title} - ${self.irc.state.server}:${self.irc.state.port}</span>',
                 timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
                 bullet: '&bull;&bull;&bull;',
                 notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
@@ -719,7 +719,7 @@ $.fn.chatmore = function (p1, p2) {
                     exec: function (meta) {
                         if (self.irc.target() !== undefined) self.queryTarget(undefined);
                         
-                        var comment = meta.comment !== undefined ? meta.comment : self.quitMessage;
+                        var comment = meta.comment !== undefined ? meta.comment : self.options.quitMessage;
                         self.enableAutoReactivate = false;
                         self.irc.sendMsg('QUIT :' + comment);
                     }
@@ -1302,7 +1302,7 @@ $.fn.chatmore = function (p1, p2) {
                 }
             },
             
-            // Clone an object or array structure.
+            // Clone an object or array structure.  Does not preserve prototype.
             // Based on: http://my.opera.com/GreyWyvern/blog/show.dml/1725165
             clone: function(obj) {
                 var newObj = (obj instanceof Array) ? [] : {};
@@ -1316,7 +1316,7 @@ $.fn.chatmore = function (p1, p2) {
             refreshTitle: function () {
                 var newTitle = $.tmpl('title', {
                     self: self,
-                    defaultTitle: self.defaultTitle,
+                    defaultTitle: options.title,
                     messageCount: self.notificationMessageCount
                 }).text();
 
@@ -1745,7 +1745,7 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
-                if (window.console) console.log(self.clone(self.irc.state));
+                if (window.console) console.log(self.irc.state);
                 
                 var state = self.irc.state;
                 
@@ -1812,14 +1812,14 @@ $.fn.chatmore = function (p1, p2) {
                 
                 if (self.enableAutoReactivate) {
                     // Attempt reactivation.
-                    if (self.reactivateAttempts < self.maxReactivateAttempts) {
+                    if (self.reactivateAttempts < self.options.reactivateAttempts) {
                         self.freezeSideBar = true;
-                        self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.reactivateDelay + ' seconds...' });
+                        self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.options.reactivateDelay + ' seconds...' });
 
                         setTimeout(function () {
                             self.reactivateAttempts++;
                             self.irc.activateClient();
-                        }, self.reactivateDelay * 1000);
+                        }, self.options.reactivateDelay * 1000);
                     }
                     else {
                         self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
