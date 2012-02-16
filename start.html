@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Experimental IRC chat client</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" type="text/css" href="themes/atwood/atwood.css" />
+    <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+    <script type="text/javascript" src="config.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            var validateNick = function (nick) {
+                return /^\S+$/.test(nick);
+            };
+            
+            var validateServer = function (server) {
+                return server.length <= 255 &&
+                    /^[a-z][a-z0-9\.-]*$/i.test(server);
+            };
+            
+            var validateChannel = function (channel) {
+                return /^[#&+!]?[^\s,:\cg]+$/.test(channel);
+            };
+            
+            var validateLaunch = function () {
+                if (validateNick($('#nickTextbox').val()) &&
+                    validateServer($('#serverTextbox').val()) &&
+                    validateChannel($('#channelTextbox').val()))
+                    $('#launchButton').removeAttr('disabled');
+                else
+                    $('#launchButton').attr('disabled', 'disabled');
+            };
+
+            $('#nickTextbox')
+                .keypress(function (e) {
+                    validateLaunch();
+                    var newNick = $('#nickTextbox').val() + String.fromCharCode(e.charCode);
+                    if (!validateNick(newNick)) return false;
+                })
+                .blur(function () {
+                    var nick = $('#nickTextbox').val();
+                    if (validateNick(nick)) {
+                        $('#nickLabel').removeClass('ui-state-error');
+                        if (window.console) console.log('valid nick');
+                    }
+                    else {
+                        $('#nickLabel').addClass('ui-state-error');
+                        if (window.console) console.log('Invalid nick!');
+                    }
+                });
+
+            $('#serverTextbox')
+                .keypress(function (e) {
+                    validateLaunch();
+                    // http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
+                    var newServer = $('#serverTextbox').val() + String.fromCharCode(e.charCode);
+                    if (!validateServer(newServer)) return false;
+                })
+                .blur(function () {
+                    var server = $('#serverTextbox').val();
+                    if (validateServer(server)) {
+                        $('#serverLabel').removeClass('ui-state-error');
+                    }
+                    else {
+                        $('#serverLabel').addClass('ui-state-error');
+                    }
+                });
+
+            $('#channelTextbox')
+                .keypress(function (e) {
+                    validateLaunch();
+                    var oldChannel = $('#channelTextbox').val();
+                    var newChannel = oldChannel + String.fromCharCode(e.charCode);
+                    if (!validateChannel(newChannel)) return false;
+                })
+                .change(function () {
+                    var channel = $('#channelTextbox').val();
+                    if (validateChannel(channel)) {
+                        // Automatically prepend channel with '#'.
+                        if (/^[^#&+!]/.test(channel)) {
+                            channel = '#' + channel;
+                            $('#channelTextbox').val(channel);
+                        }
+                        document.form1.action = 'index.php' + channel;
+                    }
+                })
+                .blur(function () {
+                    var channel = $('#channelTextbox').val();
+                    if (validateChannel(channel)) {
+                        $('#channelLabel').removeClass('ui-state-error');
+                    }
+                    else {
+                        $('#channelLabel').addClass('ui-state-error');
+                    }
+                });
+
+            // Apply default values.
+            $('#serverTextbox').val(chatmoreDefaults.server);
+            $('#channelTextbox').val(chatmoreDefaults.channel);
+            validateLaunch();
+        });
+    </script>
+</head>
+<body>
+    <form action="index.php" name="form1" method="GET">
+        <div class="chatmore ui-widget" style="float:left;overflow:hidden">
+            <div class="launcher ui-widget-content ui-corner-all">
+            <table>
+                <tr><th id="nickLabel" style="text-align:left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
+                <tr><th style="text-align:left">Real name:</th><td><input type="text" name="realname" /></td></tr>
+                <tr><th id="serverLabel" style="text-align:left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
+                <tr><th id="channelLabel" style="text-align:left">Channel:</th><td><input type="text" id="channelTextbox" /></td></tr>
+                <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
+            </table>
+            </div>
+        </div>
+        
+    </form>
+</body>
+</html>
