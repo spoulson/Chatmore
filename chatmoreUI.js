@@ -1839,70 +1839,74 @@ $.fn.chatmore = function (p1, p2) {
                 self.acceptAutoComplete();
             })
             .keydown(function (e) {
-                if (e.keyCode === 13 /* Enter */) {
-                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
-                        // If presenting an autocomplete, accept it.
-                        self.acceptAutoComplete();
-                    }
-                    else {
-                        // Send message.
-                        // Add new scratch line to user entry history.
-                        self.userEntryHistory.unshift('');
-                    
-                        self.sendLine($(this).val());
-                        $(this).val('');
-                        
-                        // Reset user entry history index.
-                        self.userEntryHistoryIndex = undefined;
-                    }
-                    return false;
-                }
-                else if (e.keyCode === 27 /* Escape */) {
-                    self.rejectAutoComplete();
-                    return false;
-                }
-                else if (e.keyCode === 9 /* Tab */) {
-                    // TODO: Support Shift+Tab to decrement autocomplete.
-                    self.incrementAutoComplete();
-                    return false;
-                }
-                else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
-                    if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
-                        // Start browsing history, if any exists.
-                        self.userEntryHistoryIndex = 0;
-                    }
-                    
-                    if (self.userEntryHistoryIndex !== undefined) {
-                        if (e.keyCode == '38') {
-                            // Go to next oldest history entry.
-                            self.userEntryHistoryIndex++;
-                            if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
-                                self.userEntryHistoryIndex = 0;
+                if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
+                    if (e.keyCode === 13 /* Enter */) {
+                        if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                            // If presenting an autocomplete, accept it.
+                            self.acceptAutoComplete();
                         }
                         else {
-                            // Go to next newest history entry.
-                            self.userEntryHistoryIndex--;
-                            if (self.userEntryHistoryIndex < 0)
-                                self.userEntryHistoryIndex = self.userEntryHistory.length - 1;
+                            // Send message.
+                            // Add new scratch line to user entry history.
+                            self.userEntryHistory.unshift('');
+                        
+                            self.sendLine($(this).val());
+                            $(this).val('');
+                            
+                            // Reset user entry history index.
+                            self.userEntryHistoryIndex = undefined;
                         }
-                    
-                        // Display history in user entry.
-                        var entry = self.userEntryHistory[self.userEntryHistoryIndex];
-                        $(this).val(entry);
-
-                        // Place caret at end of line.
-                        this.selectionStart = entry.length;
-                        this.selectionEnd = this.selectionStart;
+                        return false;
                     }
-                    
-                    return false;
+                    else if (e.keyCode === 27 /* Escape */) {
+                        self.rejectAutoComplete();
+                        return false;
+                    }
+                    else if (e.keyCode === 9 /* Tab */) {
+                        // TODO: Support Shift+Tab to decrement autocomplete.
+                        self.incrementAutoComplete();
+                        return false;
+                    }
+                    else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
+                        if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
+                            // Start browsing history, if any exists.
+                            self.userEntryHistoryIndex = 0;
+                        }
+                        
+                        if (self.userEntryHistoryIndex !== undefined) {
+                            if (e.keyCode == '38') {
+                                // Go to next oldest history entry.
+                                self.userEntryHistoryIndex++;
+                                if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
+                                    self.userEntryHistoryIndex = 0;
+                            }
+                            else {
+                                // Go to next newest history entry.
+                                self.userEntryHistoryIndex--;
+                                if (self.userEntryHistoryIndex < 0)
+                                    self.userEntryHistoryIndex = self.userEntryHistory.length - 1;
+                            }
+                        
+                            // Display history in user entry.
+                            var entry = self.userEntryHistory[self.userEntryHistoryIndex];
+                            $(this).val(entry);
+    
+                            // Place caret at end of line.
+                            this.selectionStart = entry.length;
+                            this.selectionEnd = this.selectionStart;
+                        }
+                        
+                        return false;
+                    }
                 }
             })
             .keypress(function (e) {
                 // Ignore key codes handled from keyDown event.
-                if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
-                    e.keyCode === 38 || e.keyCode === 40) {
-                   return false;
+                if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
+                    if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
+                        e.keyCode === 38 || e.keyCode === 40) {
+                       return false;
+                    }
                 }
                 
                 // Typing text will accept a presented autocomplete.
