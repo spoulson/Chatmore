@@ -25,7 +25,7 @@ if (array_key_exists('x', $_GET)) {
         // querystring needed for config.js.
         var querystring = '<?=$_SERVER['QUERY_STRING']?>';
     </script>
-    <script type="text/javascript" src="jquery-1.6.2.min.js"></script>
+    <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="chatmoreState.js"></script>
