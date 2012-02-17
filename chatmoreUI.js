@@ -566,6 +566,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         else {
                             self.irc.sendPrivateMsg(meta.target, meta.message);
+                            self.addToMsgSenders(meta.target);
                             self.writeTmpl('outgoingPrivateMsg', {
                                 msg: {
                                     prefixNick: self.irc.state.nick,
