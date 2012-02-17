@@ -917,3 +917,12 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .chatmore .ircConsole .content .MODE .modeString {
     font-family: monospace;
 }
+
+.chatmore .ircConsole .content .line.new {
+    background-color: #CEFF84;
+}
+
+.chatmore .ircConsole .content > .line.separator {
+    height: 4px;
+    background-color: #A5FF1E;
+}

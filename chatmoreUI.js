@@ -29,7 +29,9 @@ $.fn.chatmore = function (p1, p2) {
 
             options: options,
             isWindowFocused: true,
+            messageCount: 0,                    // Console message counter.
             notificationMessageCount: 0,        // Number of messages received while not focused on browser.
+            blurMessageCount: undefined,        // Message count at time of blur event.
             prevState: undefined,
             msgSenders: [],                     // History of private message senders for autocomplete.
             autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
@@ -692,12 +694,12 @@ $.fn.chatmore = function (p1, p2) {
                         var comment = meta.comment !== undefined ? meta.comment : self.options.quitMessage;
                         self.enableAutoReactivate = false;
                         if (self.isPendingActivation) {
-                        	self.isPendingActivation = false;
-                        	self.writeTmpl('error', { message: 'Server connection aborted.' });
+                            self.isPendingActivation = false;
+                            self.writeTmpl('error', { message: 'Server connection aborted.' });
                         }
                         else {
-	                        self.irc.sendMsg('QUIT :' + comment);
-	                    }
+                            self.irc.sendMsg('QUIT :' + comment);
+                        }
                     }
                 },
                 quote: {
@@ -1034,6 +1036,9 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             writeLine: function (html) {
+                self.messageCount++;
+                self.incrementNotificationMessageCount();
+
                 var ircContent = self.ircElement.find('.ircConsole .content');
                 var lineElement;
 
@@ -1072,8 +1077,21 @@ $.fn.chatmore = function (p1, p2) {
 
                     // Add line to console.
                     var lineElement = $('<div class="line"/>')
+                        .attr('mc', self.messageCount)
                         .append(element)
                         .appendTo(ircContent);
+                        
+                    if (!self.isWindowFocused) {
+                        if (self.blurMessageCount === (self.messageCount - 1)) {
+                            var content = self.ircElement.find('.ircConsole .content');
+                            content.find('.line.new').removeClass('new');
+                            content.find('.line.separator').remove();
+                            lineElement.before('<div class="line separator"/>');
+                        }
+                        lineElement
+                        	.addClass('new')
+                        	.css('opacity', '0.5');
+                    }
                         
                     // Auto scroll to bottom if currently at bottom.
                     if (atBottom) self.scrollToBottom();
@@ -1096,8 +1114,6 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             writeTmpl: function (templateName, data) {
-                self.incrementNotificationMessageCount();
-
                 data['self'] = self;
                 var el = $('<div/>')
                     .append($.tmpl(templateName, data));
@@ -1539,10 +1555,20 @@ $.fn.chatmore = function (p1, p2) {
                 if (!self.isWindowFocused) {
                     self.isWindowFocused = true;
                     self.ircElement.find('.userEntry').focus();
+                    
+                    // Indicate new messages since blur.
+                    if (self.blurMessageCount) {
+                        var msgElements = self.ircElement.find('.ircConsole .content > .line.new');
+                        msgElements.fadeTo(2000, 1, 'easeOutExpo');
+                    }
+                    
+                    self.blurMessageCount = undefined;
                 }
             })
             .blur(function () {
                 self.isWindowFocused = false;
+                self.blurMessageCount = self.messageCount;
+                if (window.console) console.log('blurMessageCount: ' + self.blurMessageCount);
             });
         
         // Setup chatmore event handlers.
@@ -1749,7 +1775,7 @@ $.fn.chatmore = function (p1, p2) {
             .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
-                	self.isPendingActivation = true;
+                    self.isPendingActivation = true;
                     self.ircElement.find('.userEntry').focus();
                     break;
                     
@@ -1793,23 +1819,24 @@ $.fn.chatmore = function (p1, p2) {
                     // Attempt reactivation.
                     if (self.reactivateAttempts < self.options.reactivateAttempts) {
                         self.freezeSideBar = true;
+                        self.isPendingActivation = true;
                         self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.options.reactivateDelay + ' seconds...  Enter /quit to abort.' });
 
                         setTimeout(function () {
-                        	if (self.enableAutoReactivate) {
-	                            self.reactivateAttempts++;
-    	                        self.irc.activateClient();
-    	                    }
+                            if (self.enableAutoReactivate) {
+                                self.reactivateAttempts++;
+                                self.irc.activateClient();
+                            }
                         }, self.options.reactivateDelay * 1000);
                     }
                     else {
-                    	self.isPendingActivation = false;
+                        self.isPendingActivation = false;
                         self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
                         self.freezeSideBar = false;
                     }
                 }
                 else {
-                	self.isPendingActivation = false;
+                    self.isPendingActivation = false;
                     self.writeTmpl('error', { message: 'Server connection closed.' });
                     self.freezeSideBar = false;
                 }
