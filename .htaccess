@@ -1,4 +1,4 @@
-DirectoryIndex index.php
+DirectoryIndex index.html index.php
 
 <Files ~ "^config\.php|lib|tmp$">
   order deny,allow

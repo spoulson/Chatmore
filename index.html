@@ -18,6 +18,10 @@
                     /^[a-z][a-z0-9\.-]*$/i.test(server);
             };
             
+            var validatePort = function (port) {
+            	return parseInt(port) > 0;
+            };
+            
             var validateChannel = function (channel) {
                 return /^[#&+!]?[^\s,:\cg]+$/.test(channel);
             };
@@ -25,6 +29,7 @@
             var validateLaunch = function () {
                 if (validateNick($('#nickTextbox').val()) &&
                     validateServer($('#serverTextbox').val()) &&
+                    validatePort($('#portTextbox').val()) &&
                     validateChannel($('#channelTextbox').val()))
                     $('#launchButton').removeAttr('disabled');
                 else
@@ -66,6 +71,22 @@
                     }
                 });
 
+			$('#portTextbox')
+                .keypress(function (e) {
+                    validateLaunch();
+                    var newPort = $('#portTextbox').val() + String.fromCharCode(e.charCode);
+                    if (!validatePort(newPort)) return false;
+                })
+                .blur(function () {
+                    var port = $('#portTextbox').val();
+                    if (validatePort(port)) {
+                        $('#portLabel').removeClass('ui-state-error');
+                    }
+                    else {
+                        $('#portLabel').addClass('ui-state-error');
+                    }
+                });
+                
             $('#channelTextbox')
                 .keypress(function (e) {
                     validateLaunch();
@@ -81,7 +102,7 @@
                             channel = '#' + channel;
                             $('#channelTextbox').val(channel);
                         }
-                        document.form1.action = 'index.php' + channel;
+                        document.form1.action = 'client.php' + channel;
                     }
                 })
                 .blur(function () {
@@ -96,19 +117,21 @@
 
             // Apply default values.
             $('#serverTextbox').val(chatmoreDefaults.server);
+            $('#portTextbox').val(chatmoreDefaults.port);
             $('#channelTextbox').val(chatmoreDefaults.channel);
             validateLaunch();
         });
     </script>
 </head>
 <body>
-    <form action="index.php" name="form1" method="GET">
+    <form action="client.php" name="form1" method="GET">
         <div class="chatmore ui-widget" style="float:left;overflow:hidden">
             <div class="launcher ui-widget-content ui-corner-all">
             <table>
                 <tr><th id="nickLabel" style="text-align:left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
                 <tr><th style="text-align:left">Real name:</th><td><input type="text" name="realname" /></td></tr>
                 <tr><th id="serverLabel" style="text-align:left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
+                <tr><th id="portLabel" style="text-align:left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
                 <tr><th id="channelLabel" style="text-align:left">Channel:</th><td><input type="text" id="channelTextbox" /></td></tr>
                 <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
             </table>
