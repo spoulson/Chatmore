@@ -37,6 +37,7 @@ $.fn.chatmore = function (p1, p2) {
             autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
             enableAutoReactivate: true,
             reactivateAttempts: 0,
+            isPendingActivation: false,
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
@@ -240,38 +241,6 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('TOPIC ' + self.irc.target() + ' :');
                     }
                 },
-                // connect: {
-                    // helpUsage: 'Usage: /connect &lt;server&gt; [port]',
-                    // helpText: 'Connect to IRC server',
-                    // parseParam: function (param, meta) {
-                        // var m = /^(\S+)(\s+(\d+))?\s*$/.exec(param);
-                        // if (m === null) {
-                            // meta.error = self.cmdDefs['connect'].helpUsage;
-                            // return false;
-                        // }
-                        
-                        // meta.server = m[1];
-                        // meta.port = m[3] === undefined ? 6667 : m[3];
-                    // },
-                    // exec: function (meta) {
-                        // var connectFunc = function () {
-                            // self.irc.deactivateClient();
-                            
-                            // // Connect to server.
-                            // self.irc = new chatmore(self.ircElement.get(0), meta.server, meta.port, self.nick, self.realname, { mustMatchServer: true });
-                            // self.irc.activateClient();
-                        // };
-                        
-                        // if (self.irc.state.isActivated) {
-                            // // /quit, wait a moment, then deactivate and reconnect.
-                            // self.sendLine('/quit');
-                            // setTimeout(connectFunc, 1000);
-                        // }
-                        // else {
-                            // connectFunc();
-                        // }
-                    // }
-                // },
                 help: {
                     helpUsage: 'Usage: /help &lt;command&gt;',
                     helpText: [
@@ -711,7 +680,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         meta.comment = param;
                     
-                        if (!self.irc.state.isActivated) {
+                        if (!self.irc.state.isActivated && !self.isPendingActivation) {
                             meta.error = 'Error: Must be connected to quit.';
                             return false;
                         }
@@ -721,7 +690,13 @@ $.fn.chatmore = function (p1, p2) {
                         
                         var comment = meta.comment !== undefined ? meta.comment : self.options.quitMessage;
                         self.enableAutoReactivate = false;
-                        self.irc.sendMsg('QUIT :' + comment);
+                        if (self.isPendingActivation) {
+                        	self.isPendingActivation = false;
+                        	self.writeTmpl('error', { message: 'Server connection aborted.' });
+                        }
+                        else {
+	                        self.irc.sendMsg('QUIT :' + comment);
+	                    }
                     }
                 },
                 quote: {
@@ -1773,6 +1748,7 @@ $.fn.chatmore = function (p1, p2) {
             .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
+                	self.isPendingActivation = true;
                     self.ircElement.find('.userEntry').focus();
                     break;
                     
@@ -1793,6 +1769,7 @@ $.fn.chatmore = function (p1, p2) {
                         .addClass('activated');
                     self.reactivateAttempts = 0;
                     self.enableAutoReactivate = true;
+                    self.isPendingActivation = false;
                     self.freezeSideBar = false;
                     
                     // Auto-query first channel on activation.
@@ -1801,6 +1778,7 @@ $.fn.chatmore = function (p1, p2) {
                     break;
 
                 case 'error':
+                    self.isPendingActivation = false;
                     self.writeTmpl('error', { message: message });
                     break;
                 }
@@ -1814,19 +1792,23 @@ $.fn.chatmore = function (p1, p2) {
                     // Attempt reactivation.
                     if (self.reactivateAttempts < self.options.reactivateAttempts) {
                         self.freezeSideBar = true;
-                        self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.options.reactivateDelay + ' seconds...' });
+                        self.writeTmpl('error', { message: 'Server connection lost.  Retrying connection in ' + self.options.reactivateDelay + ' seconds...  Enter /quit to abort.' });
 
                         setTimeout(function () {
-                            self.reactivateAttempts++;
-                            self.irc.activateClient();
+                        	if (self.enableAutoReactivate) {
+	                            self.reactivateAttempts++;
+    	                        self.irc.activateClient();
+    	                    }
                         }, self.options.reactivateDelay * 1000);
                     }
                     else {
+                    	self.isPendingActivation = false;
                         self.writeTmpl('error', { message: 'Server connection lost and will not reconnect.  Sorry about that.' });
                         self.freezeSideBar = false;
                     }
                 }
                 else {
+                	self.isPendingActivation = false;
                     self.writeTmpl('error', { message: 'Server connection closed.' });
                     self.freezeSideBar = false;
                 }

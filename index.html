@@ -19,7 +19,7 @@
             };
             
             var validatePort = function (port) {
-            	return parseInt(port) > 0;
+                return parseInt(port) > 0;
             };
             
             var validateChannel = function (channel) {
@@ -27,10 +27,11 @@
             };
             
             var validateLaunch = function () {
+                var channel = $('#channelTextbox').val();
                 if (validateNick($('#nickTextbox').val()) &&
                     validateServer($('#serverTextbox').val()) &&
                     validatePort($('#portTextbox').val()) &&
-                    validateChannel($('#channelTextbox').val()))
+                    (channel == '' || validateChannel(channel)))
                     $('#launchButton').removeAttr('disabled');
                 else
                     $('#launchButton').attr('disabled', 'disabled');
@@ -71,7 +72,7 @@
                     }
                 });
 
-			$('#portTextbox')
+            $('#portTextbox')
                 .keypress(function (e) {
                     validateLaunch();
                     var newPort = $('#portTextbox').val() + String.fromCharCode(e.charCode);
