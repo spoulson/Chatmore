@@ -113,7 +113,8 @@
                         });
                         
                         // Update form action URL.
-                        $('#channelTextbox').val(channels.join(','));
+                        var channel = channels.join(',');
+                        $('#channelTextbox').val(channel);
                         document.form1.action = 'client.php' + channel;
                     }
                 })
