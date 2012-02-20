@@ -940,11 +940,25 @@ $.fn.chatmore = function (p1, p2) {
                     var modified = false;
                     var html = $(node).text().replace(self.linkifyRegex, function (m, url) {
                         modified = true;
+                        
+                        // Strip trailing symbols that are probably not part of the URL.
+                        trailingText = url.match(/[)>,\.;:'"]$/);
+                        console.log(trailingText);
+                        if (trailingText !== null) {
+                            url = url.substring(url, url.length - trailingText[0].length);
+                        }
+                        
                         var n = $('<div/>')
                             .append($('<a/>')
                                 .attr('href', url)
                                 .attr('target', '_blank')
                                 .text(url));
+                                
+                        if (trailingText !== null) {
+                            n.append(document.createTextNode(trailingText[0]));
+                        }
+                        console.log(n.html());
+                        
                         return n.html();
                     });
                     
@@ -954,8 +968,9 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 };
             },
-            //             [-scheme---------][-hostname------------][-port][-path------------][-querystring------------------------------------------------][-anchor----]
-            linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>()]*)*(\?([^\s=&<>()]+=[^\s=&<>()]*(&[^\s=&<>()]+=[^\s=&<>()]*)*)?)?(#[\w_\-]+)?)/gi,
+
+            //             [-scheme---------][-hostname------------][-port][-path------------][-querystring---------------------------------------------------][anchor]
+            linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?\&*([^\s=&#<>]+(=[^\s=&#<>]*)?(&[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi,
 
             // Decorate nicks found in text with span.
             decorateNicks: function (el, channel) {
