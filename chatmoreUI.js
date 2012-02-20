@@ -1,7 +1,13 @@
 $.fn.chatmore = function (p1, p2) {
     // If no arguments provided, default to empty options array.
     if (p1 === undefined) p1 = {};
-    
+
+    // Private static functions.
+    var isEmpty = function (text) {
+        return text === undefined || text === null || text == '';
+    };
+
+    // charemoreUI constructor(options)
     if (typeof(p1) === 'object') {
         // Construct UI widget.
         var userOptions = p1;
@@ -16,16 +22,15 @@ $.fn.chatmore = function (p1, p2) {
             mustMatchServer: false
         };
         $.extend(options, userOptions);
-        if (userOptions.nick === undefined) options.nick = 'user' + Math.floor(Math.random() * 10000);
-        if (userOptions.realname === undefined) options.realname = userOptions.nick;
+        if (isEmpty(userOptions.nick)) options.nick = 'user' + Math.floor(Math.random() * 10000);
+        if (isEmpty(userOptions.realname)) options.realname = userOptions.nick;
         
-        var self;
-        self = {
+        var self = {
             //
             // Private members.
             //
-            ircElement: $(this),
-            irc: undefined,
+            ircElement: $(this),                // Chatmore parent jQuery element.
+            irc: undefined,                     // Chatmore object.
 
             options: options,
             isWindowFocused: true,
@@ -33,7 +38,7 @@ $.fn.chatmore = function (p1, p2) {
             notificationMessageCount: 0,        // Number of messages received while not focused on browser.
             blurMessageCount: undefined,        // Message count at time of blur event.
             prevState: undefined,
-            msgSenders: [],                     // History of private message senders for autocomplete.
+            msgSenders: [ ],                    // History of private message senders for autocomplete.
             autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
             autoCompletePrefix: undefined,      // Autocomplete filter, word typed at first Tab completion.
             autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
@@ -204,14 +209,6 @@ $.fn.chatmore = function (p1, p2) {
                         'by <span class="nick">${msg.prefixNick}</span></span>' +
                     '{{/if}}' +
                     '</span>',
-                // names: '{{tmpl "timestamp"}}<span class="NAMES">' +
-                    // '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-                    // '<span class="message">Users in channel: ' +
-                    // '{{each(i,name) msg.info.names.sort(function (a, b) { return self.stricmp(a, b); })}}' +
-                        // '<span class="mode">${name.mode}</span><span class="nick">${name.nick}</span> ' +
-                    // '{{/each}}' +
-                    // '</span>' +
-                    // '</span>',
                 list: '{{tmpl "timestamp"}}<span class="LIST">' +
                     '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${msg.info.topic}</span>' +
                     '</span>',
@@ -943,10 +940,8 @@ $.fn.chatmore = function (p1, p2) {
                         
                         // Strip trailing symbols that are probably not part of the URL.
                         trailingText = url.match(/[)>,\.;:'"]$/);
-                        console.log(trailingText);
-                        if (trailingText !== null) {
+                        if (trailingText !== null)
                             url = url.substring(url, url.length - trailingText[0].length);
-                        }
                         
                         var n = $('<div/>')
                             .append($('<a/>')
@@ -954,10 +949,8 @@ $.fn.chatmore = function (p1, p2) {
                                 .attr('target', '_blank')
                                 .text(url));
                                 
-                        if (trailingText !== null) {
+                        if (trailingText !== null)
                             n.append(document.createTextNode(trailingText[0]));
-                        }
-                        console.log(n.html());
                         
                         return n.html();
                     });
@@ -969,7 +962,7 @@ $.fn.chatmore = function (p1, p2) {
                 };
             },
 
-            //             [-scheme---------][-hostname------------][-port][-path------------][-querystring---------------------------------------------------][anchor]
+            //             [-scheme---------][-hostname------------][-port][-path----------][-querystring-----------------------------------------------------][anchor]
             linkifyRegex: /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?\&*([^\s=&#<>]+(=[^\s=&#<>]*)?(&[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi,
 
             // Decorate nicks found in text with span.
@@ -1104,8 +1097,8 @@ $.fn.chatmore = function (p1, p2) {
                             lineElement.before('<div class="line separator"/>');
                         }
                         lineElement
-                        	.addClass('new')
-                        	.css('opacity', '0.5');
+                            .addClass('new')
+                            .css('opacity', '0.5');
                     }
                         
                     // Auto scroll to bottom if currently at bottom.
@@ -1216,9 +1209,6 @@ $.fn.chatmore = function (p1, p2) {
                 }
             },
 
-            leaveChannel: function (channel, comment) {
-            },
-                        
             queryTarget: function (target) {
                 var prevTarget = self.irc.target();
                 
@@ -1247,7 +1237,7 @@ $.fn.chatmore = function (p1, p2) {
             
             // Handle renaming of a nick of any user.
             getJoinedChannels: function () {
-                var channels = [];
+                var channels = [ ];
                 
                 if (self.irc.state !== undefined) {
                     for (var channel in self.irc.state.channels) {
@@ -1259,7 +1249,7 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             getChannelMembers: function (channel) {
-                var members = [];
+                var members = [ ];
                 
                 if (self.irc.state !== undefined) {
                     var channelDesc = self.irc.state.channels[channel];
@@ -1959,7 +1949,7 @@ $.fn.chatmore = function (p1, p2) {
         }
     }
     else {
-        // Invoke method against chatmoreUI.
+        // Invoke method against chatmoreUI object.
         var method = p1;
         var args = p2;
         var self = $(this).data('chatmore');
