@@ -3,3 +3,23 @@ BODY {
     margin: 0;
     overflow: hidden;
 }
+
+TD, TH {
+    vertical-align: top;
+}
+
+.wrap {
+    white-space: normal;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+.left {
+    text-align: left;
+}
+
+.right {
+    text-align: right;
+}

@@ -1198,11 +1198,12 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('JOIN ' + channel + ' ' + key);
                     else
                         self.irc.sendMsg('JOIN ' + channel);
-                    
-                    //self.queryTarget(channel);
                 }
             },
-            
+
+            leaveChannel: function (channel, comment) {
+            },
+                        
             queryTarget: function (target) {
                 var prevTarget = self.irc.target();
                 
@@ -1568,7 +1569,6 @@ $.fn.chatmore = function (p1, p2) {
             .blur(function () {
                 self.isWindowFocused = false;
                 self.blurMessageCount = self.messageCount;
-                if (window.console) console.log('blurMessageCount: ' + self.blurMessageCount);
             });
         
         // Setup chatmore event handlers.
@@ -1766,6 +1766,13 @@ $.fn.chatmore = function (p1, p2) {
                 }
                 
                 self.refreshSideBar();
+                
+                // Update hash tag with joined channels.
+                var channels = [ ];
+                for (var key in self.irc.state.channels) {
+                    channels.push(key);
+                }
+                document.location.hash = channels.sort().join(',');
                 
                 self.prevState = self.clone(self.irc.state);
             })

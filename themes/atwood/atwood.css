@@ -926,3 +926,9 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     height: 4px;
     background-color: #A5FF1E;
 }
+
+.chatmore .helpText {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.8em;
+}

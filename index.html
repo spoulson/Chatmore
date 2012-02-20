@@ -23,7 +23,7 @@
             };
             
             var validateChannel = function (channel) {
-                return /^[#&+!]?[^\s,:\cg]+$/.test(channel);
+                return /^[#&+!]?[^\s:\cg]+(,[#&+!]?[^\s:\cg]+)*$/.test(channel);
             };
             
             var validateLaunch = function () {
@@ -57,10 +57,11 @@
 
             $('#serverTextbox')
                 .keypress(function (e) {
-                    validateLaunch();
                     // http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
                     var newServer = $('#serverTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validateServer(newServer)) return false;
+
+                    validateLaunch();
                 })
                 .blur(function () {
                     var server = $('#serverTextbox').val();
@@ -74,9 +75,10 @@
 
             $('#portTextbox')
                 .keypress(function (e) {
-                    validateLaunch();
                     var newPort = $('#portTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validatePort(newPort)) return false;
+
+                    validateLaunch();
                 })
                 .blur(function () {
                     var port = $('#portTextbox').val();
@@ -90,19 +92,28 @@
                 
             $('#channelTextbox')
                 .keypress(function (e) {
+                    // Block spaces.
+                    if (/^\s$/.test(String.fromCharCode(e.charCode))) return false;
+
                     validateLaunch();
-                    var oldChannel = $('#channelTextbox').val();
-                    var newChannel = oldChannel + String.fromCharCode(e.charCode);
-                    if (!validateChannel(newChannel)) return false;
                 })
                 .change(function () {
                     var channel = $('#channelTextbox').val();
                     if (validateChannel(channel)) {
-                        // Automatically prepend channel with '#'.
-                        if (/^[^#&+!]/.test(channel)) {
-                            channel = '#' + channel;
-                            $('#channelTextbox').val(channel);
-                        }
+                        // Automatically prepend channels with '#'.
+                        var channels = channel.split(',');
+
+                        // Remove empty array elements.
+                        channels = $.grep(channels, function (c) { return !/^#?$/.test(c); });
+
+                        $.each(channels, function (idx, c) {
+                            if (/^[^#&+!]/.test(c)) {
+                                channels[idx] = '#' + c;
+                            }
+                        });
+                        
+                        // Update form action URL.
+                        $('#channelTextbox').val(channels.join(','));
                         document.form1.action = 'client.php' + channel;
                     }
                 })
@@ -129,11 +140,13 @@
         <div class="chatmore ui-widget" style="float:left;overflow:hidden">
             <div class="launcher ui-widget-content ui-corner-all">
             <table>
-                <tr><th id="nickLabel" style="text-align:left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
-                <tr><th style="text-align:left">Real name:</th><td><input type="text" name="realname" /></td></tr>
-                <tr><th id="serverLabel" style="text-align:left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
-                <tr><th id="portLabel" style="text-align:left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
-                <tr><th id="channelLabel" style="text-align:left">Channel:</th><td><input type="text" id="channelTextbox" /></td></tr>
+                <col width="150" />
+                <col width="*" />
+                <tr><th id="nickLabel" class="left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
+                <tr><th class="left">Real name:</th><td><input type="text" name="realname" /></td></tr>
+                <tr><th id="serverLabel" class="left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
+                <tr><th id="portLabel" class="left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
+                <tr><th id="channelLabel" class="left wrap">Channel:<br/><span class="helpText">Can provide multiple channels separated by commas.</span></th><td><input type="text" id="channelTextbox" /></td></tr>
                 <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
             </table>
             </div>
