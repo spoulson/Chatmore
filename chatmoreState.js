@@ -48,6 +48,22 @@ function chatmoreState() {
     // Session id returned from init.php during activation.
     state.sessionId = undefined;
 
+    state.getChannels = function () {
+        var channels = [ ];
+        for (var channel in state.channels) {
+            channels.push(channel);
+        }
+        return channels;
+    };
+    
+    state.getUsers = function () {
+        var users = [ ];
+        for (var user in state.users) {
+            users.push(user);
+        }
+        return users;
+    };
+    
     state.addChannel = function (channel) {
         if (state.channels[channel] === undefined) {
             //if (window.console) console.log('addchannel(' + channel + ')');

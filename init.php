@@ -198,17 +198,17 @@ function validateSession($state, &$data = array()) {
         return false;
     }
     
-    if ($state->server->recvInProgress) {
-        // Cannot reinitialize state, recv.php already active in another thread.
-        log::info('recv.php already active in another thread.');
-        $data[] =
-            array(
-                'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                'message' => 'Connection already active in this session.',
-                'code' => spIrcClient::CLMSG_CONNECTION_ALREADY_ACTIVE
-            );
-        return false;
-    }
+    //if ($state->server->recvInProgress) {
+    //    // Cannot reinitialize state, recv.php already active in another thread.
+    //    log::info('recv.php already active in another thread.');
+    //    $data[] =
+    //        array(
+    //            'type' => spIrcClient::CLMSG_TYPE_SERVER,
+    //            'message' => 'Connection already active in this session.',
+    //            'code' => spIrcClient::CLMSG_CONNECTION_ALREADY_ACTIVE
+    //        );
+    //    return false;
+    //}
 
     log::info('Session is valid.');
     

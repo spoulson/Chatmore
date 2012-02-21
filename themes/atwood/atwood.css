@@ -908,8 +908,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 }
 
 .chatmore .ircConsole .content .clientMsg .message,
-.chatmore .ircConsole .content .queryMsg .message
- {
+.chatmore .ircConsole .content .queryMsg .message {
     font-style: italic;
     color: #008000;
 }
@@ -919,12 +918,12 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 }
 
 .chatmore .ircConsole .content .line.new {
-    background-color: #CEFF84;
+    background-color: #FAFFB3; /*#CEFF84*/
 }
 
 .chatmore .ircConsole .content > .line.separator {
     height: 4px;
-    background-color: #A5FF1E;
+    background-color: #F0FF1D; /*#A5FF1E*/
 }
 
 .chatmore .helpText {

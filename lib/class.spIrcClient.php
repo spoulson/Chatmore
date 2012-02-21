@@ -189,7 +189,7 @@ class spIrcClient {
         global $ircConfig;
         $m = array();
         $msg = null;
-        log::info('Parsing: ' . $line);
+        log::info('Parsing: ' . rtrim($line));
         
         // Ensure UTF-8 encoding.
         // If non-UTF-8 characters found, convert to best of PHP's ability.
