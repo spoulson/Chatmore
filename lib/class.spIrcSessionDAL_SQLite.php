@@ -27,6 +27,7 @@ class spIrcSessionDAL_SQLite {
             // Lookup model, create new record if not found.
             $this->id = $this->lookupId($server, $port);
             if ($this->id === null) {
+				log::info("Creating new session record for server=" . $server . ", port=" . $port);
                 $sessionId = uniqid('', true);
                 $model = new spIrcSessionModel();
                 $model->server = $server;
@@ -36,6 +37,9 @@ class spIrcSessionDAL_SQLite {
                 log::info('state: ' . var_export($model, true));
                 $this->create($model);
             }
+			else {
+				log::info("Found session record id=" . $this->id . " for server=" . $server . ", port=" . $port);
+			}
         }
         else if (count($args) == 2) {
             // Constructor to existing session record.
@@ -159,10 +163,11 @@ class spIrcSessionDAL_SQLite {
     //
     // Private Methods.
     //
-    // Reverse lookup model, return id if found.
+    // Reverse lookup model, return id if found; NULL if not found.
     private function lookupId($server, $port) {
         $id = null;
-        
+        log::info("lookupId(" . $server . ", " . $port . ") by sessionKey=" . session_id());
+
         $db = $this->openDatabase();
         
         $st = $db->prepare(
@@ -174,11 +179,12 @@ class spIrcSessionDAL_SQLite {
             '    port = ? ' .
             'LIMIT 1;');
         $st->execute(array(session_id(), $server, $port));
-        if ($st->rowCount() > 0) $id = $st->fetchColumn(0);
+		$value = $st->fetchColumn(0);
+		if ($value !== FALSE) $id = $value;
         
         $db = null;
         
-        log::info("lookupId($server, $port) = " . var_export($id, true));
+        log::info("lookupId() = " . var_export($id, true));
         return $id;
     }
     
@@ -194,7 +200,8 @@ class spIrcSessionDAL_SQLite {
         $st = $db->prepare(
             'INSERT INTO Session (sessionKey, server, port, primarySocketFilename, secondarySocketFilename, createdDate, lastModifiedDate) ' .
             'VALUES (?, ?, ?, ?, ?, date(\'now\'), date(\'now\'));');
-        $st->execute(array(session_id(),
+        $st->execute(array(
+			session_id(),
             $model->server,
             $model->port,
             $model->primarySocketFilename,

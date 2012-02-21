@@ -45,6 +45,7 @@ $.fn.chatmore = function (p1, p2) {
             enableAutoReactivate: true,
             reactivateAttempts: 0,
             isPendingActivation: false,
+            isResumedConnection: undefined,     // Last connection was resumed flag.
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
@@ -1505,6 +1506,12 @@ $.fn.chatmore = function (p1, p2) {
                         .dblclick(self.dblclickChannelNickHandler);
                 }
             },
+            
+            getChannelsFromHash: function () {
+                var channels = document.location.hash.split(',');
+                if (channels[0] == '') return [ ];
+                else return channels;
+            },
         
             methods: {
                 // Resize chatmoreUI element.
@@ -1693,12 +1700,17 @@ $.fn.chatmore = function (p1, p2) {
                         break;
 
                     case '001': // Welcome
-                        if (options.channel !== undefined) {
-                            // Autojoin channels found in URL anchor.
-                            var channels = typeof(options.channel) == 'string' ? [options.channel] : options.channel;
-                            for (var i in channels) {
-                                self.joinChannel(channels[i]);
-                            }
+                        // Auto-join channels.
+                        var channels = self.getJoinedChannels();
+                        
+                        if (channels.length > 0) {
+                            $.each(channels, function (idx, channel) {
+                                if (window.console) console.log('Joining channel: ' + channel);
+                                self.joinChannel(channel);
+                            });
+
+                            // Auto-query first channel on activation.
+                            self.queryTarget(channels[0]);
                         };
                         break;
                         
@@ -1752,6 +1764,7 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
+                if (window.console) console.log('stateChanged');
                 if (window.console) console.log(self.irc.state);
                 
                 var state = self.irc.state;
@@ -1787,19 +1800,42 @@ $.fn.chatmore = function (p1, p2) {
             .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
+                    if (window.console) console.log('start');
                     self.isPendingActivation = true;
                     self.ircElement.find('.userEntry').focus();
+
+                    // Pre-populate state with channels listed in hashtag.
+                    $.each(self.getChannelsFromHash(), function (idx, channel) {
+                        self.irc.state.addChannel(channel);
+                    });
                     break;
                     
                 case 'connecting':
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + server });
+                    isResumedConnection = false;
                     break;
                     
                 case 'resuming':
+                    if (window.console) console.log('resuming');
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + server });
                     self.freezeSideBar = false;
+                    isResumedConnection = true;
+
+                    // Auto-join channels.
+                    var channels = self.getJoinedChannels();
+                    
+                    if (channels.length > 0) {
+                        $.each(channels, function (idx, channel) {
+                            if (window.console) console.log('Rejoining channel: ' + channel);
+                            self.irc.sendMsg('JOIN ' + channel);
+                            self.irc.sendMsg('NAMES ' + channel);
+                        });
+
+                        // Auto-query first channel.
+                        self.queryTarget(channels[0]);
+                    };
                     break;
                     
                 case 'activated':
@@ -1810,10 +1846,6 @@ $.fn.chatmore = function (p1, p2) {
                     self.enableAutoReactivate = true;
                     self.isPendingActivation = false;
                     self.freezeSideBar = false;
-                    
-                    // Auto-query first channel on activation.
-                    var firstChannel = self.getJoinedChannels()[0];
-                    if (firstChannel !== undefined) self.queryTarget(firstChannel);
                     break;
 
                 case 'error':

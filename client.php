@@ -31,8 +31,8 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript">
         $(function () {
             // Parse querystring.
-            var opts = {};
-            var form = {};
+            var opts = { };
+            var form = { };
             var pairs = '<?=$_SERVER['QUERY_STRING']?>'.split('&');
             
             for (var i in pairs) {

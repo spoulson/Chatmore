@@ -242,6 +242,7 @@ function chatmore(element, server, port, nick, realname, options) {
     self.state.port = port;
     self.state.nick = nick;
     self.state.realname = realname;
+    self.state.isModified = true;
     
     // Get selected target nick or channel, such as by /query command.
     self.target = function (newTarget) {
@@ -301,7 +302,8 @@ function chatmore(element, server, port, nick, realname, options) {
                 success: function (data) {
                     local.processMessages.call(self, data);
                     
-                    for (var msg in data) {
+                    for (var idx in data) {
+                        var msg = data[idx];
                         if (msg.type == 'servermsg') {
                             // Check for connection ready message, which indicates a resumable connection.
                             if (msg.code == 200) {
@@ -373,9 +375,14 @@ function chatmore(element, server, port, nick, realname, options) {
                         ]);
                         self.state.isActivated = true;
                         
-                        // Register with IRC server.
-                        self.register(self.state.nick, self.state.realname);
-                    
+                        if (newConnectionFlag) {
+                            // Register with IRC server.
+                            self.register(self.state.nick, self.state.realname);
+                        }
+                        else {
+                            self.sendMsg('NICK ' + self.state.nick);
+                        }
+                
                         // Repeatedly poll for IRC activity.
                         var pollFunc = function () {
                             if (local.pauseRecv) {
