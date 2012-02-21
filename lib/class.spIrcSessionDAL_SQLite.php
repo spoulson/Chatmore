@@ -124,6 +124,7 @@ class spIrcSessionDAL_SQLite {
     
     // Delete this session record.
     public function delete() {
+        log::info('Deleting session id ' . $this->id . '.');
         $rc = false;
         
         if ($this->id !== null) {
@@ -138,6 +139,7 @@ class spIrcSessionDAL_SQLite {
             $st->execute(array($this->id, session_id()));
             
             $rc = $st->rowCount() > 0;
+            log::info('Affected ' . $st->rowCount() . ' rows.');
             
             $db = null;
             

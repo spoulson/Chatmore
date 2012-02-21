@@ -30,8 +30,39 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {
+            var getChannelsFromHash = function () {
+                var channels = document.location.hash.split(',');
+                if (channels[0] == '') return [ ];
+                else return channels;
+            };
+            
+            var setHashWithChannels = function (channels) {
+                var hash = channels.sort().join(',');
+                if (document.location.hash !== hash) document.location.hash = hash;
+            };
+
+            var objectSize = function (obj) {
+                var count = 0;
+                for (var prop in obj) {
+                    if (obj.hasOwnProperty(prop)) count++;
+                }
+                return count;
+            };
+            
+            var clone;
+            clone = function(obj) {
+                var newObj = (obj instanceof Array) ? [] : {};
+                for (i in obj) {
+                    if (obj[i] && typeof(obj[i]) === "object")
+                        newObj[i] = clone(obj[i]);
+                    else
+                        newObj[i] = obj[i];
+                }
+                return newObj;
+            };
+
             // Parse querystring.
-            var opts = { };
+            var opts = $.extend({ }, chatmoreDefaults);
             var form = { };
             var pairs = '<?=$_SERVER['QUERY_STRING']?>'.split('&');
             
@@ -55,40 +86,23 @@ if (array_key_exists('x', $_GET)) {
                 if (form.nick !== undefined) opts.nick = form.nick;
             }
             
-            // Parse anchor string.
-            var m = window.location.href.match(/(#.+)/);
-            if (m !== null) {
-                opts.channel = m[1].split(',');
-            }
+            // Parse hash string for channels.
+            var channels = getChannelsFromHash();
+            if (channels.length > 0) opts.channel = channels;
             
             // Determine if any options were set.
             // If not, assume defaults.
-            var objectSize = function (obj) {
-                var count = 0;
-                for (var prop in obj) {
-                    if (obj.hasOwnProperty(prop)) count++;
-                }
-                return count;
-            };
-            
-            var clone;
-            clone = function(obj) {
-                var newObj = (obj instanceof Array) ? [] : {};
-                for (i in obj) {
-                    if (obj[i] && typeof(obj[i]) === "object")
-                        newObj[i] = clone(obj[i]);
-                    else
-                        newObj[i] = obj[i];
-                }
-                return newObj;
-            };
-            
-            if (objectSize(opts) == 0) opts = clone(chatmoreDefaults);
-            else opts.mustMatchServer = true;
+            //if (objectSize(opts) === 0) opts = clone(chatmoreDefaults);
+            //else opts.mustMatchServer = true;
             
             // Startup the IRC client.
             var ircElement = $('.chatmore');
-            ircElement.chatmore(opts);
+            ircElement
+                .chatmore(opts)
+                .chatmore('stateChanged', function (state) {
+                    if (window.console) console.log('User event: stateChanged');
+                    setHashWithChannels(state.getChannels());
+                });
 
             // Stretch client element to width/height of browser window space.
             var stretchClient = function () {

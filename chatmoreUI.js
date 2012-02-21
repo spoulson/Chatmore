@@ -4,7 +4,7 @@ $.fn.chatmore = function (p1, p2) {
 
     // Private static functions.
     var isEmpty = function (text) {
-        return text === undefined || text === null || text == '';
+        return text === undefined || text === null || text === '';
     };
 
     // charemoreUI constructor(options)
@@ -19,18 +19,26 @@ $.fn.chatmore = function (p1, p2) {
             quitMessage: 'Chatmore IRC client',
             reactivateAttempts: 6,
             reactivateDelay: 10,
-            mustMatchServer: false
+            mustMatchServer: false,
+            channels: [ ]
         };
         $.extend(options, userOptions);
         if (isEmpty(userOptions.nick)) options.nick = 'user' + Math.floor(Math.random() * 10000);
         if (isEmpty(userOptions.realname)) options.realname = userOptions.nick;
+        if (typeof(options.channel) === 'object') options.channels = options.channel;
+        else options.channels.push(options.channel);
+
+        if (window.console) console.log('userOptions:');
+        if (window.console) console.log(userOptions);
+        if (window.console) console.log('options:');
+        if (window.console) console.log(options);
         
         var self = {
             //
             // Private members.
             //
             ircElement: $(this),                // Chatmore parent jQuery element.
-            irc: undefined,                     // Chatmore object.
+            irc: undefined,                     // Chatmore client object.
 
             options: options,
             isWindowFocused: true,
@@ -804,7 +812,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                     }
                     else {
-                        self.writeTmpl('error', { message: 'Error: No target selected.  Use: /query <nick|#channel>.' });
+                        self.writeTmpl('error', { message: 'Error: No target selected.  Use: /query <nick|#channel> or /join <#channel>.' });
                     }
                 }
                 else {
@@ -1211,6 +1219,7 @@ $.fn.chatmore = function (p1, p2) {
             },
 
             queryTarget: function (target) {
+                if (window.console) console.log('queryTarget(' + target + ')');
                 var prevTarget = self.irc.target();
                 
                 if (target !== prevTarget) {
@@ -1507,12 +1516,6 @@ $.fn.chatmore = function (p1, p2) {
                 }
             },
             
-            getChannelsFromHash: function () {
-                var channels = document.location.hash.split(',');
-                if (channels[0] == '') return [ ];
-                else return channels;
-            },
-        
             methods: {
                 // Resize chatmoreUI element.
                 // Args: width, height.
@@ -1526,13 +1529,31 @@ $.fn.chatmore = function (p1, p2) {
                         .outerHeight(args.height - userEntrySection.outerHeight());
                     
                     self.alignUI();
+                    
+                    return self;
                 },
-                // Determine if IRC console is scrolled to the bottom.
+                // Determine if console is scrolled to the bottom.
                 isAtBottom: function () {
                     return self.isAtBottom();
                 },
+                // Scroll console to bottom.
                 scrollToBottom: function () {
-                    return self.scrollToBottom();
+                    self.scrollToBottom();
+                    return self;
+                },
+                // Bind event 'stateChanged'.  Signature: callback(state)
+                stateChanged: function (callback) {
+                    self.ircElement.bind('stateChanged', function () {
+                        callback.call(self.ircElement, self.irc.state);
+                    });
+                    return self;
+                },
+                // Bind event 'processedMessage'.  Signature: callback(array_of_msgs)
+                processedMessage: function (callback) {
+                    self.ircElement.bind('processedMessage', function () {
+                        callback.call(self.ircElement);
+                    });
+                    return self;
                 }
             }
         };
@@ -1586,6 +1607,7 @@ $.fn.chatmore = function (p1, p2) {
         // Setup chatmore event handlers.
         self.ircElement
             .bind('localMessage', function (e, message, type, data) {
+                if (window.console) console.log('UI event: localMessage');
                 switch (data.code) {
                 case 'R1':
                     // Retrying registration with new nick.
@@ -1701,16 +1723,13 @@ $.fn.chatmore = function (p1, p2) {
 
                     case '001': // Welcome
                         // Auto-join channels.
-                        var channels = self.getJoinedChannels();
-                        
-                        if (channels.length > 0) {
-                            $.each(channels, function (idx, channel) {
+                        if (window.console) console.log('options.channels:');
+                        if (window.console) console.log(self.options.channels);
+                        if (self.options.channels !== undefined && self.options.channels.length > 0) {
+                            $.each(self.options.channels.sort(self.stricmp).reverse(), function (idx, channel) {
                                 if (window.console) console.log('Joining channel: ' + channel);
-                                self.joinChannel(channel);
+                                self.irc.sendMsg('JOIN ' + channel);
                             });
-
-                            // Auto-query first channel on activation.
-                            self.queryTarget(channels[0]);
                         };
                         break;
                         
@@ -1764,13 +1783,14 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('stateChanged', function (e) {
-                if (window.console) console.log('stateChanged');
+                if (window.console) console.log('UI event: stateChanged');
                 if (window.console) console.log(self.irc.state);
                 
                 var state = self.irc.state;
                 
-                if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) != 0) {
+                if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) !== 0) {
                     // Nick changed.
+                    if (window.console) console.log('Nick changed.');
                     var nickLabel = self.ircElement.find('.nickLabel');
                     nickLabel.fadeOut(null, function () {
                         nickLabel.text(state.nick);
@@ -1779,18 +1799,17 @@ $.fn.chatmore = function (p1, p2) {
                 }
 
                 // Auto-query first channel if selected channel is no longer joined.
+                var channels = self.getJoinedChannels();
                 if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
-                    self.queryTarget(self.getJoinedChannels()[0]);
+                    var channel = channels[0];
+                    if (window.console) console.log('Selected channel is no longer joined.  Selecting first channel: ' + channel);
+                    self.queryTarget(channel);
                 }
+                
+                // Save channel list for possible reconnection event to rejoin currently joined channels.
+                //self.options.channels = channels;
                 
                 self.refreshSideBar();
-                
-                // Update hash tag with joined channels.
-                var channels = [ ];
-                for (var key in self.irc.state.channels) {
-                    channels.push(key);
-                }
-                document.location.hash = channels.sort().join(',');
                 
                 self.prevState = self.clone(self.irc.state);
             })
@@ -1800,32 +1819,27 @@ $.fn.chatmore = function (p1, p2) {
             .bind('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
-                    if (window.console) console.log('start');
+                    if (window.console) console.log('UI event: activatingClient start');
                     self.isPendingActivation = true;
                     self.ircElement.find('.userEntry').focus();
-
-                    // Pre-populate state with channels listed in hashtag.
-                    $.each(self.getChannelsFromHash(), function (idx, channel) {
-                        self.irc.state.addChannel(channel);
-                    });
                     break;
                     
                 case 'connecting':
+                    if (window.console) console.log('UI event: activatingClient connecting');
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + server });
                     isResumedConnection = false;
                     break;
                     
                 case 'resuming':
-                    if (window.console) console.log('resuming');
+                    if (window.console) console.log('UI event: activatingClient resuming');
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + server });
                     self.freezeSideBar = false;
                     isResumedConnection = true;
 
                     // Auto-join channels.
-                    var channels = self.getJoinedChannels();
-                    
+                    var channels = self.options.channels.sort(self.stricmp);
                     if (channels.length > 0) {
                         $.each(channels, function (idx, channel) {
                             if (window.console) console.log('Rejoining channel: ' + channel);
@@ -1835,10 +1849,11 @@ $.fn.chatmore = function (p1, p2) {
 
                         // Auto-query first channel.
                         self.queryTarget(channels[0]);
-                    };
+                    }
                     break;
                     
                 case 'activated':
+                    if (window.console) console.log('UI event: activatingClient activated');
                     self.ircElement
                         .removeClass('deactivated')
                         .addClass('activated');
@@ -1849,12 +1864,14 @@ $.fn.chatmore = function (p1, p2) {
                     break;
 
                 case 'error':
+                    if (window.console) console.log('UI event: activatingClient error');
                     self.isPendingActivation = false;
                     self.writeTmpl('error', { message: message });
                     break;
                 }
             })
             .bind('deactivatingClient', function () {
+                if (window.console) console.log('UI event: deactivatingClient');
                 self.ircElement
                     .removeClass('activated')
                     .addClass('deactivated');
@@ -1979,6 +1996,8 @@ $.fn.chatmore = function (p1, p2) {
             });
             self.irc.activateClient();
         }
+        
+        return self.ircElement;
     }
     else {
         // Invoke method against chatmoreUI object.
