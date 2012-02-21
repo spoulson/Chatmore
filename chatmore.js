@@ -53,7 +53,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         
                     case 'PART':
                         // Clean up state when leaving channel.
-                        if (self.stricmp(msg.prefixNick, self.state.nick) == 0) {
+                        if (self.stricmp(msg.prefixNick, self.state.nick) === 0) {
                             // Current user leaving channel, remove channel from state.
                             self.state.removeChannel(msg.info.channel);
                         }
@@ -65,7 +65,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         
                     case 'KICK':
                         $.each(msg.info.kicks, function (i, kick) {
-                            if (self.stricmp(kick.nick, self.state.nick) == 0) {
+                            if (self.stricmp(kick.nick, self.state.nick) === 0) {
                                 self.state.removeChannel(kick.channel);
                             }
                             else {
@@ -93,7 +93,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         break;
 
                     case 'NICK':
-                        if (self.stricmp(msg.prefixNick, self.state.nick) == 0) {
+                        if (self.stricmp(msg.prefixNick, self.state.nick) === 0) {
                             // Change current user's nick.
                             self.state.nick = msg.info.nick;
                         }
@@ -135,7 +135,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         
                     case '332': // RPL_TOPIC
                         if (self.state.channels[msg.info.channel] !== undefined) {
-                            self.state.channels[msg.info.channel].topic = (msg.info.topic != '') ? msg.info.topic : undefined;
+                            self.state.channels[msg.info.channel].topic = (msg.info.topic !== '') ? msg.info.topic : undefined;
                             self.state.isModified = true;
                         }
                         break;
@@ -209,12 +209,12 @@ function chatmore(element, server, port, nick, realname, options) {
                         }
                     }
 
-                    if (msg.code == 300) { // define session key
+                    if (msg.code === 300) { // define session key
                         self.state.sessionId = msg.sessionId;
                         if (window.console) console.log('Session Key: ' + self.state.sessionId);
                     }
                     else if (msg.code >= 400) {
-                        if (self.state.isActivated && msg.code == 400) {
+                        if (self.state.isActivated && msg.code === 400) {
                             self.deactivateClient();
                         }
                     }
@@ -282,8 +282,6 @@ function chatmore(element, server, port, nick, realname, options) {
         
         // Initialize web client.
         // Check for open connection.
-        var newConnectionFlag = true;
-
         var initCheckPostData = {
             connect: 0,
             server: self.state.server,
@@ -304,13 +302,13 @@ function chatmore(element, server, port, nick, realname, options) {
                     
                     for (var idx in data) {
                         var msg = data[idx];
-                        if (msg.type == 'servermsg') {
+                        if (msg.type === 'servermsg') {
                             // Check for connection ready message, which indicates a resumable connection.
-                            if (msg.code == 200) {
+                            if (msg.code === 200) {
                                 newConnectionFlag = false;
                             }
                             // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
-                            else if (msg.code == '401') {
+                            else if (msg.code === '401') {
                                 errorHandler('Connection already active in this session.');
                                 errorFlag = true;
                             }
@@ -366,7 +364,7 @@ function chatmore(element, server, port, nick, realname, options) {
                 success: function (data) {
                     local.processMessages.call(self, data);
                     
-                    if ($.grep(data, function (x) { return x.type == 'servermsg' && x.code == 200; }).length) {
+                    if ($.grep(data, function (x) { return x.type === 'servermsg' && x.code === 200; }).length) {
                         // Activated.
                         $(element).trigger('activatingClient', [
                             'activated',
@@ -378,9 +376,6 @@ function chatmore(element, server, port, nick, realname, options) {
                         if (newConnectionFlag) {
                             // Register with IRC server.
                             self.register(self.state.nick, self.state.realname);
-                        }
-                        else {
-                            self.sendMsg('NICK ' + self.state.nick);
                         }
                 
                         // Repeatedly poll for IRC activity.
@@ -396,7 +391,7 @@ function chatmore(element, server, port, nick, realname, options) {
                                     dataType: 'json',
                                     success: function (data) {
                                         // Validate data is an array.
-                                        if (typeof(data) == 'object') {
+                                        if (typeof(data) === 'object') {
                                             local.processMessages.call(self, data);
                                         }
                                         else {
@@ -466,7 +461,7 @@ function chatmore(element, server, port, nick, realname, options) {
                 $(element).trigger('sentMsg', [ rawMsg ]);
                 
                 // Validate data is an array.
-                if (typeof(data) == 'object') {
+                if (typeof(data) === 'object') {
                     local.processMessages.call(self, data);
                 }
                 else {

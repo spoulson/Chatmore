@@ -53,7 +53,6 @@ $.fn.chatmore = function (p1, p2) {
             enableAutoReactivate: true,
             reactivateAttempts: 0,
             isPendingActivation: false,
-            isResumedConnection: undefined,     // Last connection was resumed flag.
             userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
             userEntryHistoryIndex: undefined,
             freezeSideBar: false,               // True to disregard UI updates when calling refreshSideBar.
@@ -1828,7 +1827,6 @@ $.fn.chatmore = function (p1, p2) {
                     if (window.console) console.log('UI event: activatingClient connecting');
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Connecting to IRC server ' + server });
-                    isResumedConnection = false;
                     break;
                     
                 case 'resuming':
@@ -1836,7 +1834,6 @@ $.fn.chatmore = function (p1, p2) {
                     var server = params.server + (params.port != 6667 ? (':' + params.port) : '');
                     self.writeTmpl('clientMsg', { message: 'Resuming existing IRC connection to ' + server });
                     self.freezeSideBar = false;
-                    isResumedConnection = true;
 
                     // Auto-join channels.
                     var channels = self.options.channels.sort(self.stricmp);

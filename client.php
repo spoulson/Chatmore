@@ -60,6 +60,11 @@ if (array_key_exists('x', $_GET)) {
                 }
                 return newObj;
             };
+            
+            // Provide popup warning when navigating away from this page.
+            $(window).bind('beforeunload', function () {
+                return 'You are about to navigate away from the Chatmore IRC client, which may disconnect from your session.';
+            });
 
             // Parse querystring.
             var opts = $.extend({ }, chatmoreDefaults);
@@ -89,11 +94,6 @@ if (array_key_exists('x', $_GET)) {
             // Parse hash string for channels.
             var channels = getChannelsFromHash();
             if (channels.length > 0) opts.channel = channels;
-            
-            // Determine if any options were set.
-            // If not, assume defaults.
-            //if (objectSize(opts) === 0) opts = clone(chatmoreDefaults);
-            //else opts.mustMatchServer = true;
             
             // Startup the IRC client.
             var ircElement = $('.chatmore');
