@@ -1822,11 +1822,6 @@ $.fn.chatmore = function (p1, p2) {
                     if (window.console) console.log('UI event: activatingClient start');
                     self.isPendingActivation = true;
                     self.ircElement.find('.userEntry').focus();
-
-                    // Pre-populate state with channels listed in hashtag.
-                    $.each(self.getChannelsFromHash(), function (idx, channel) {
-                        self.irc.state.addChannel(channel);
-                    });
                     break;
                     
                 case 'connecting':
