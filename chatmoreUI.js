@@ -16,15 +16,15 @@ $.fn.chatmore = function (p1, p2) {
         var options = {
             port: 6667,
             title: document.title,
-            viewKey: undefined,
+            viewKey: '',
             nick: 'user' + Math.floor(Math.random() * 10000),
             quitMessage: 'Chatmore IRC client',
             reactivateAttempts: 6,
             reactivateDelay: 10,
             channels: [ ]
         };
-        options.realname = options.nick;
         $.extend(options, userOptions);
+        if (isEmpty(options.realname)) options.realname = options.nick;
         if (typeof(options.channel) === 'object') options.channels = options.channel;
         else if (!isEmpty(options.channel)) options.channels.push(options.channel);
 
@@ -232,7 +232,7 @@ $.fn.chatmore = function (p1, p2) {
                 },
                 cleartopic: {
                     helpUsage: 'Usage: /cleartopic',
-                    helpText: 'Clear the selected channel\'s topic',
+                    helpText: 'Clear the selected channel\'s topic.',
                     parseParam: function (param, meta) {
                         if (!self.irc.state.isActivated) {
                             meta.error = 'Error: Must be connected to clear the topic.';
@@ -243,6 +243,22 @@ $.fn.chatmore = function (p1, p2) {
                         self.irc.sendMsg('TOPIC ' + self.irc.target() + ' :');
                     }
                 },
+                connect: {
+                    helpUsage: 'Usage: /connect',
+                    helpText: 'Reconnect after disconnection.',
+                    parseParam: function () { },
+                    exec: function (meta) {
+                        if (self.isPendingActivation) {
+                            meta.error = 'Error: Cannot reconnect while connection attempt is pending.  Enter /quit to abort connection attempt.';
+                            return false;
+                        }
+                        else if (self.irc.state.isActivated) {
+                            meta.error = 'Error: Cannot reconnect while still connected.';
+                            return false;
+                        }
+                        self.irc.activateClient();
+                    }
+                },
                 help: {
                     helpUsage: 'Usage: /help &lt;command&gt;',
                     helpText: [
@@ -250,7 +266,7 @@ $.fn.chatmore = function (p1, p2) {
                         'Commands:',
                         ' clear - Clear the chat console',
                         ' cleartopic - Clear the channel\'s topic',
-                        //' connect - Connect to IRC server',
+                        ' connect - Reconnect to IRC server',
                         ' join - Join a channel',
                         ' kick - Kick user from channel',
                         ' leave - Leave a channel',
@@ -1526,7 +1542,7 @@ $.fn.chatmore = function (p1, p2) {
                     
                     self.alignUI();
                     
-                    return self;
+                    return self.ircElement;
                 },
                 // Determine if console is scrolled to the bottom.
                 isAtBottom: function () {
@@ -1535,21 +1551,21 @@ $.fn.chatmore = function (p1, p2) {
                 // Scroll console to bottom.
                 scrollToBottom: function () {
                     self.scrollToBottom();
-                    return self;
+                    return self.ircElement;
                 },
                 // Bind event 'stateChanged'.  Signature: callback(state)
                 stateChanged: function (callback) {
-                    self.ircElement.bind('stateChanged', function () {
-                        callback.call(self.ircElement, self.irc.state);
+                    self.ircElement.bind('stateChanged', function (e) {
+                        callback.call(self.ircElement, e, self.irc.state);
                     });
-                    return self;
+                    return self.ircElement;
                 },
-                // Bind event 'processedMessage'.  Signature: callback(array_of_msgs)
+                // Bind event 'processedMessage'.  Signature: callback(msg)
                 processedMessage: function (callback) {
-                    self.ircElement.bind('processedMessage', function () {
-                        callback.call(self.ircElement);
+                    self.ircElement.bind('processedMessage', function (e, msg) {
+                        callback.call(self.ircElement, e, msg);
                     });
-                    return self;
+                    return self.ircElement;
                 }
             }
         };

@@ -273,66 +273,50 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
         };
         
         // Initialize web client.
-        var viewKeyRegenCount = 0;
-        do {
-            // Generate new viewKey if undefined.
-            if (viewKey === undefined) viewKey = Math.random().toString(36).substring(8);
-            
-            // Check for open connection.
-            $.ajax('init.php',
-                {
-                    async: false,
-                    type: 'POST',
-                    cache: false,
-                    dataType: 'json',
-                    data: {
-                        connect: 0,
-                        viewKey: viewKey,
-                        server: self.state.server,
-                        port: self.state.port
-                    },
-                    success: function (data) {
-                        local.processMessages.call(self, data);
-                        
-                        for (var idx in data) {
-                            var msg = data[idx];
-                            if (msg.type === 'servermsg') {
-                                // Check for connection ready message, which indicates a resumable connection.
-                                if (msg.code === 200) {
-                                    newConnectionFlag = false;
-                                }
-                                // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
-                                else if (msg.code === '401') {
-                                    errorHandler('Connection already active in this session.');
-                                    errorFlag = true;
-                                }
-                                // 402: CLMSG_SESSION_UNAVAILABLE.
-                                else if (msg.code === '402') {
-                                    // viewKey must be regenerated.
-                                    viewKey = undefined;
-                                }
+        // Check for open connection.
+        $.ajax('init.php',
+            {
+                async: false,
+                type: 'POST',
+                cache: false,
+                dataType: 'json',
+                data: {
+                    connect: 0,
+                    viewKey: viewKey,
+                    server: self.state.server,
+                    port: self.state.port
+                },
+                success: function (data) {
+                    local.processMessages.call(self, data);
+                    
+                    for (var idx in data) {
+                        var msg = data[idx];
+                        if (msg.type === 'servermsg') {
+                            // Check for connection ready message, which indicates a resumable connection.
+                            if (msg.code === 200) {
+                                newConnectionFlag = false;
+                            }
+                            // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
+                            else if (msg.code === '401') {
+                                errorHandler('Connection already active in this session.');
+                                errorFlag = true;
+                            }
+                            // 402: CLMSG_SESSION_UNAVAILABLE.
+                            else if (msg.code === '402') {
+                                errorHandler('Session viewKey is unavailable.');
+                                errorFlag = true;
                             }
                         }
-                    },
-                    error: ajaxErrorFunc
-                }
-            );
-            
-            if (errorFlag) {
-                return;
+                    }
+                },
+                error: ajaxErrorFunc
             }
-            
-            // If viewKey still undefined, retry activation.
-            viewKeyRegenCount++;
-        } while (viewKey === undefined && viewKeyRegenCount < 3);
-
-        if (viewKey === undefined) {
-            var msg = 'Maximum attempts trying to activate but session is unavailable.';
-            if (windows.console) console.log(msg);
-            errorHandler(msg);
+        );
+        
+        if (errorFlag) {
             return;
         }
-
+            
         // Create/resume a connection.
         if (newConnectionFlag) {
             $(element).trigger('activatingClient', [
