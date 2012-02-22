@@ -14,7 +14,7 @@ session_start();
 $session = new spIrcSessionDAL_SQLite($sessionDbFilename, $viewKey);
 $state = $session->load();
 
-log::info('Got state: ' . var_export($state, true));
+//log::info('Got state: ' . var_export($state, true));
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');

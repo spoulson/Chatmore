@@ -1716,8 +1716,6 @@ $.fn.chatmore = function (p1, p2) {
 
                     case '001': // Welcome
                         // Auto-join channels.
-                        if (window.console) console.log('options.channels:');
-                        if (window.console) console.log(self.options.channels);
                         if (self.options.channels !== undefined && self.options.channels.length > 0) {
                             $.each(self.options.channels.sort(self.stricmp).reverse(), function (idx, channel) {
                                 if (window.console) console.log('Joining channel: ' + channel);
@@ -1791,16 +1789,21 @@ $.fn.chatmore = function (p1, p2) {
                     });
                 }
 
-                // Auto-query first channel if selected channel is no longer joined.
-                var channels = self.getJoinedChannels();
-                if (self.irc.target() !== undefined && state.channels[self.irc.target()] === undefined) {
-                    var channel = channels[0];
-                    if (window.console) console.log('Selected channel is no longer joined.  Selecting first channel: ' + channel);
-                    self.queryTarget(channel);
+                // Auto-query first channel if selected user/channel is no longer available.
+                var target = self.irc.target();
+                if (target !== undefined) {
+                    var isChannel = self.isChannel(target);
+                    if (isChannel && !(target in state.channels)) {
+                        var channel = self.getJoinedChannels()[0];
+                        if (window.console) console.log('Selected channel is no longer joined.  Selecting first channel: ' + channel);
+                        self.queryTarget(channel);
+                    }
+                    else if (!isChannel && !(target in state.users)) {
+                        var channel = self.getJoinedChannels()[0];
+                        if (window.console) console.log('Selected user is no longer available.  Selecting first channel: ' + channel);
+                        self.queryTarget(channel);
+                    }
                 }
-                
-                // Save channel list for possible reconnection event to rejoin currently joined channels.
-                //self.options.channels = channels;
                 
                 self.refreshSideBar();
                 
