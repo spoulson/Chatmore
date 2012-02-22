@@ -4,7 +4,7 @@ require_once 'class.spIrcSessionModel.php';
 // Data access layer to session state storage with SQLite.
 // Manages a SQLite database.
 class spIrcSessionDAL_SQLite {
-    const SCHEMA_VERSION = 0x101;
+    const SCHEMA_VERSION = 0x102;   // Note, keep in sync with value inserted into Config in createDatabase().
 
     private $filename;          // SQLite database filename.
     private $isValid = false;   // Has database been validated by validateDatabase()?
@@ -70,7 +70,7 @@ class spIrcSessionDAL_SQLite {
 
         // Load model fields from database.
         $st = $db->prepare(
-            'SELECT server, port, primarySocketFilename, secondarySocketFilename ' .
+            'SELECT server, port, primarySocketFilename, secondarySocketFilename, deleted ' .
             'FROM Session ' .
             'WHERE ' .
             '    id = ? AND ' .
@@ -87,6 +87,7 @@ class spIrcSessionDAL_SQLite {
         $model->port = $row['port'];
         $model->primarySocketFilename = $row['primarySocketFilename'];
         $model->secondarySocketFilename = $row['secondarySocketFilename'];
+        $model->deleted = $row['deleted'];
         
         return $model;
     }
@@ -96,30 +97,21 @@ class spIrcSessionDAL_SQLite {
         $db = $this->openDatabase();
         if ($db === false) return false;
 
-        // No modifyable properties in model, so skip database update.
-        $db = null;
-        return true;
-        /*        
         $st = $db->prepare(
             'UPDATE Session ' .
             'SET ' .
-            '    primarySocketFilename = ?, ' .
-            '    secondarySocketFilename = ?, ' .
-            '    lastModifiedDate = date(\'now\') ' .
+            '    lastModifiedDate = datetime(\'now\') ' .
             'WHERE ' .
             '    id = ? AND ' .
             '    sessionKey = ?;');
         $st->execute(array(
-            $model->primarySocketFilename,
-            $model->secondarySocketFilename,
             $this->id,
             session_id()));
         
         $rc = $st->rowCount() > 0;
-        
         $db = null;
         
-        return $rc;*/
+        return $rc;
     }
     
     // Delete this session record.
@@ -132,10 +124,13 @@ class spIrcSessionDAL_SQLite {
             if ($db === false) return false;
             
             $st = $db->prepare(
-                'DELETE FROM Session ' .
+                'UPDATE Session ' .
+                'SET deleted = 1, ' .
+                '    lastModified = datetime(\'now\') ' .
                 'WHERE ' .
                 '    id = ? AND ' .
                 '    sessionKey = ?;');
+            log::info(sprintf('errorCode: %s, errorInfo: %s', $db->errorCode, $db->errorInfo));
             $st->execute(array($this->id, session_id()));
             
             $rc = $st->rowCount() > 0;
@@ -201,7 +196,7 @@ class spIrcSessionDAL_SQLite {
 
         $st = $db->prepare(
             'INSERT INTO Session (sessionKey, server, port, primarySocketFilename, secondarySocketFilename, createdDate, lastModifiedDate) ' .
-            'VALUES (?, ?, ?, ?, ?, date(\'now\'), date(\'now\'));');
+            'VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'));');
         $st->execute(array(
 			session_id(),
             $model->server,
@@ -220,8 +215,11 @@ class spIrcSessionDAL_SQLite {
     }
 
     private function createDatabase($filename) {
-        log::info(sprintf('Creating session database at path: %s', $filename));
-        if (file_exists($filename)) unlink($filename);
+        log::info(sprintf('Creating session database at path: "%s"', $filename));
+        if (file_exists($filename) && unlink($filename) === FALSE) {
+            log::error(sprintf('Unable to delete existing session database at path: "%s"', $filename));
+            return;
+        }
         
         $db = new PDO('sqlite:' . $filename);
         $db->exec(
@@ -232,6 +230,7 @@ class spIrcSessionDAL_SQLite {
             "    port int NOT NULL,\n" .
             "    primarySocketFilename varchar(255) NOT NULL,\n" .
             "    secondarySocketFilename varchar(255) NOT NULL,\n" .
+            "    deleted bit default(0) NOT NULL,\n" .
             "    createdDate datetime NOT NULL,\n" .
             "    lastModifiedDate datetime NOT NULL\n" .
             ");\n" .
@@ -239,7 +238,7 @@ class spIrcSessionDAL_SQLite {
             "    schemaVersion int NOT NULL\n" .
             ");\n" .
             "INSERT INTO Config (schemaVersion)\n" .
-            "VALUES (257);");
+            "VALUES (258);");
 
         $db = null;
     }
@@ -253,7 +252,7 @@ class spIrcSessionDAL_SQLite {
         }
         else {
             // Recreate database.
-            log::info('Recreating database after validation error.');
+            log::info(sprintf('Recreating database after validation error: "%s"', $this->filename));
             $db = null;
             $this->createDatabase($this->filename);
             $db = new PDO('sqlite:' . $this->filename);

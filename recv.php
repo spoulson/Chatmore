@@ -12,13 +12,14 @@ set_time_limit($timeout/1000 + 5);
 session_start();
 $session = new spIrcSessionDAL_SQLite($sessionDbFilename, $_GET['id']);
 $state = $session->load();
+log::info(print_r($state, true));
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
-if ($state !== null) {
+if ($state !== null && !$state->deleted) {
     $socketFile = $state->primarySocketFilename;
 
     if (file_exists($socketFile)) {

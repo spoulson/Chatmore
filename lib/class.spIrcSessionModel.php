@@ -10,6 +10,6 @@ class spIrcSessionModel {
     public $secondarySocketFilename;
     
     // Modifyable properties:
-    // ...
+    public $deleted;    // boolean
 }
 ?>

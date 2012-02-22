@@ -16,23 +16,17 @@ $.fn.chatmore = function (p1, p2) {
         var options = {
             port: 6667,
             title: document.title,
+            nick: 'user' + Math.floor(Math.random() * 10000),
             quitMessage: 'Chatmore IRC client',
             reactivateAttempts: 6,
             reactivateDelay: 10,
-            mustMatchServer: false,
             channels: [ ]
         };
+        options.realname = options.nick;
         $.extend(options, userOptions);
-        if (isEmpty(userOptions.nick)) options.nick = 'user' + Math.floor(Math.random() * 10000);
-        if (isEmpty(userOptions.realname)) options.realname = userOptions.nick;
         if (typeof(options.channel) === 'object') options.channels = options.channel;
-        else options.channels.push(options.channel);
+        else if (!isEmpty(options.channel)) options.channels.push(options.channel);
 
-        if (window.console) console.log('userOptions:');
-        if (window.console) console.log(userOptions);
-        if (window.console) console.log('options:');
-        if (window.console) console.log(options);
-        
         var self = {
             //
             // Private members.
@@ -490,7 +484,7 @@ $.fn.chatmore = function (p1, p2) {
                     parseParam: function (param, meta) {
                         var usage = self.cmdDefs['mode'].helpUsage;
                         var m = /^(\S+)(\s+(\S+(\s+\S+)*))?\s*$/.exec(param);
-                        if (m == null) {
+                        if (m === null) {
                             meta.error = usage;
                             return false;
                         }
@@ -545,7 +539,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         
                         var m = /^(\S+)\s+(.+)$/.exec(param);
-                        if (m === null || m.length != 3) {
+                        if (m === null || m.length !== 3) {
                             meta.error = usage;
                             return false;
                         }
@@ -620,7 +614,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         
                         var m = /^(\S+)\s+(.+)$/.exec(param);
-                        if (m === null || m.length != 3) {
+                        if (m === null || m.length !== 3) {
                             meta.error = usage;
                             return false;
                         }
@@ -782,8 +776,8 @@ $.fn.chatmore = function (p1, p2) {
             // If not a command, send as message to current target.
             sendLine: function (text) {
                 // Parse out command and parameters.
-                var m;
-                if (m = /^\/(\S+)(\s+(.+))?/.exec(text)) {
+                var m = /^\/(\S+)(\s+(.+))?/.exec(text);
+                if (m) {
                     var cmd = m[1].toLowerCase();
                     var param = m[3];
                     
@@ -860,10 +854,10 @@ $.fn.chatmore = function (p1, p2) {
             },
             
             addToMsgSenders: function (nick) {
-                if (self.stricmp(nick, self.irc.state.nick) != 0) {
+                if (self.stricmp(nick, self.irc.state.nick) !== 0) {
                     self.msgSenders = $.grep(self.msgSenders, function (val) {
                         // Remove from array, if exists.
-                        return self.stricmp(val, nick) != 0;
+                        return self.stricmp(val, nick) !== 0;
                     });
                     self.msgSenders.unshift(nick);
                     
@@ -874,7 +868,7 @@ $.fn.chatmore = function (p1, p2) {
 
             startsWith: function (subject, prefix, comparer) {
                 return subject.length >= prefix.length &&
-                    comparer(subject.substr(0, prefix.length), prefix) == 0;
+                    comparer(subject.substr(0, prefix.length), prefix) === 0;
             },
 
             // Find next match from a list, where the item is greater than seed.
@@ -907,11 +901,13 @@ $.fn.chatmore = function (p1, p2) {
  
                 if (node.nodeType === 1) {
                     // Element node.
-                    if (node = node.firstChild) {
+                    if (node.firstChild) {
+                        node = node.firstChild;
                         do {
                             next = node.nextSibling;
                             nodes = nodes.concat(self.findTextNodes(node, predicate));
-                        } while (node = next);
+                            node = next;
+                        } while (node);
                     }
                 }
                 else if (node.nodeType === 3) {
@@ -928,8 +924,8 @@ $.fn.chatmore = function (p1, p2) {
                 return self.findTextNodes(el, function (node) {
                     // Exclude already decorated elements.
                     // Exclude elements tagged with no-decorate class.
-                    if ($(node).parent('a,.channel,.nick').length != 0 ||
-                        $(node).parents('.no-decorate').length != 0)
+                    if ($(node).parent('a,.channel,.nick').length !== 0 ||
+                        $(node).parents('.no-decorate').length !== 0)
                         return false;
                     else
                         return true;
@@ -967,7 +963,7 @@ $.fn.chatmore = function (p1, p2) {
                         var newNode = $('<span/>').append(html);
                         $(node).replaceWith(newNode);
                     }
-                };
+                }
             },
 
             //             [-scheme---------][-hostname------------][-port][-path----------][-querystring-----------------------------------------------------][anchor]
@@ -975,12 +971,12 @@ $.fn.chatmore = function (p1, p2) {
 
             // Decorate nicks found in text with span.
             decorateNicks: function (el, channel) {
-                var nicks = undefined;
+                var nicks;
                 if (self.irc.state !== undefined) {
                     nicks = $.map(self.irc.state.users, function (val, key) { return key; });
                 }
 
-                if (nicks === undefined || nicks.length == 0) return;
+                if (nicks === undefined || nicks.length === 0) return;
                 
                 // Convert array of nicks to regex expression.
                 var nickExpr = $.map(nicks, function (nick) {
@@ -995,7 +991,7 @@ $.fn.chatmore = function (p1, p2) {
                     var node = nodes[i];
                     var modified = false;
                     var html = $(node).text().replace(re, function (m, nick) {
-                        var colorizeNumber = undefined;
+                        var colorizeNumber;
                         if (channel !== undefined && self.isChannel(channel)) {
                             // Lookup nick's colorize number for given channel.
                             if (self.irc.state.channels[channel] !== undefined &&
@@ -1007,10 +1003,10 @@ $.fn.chatmore = function (p1, p2) {
                         modified = true;
 
                         if (colorizeNumber !== undefined) {
-                            return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>'
+                            return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>';
                         }
                         else {
-                            return '<span class="nick">' + nick + '</span>'
+                            return '<span class="nick">' + nick + '</span>';
                         }
                     });
                     
@@ -1018,7 +1014,7 @@ $.fn.chatmore = function (p1, p2) {
                         var newNode = $('<span/>').append(html);
                         $(node).replaceWith(newNode);
                     }
-                };
+                }
             },
 
             // Decorate channel-like text with span.
@@ -1079,13 +1075,13 @@ $.fn.chatmore = function (p1, p2) {
                     // Detect if my nick was mentioned in a channel message.
                     element.closest('.channelMsg').find('.message .nick')
                         .filter(function () {
-                            return self.irc.state !== undefined && self.stricmp($(this).text(), self.irc.state.nick) == 0;
+                            return self.irc.state !== undefined && self.stricmp($(this).text(), self.irc.state.nick) === 0;
                         })
                         .first()
                         .filter(function () {
                             // Check if this message is written by me.  If I wrote it, skip highlighting.
                             var prefixNick = element.find('.prefix .nick').text();
-                            return self.irc.state !== undefined && self.stricmp(prefixNick, self.irc.state.nick) != 0;
+                            return self.irc.state !== undefined && self.stricmp(prefixNick, self.irc.state.nick) !== 0;
                         })
                         .each(function () {
                             element.closest('.channelMsg').addClass('nickHighlight');
@@ -1187,7 +1183,7 @@ $.fn.chatmore = function (p1, p2) {
                     // Unselect doubleclicked text.
                     self.clearSelection();
 
-                    if (self.irc.state !== undefined && self.stricmp(target, self.irc.state.nick) != 0) {
+                    if (self.irc.state !== undefined && self.stricmp(target, self.irc.state.nick) !== 0) {
                         if (self.isChannel(target)) {
                             // Check if joined to this channel.
                             if (self.irc.state !== undefined && self.irc.state.channels[target] === undefined)
@@ -1327,7 +1323,7 @@ $.fn.chatmore = function (p1, p2) {
                     messageCount: self.notificationMessageCount
                 }).text();
 
-                if (newTitle != document.title) document.title = newTitle;
+                if (newTitle !== document.title) document.title = newTitle;
             },
 
             // Update title when notifications occur and user isn't focused on the browser.
@@ -1378,7 +1374,7 @@ $.fn.chatmore = function (p1, p2) {
                 var userEntry = self.ircElement.find('.userEntry');
                 var s = userEntry.val();
                     
-                if (s == '' || self.autoCompleteReplyIndex !== undefined) {
+                if (s === '' || self.autoCompleteReplyIndex !== undefined) {
                     // When user entry is blank, autocomplete as reply to recent private message senders.
                     if (self.msgSenders.length) {
                         if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
@@ -1399,7 +1395,7 @@ $.fn.chatmore = function (p1, p2) {
                     if (self.autoCompletePrefix === undefined) {
                         // Advance caret to end of word.
                         var m1 = s.substr(caretPos).match(/^\S+/);
-                        if (m1 != null) caretPos += m1[0].length;
+                        if (m1 !== null) caretPos += m1[0].length;
                         
                         // Get last word of user entry, up to the caret position.
                         var m2 = /\S+$/.exec(s.substr(0, caretPos));
@@ -1424,7 +1420,7 @@ $.fn.chatmore = function (p1, p2) {
                         if (self.isChannel(self.autoCompletePrefix)) {
                             // When string looks like a channel, autocomplete from joined channel list.
                             var channels = $.grep(self.getJoinedChannels(), function (val) {
-                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
                             });
                             
                             self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
@@ -1443,7 +1439,7 @@ $.fn.chatmore = function (p1, p2) {
                         else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
                             // When a channel is selected, autocomplete that channel's users.
                             var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
-                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) != 0;
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
                             });
                             
                             self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
@@ -1453,7 +1449,7 @@ $.fn.chatmore = function (p1, p2) {
                                 var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
                                 var wordpos = s1.length - self.autoCompleteSuggest.length;
                                 // If this is the only word on the line, assume it's to address the suggested user.
-                                if (wordpos == 0) s1 += ': ';
+                                if (wordpos === 0) s1 += ': ';
                                 s = s1 + s.substr(caretPos);
                                 userEntry.val(s);
     
@@ -1615,10 +1611,10 @@ $.fn.chatmore = function (p1, p2) {
                     
                 case 'RE1':
                     // Registration failed.  Abort activation.
-                    var message = data.maxRegistrationAttempts > 1 ?
+                    var m = data.maxRegistrationAttempts > 1 ?
                         'Registration failed.  Unable to register with a unique nickname after ' + data.maxRegistrationAttempts + ' attempts.  Please reconnect with a unique nickname.' :
                         'Registration failed.  Please reconnect with a unique nickname.';
-                    self.writeTmpl(type, { message: message });
+                    self.writeTmpl(type, { message: m });
                         
                     self.enableAutoReactivate = false;
                     self.deactivateClient();
@@ -1629,24 +1625,21 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .bind('processingMessage', function (e, msg) {
-                switch (msg.type) {
-                case 'recv':
+                if (msg.type === 'recv') {
                     // Ensure user is in user state.
                     self.irc.state.addUser(msg.prefixNick);
 
-                    switch (msg.command) {
-                    case '433': // ERR_NICKNAMEINUSE
+                    // ERR_NICKNAMEINUSE
+                    if (msg.command === '433') {
                         self.writeTmpl('nickInUse', { msg: msg });
-                        break;
                     }
                 }
             })
             .bind('processedMessage', function (e, msg) {
-                switch (msg.type) {
-                case 'recv':
+                if (msg.type === 'recv') {
                     switch (msg.command) {
                     case 'PRIVMSG':
-                        if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
+                        if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
                             self.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', { msg: msg });
                             if (!msg.info.isAction) {
                                 // Add this sender to the history of senders.
@@ -1658,7 +1651,7 @@ $.fn.chatmore = function (p1, p2) {
                         break;
                     
                     case 'NOTICE':
-                        if (self.stricmp(msg.info.target, self.irc.state.nick) == 0) {
+                        if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
                             self.writeTmpl('incomingPrivateNotice', { msg: msg });
 
                             // Add this sender to the history of senders.
@@ -1672,7 +1665,7 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('join', { msg: msg });
 
                         // Auto-query newly joined channel.
-                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) == 0) {
+                        if (self.stricmp(msg.prefixNick, self.irc.state.nick) === 0) {
                             self.queryTarget(msg.info.channel);
                         }
 
@@ -1701,7 +1694,7 @@ $.fn.chatmore = function (p1, p2) {
                         self.writeTmpl('nick', { msg: msg });
                                                 
                         // If selected target's nick changes, update target.
-                        if (self.irc.target() !== undefined && self.stricmp(msg.prefixNick, self.irc.target()) == 0) {
+                        if (self.irc.target() !== undefined && self.stricmp(msg.prefixNick, self.irc.target()) === 0) {
                             self.queryTarget(msg.info.nick);
                         }
                         break;
@@ -1729,7 +1722,7 @@ $.fn.chatmore = function (p1, p2) {
                                 if (window.console) console.log('Joining channel: ' + channel);
                                 self.irc.sendMsg('JOIN ' + channel);
                             });
-                        };
+                        }
                         break;
                         
                     case '252': // RPL_LUSEROP
@@ -1942,7 +1935,7 @@ $.fn.chatmore = function (p1, p2) {
                         }
                         
                         if (self.userEntryHistoryIndex !== undefined) {
-                            if (e.keyCode == '38') {
+                            if (e.keyCode === 38) {
                                 // Go to next oldest history entry.
                                 self.userEntryHistoryIndex++;
                                 if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
@@ -1988,9 +1981,7 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement[0], options.server, options.port, options.nick, options.realname, {
-                mustMatchServer: options.mustMatchServer
-            });
+            self.irc = new chatmore(self.ircElement[0], options.server, options.port, options.nick, options.realname);
             self.irc.activateClient();
         }
         
@@ -2000,7 +1991,7 @@ $.fn.chatmore = function (p1, p2) {
         // Invoke method against chatmoreUI object.
         var method = p1;
         var args = p2;
-        var self = $(this).data('chatmore');
-        return self.methods[method].call(self, args);
+        var selfRef = $(this).data('chatmore');
+        return selfRef.methods[method].call(selfRef, args);
     }
 };

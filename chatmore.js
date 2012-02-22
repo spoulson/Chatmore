@@ -1,10 +1,7 @@
 // Instantiate chatmore as an object.
 // var c = new chatmore(...);
 // element: Associated HTML DOM object
-// options array:
-//    mustMatchServer:
-//       when true, allows resuming connection, regardless of server
-//       when false, allows resuming connection only if server/port match constructor parameters
+// options array: <unused>
 function chatmore(element, server, port, nick, realname, options) {
     if (options === undefined) options = {};
     
@@ -17,7 +14,6 @@ function chatmore(element, server, port, nick, realname, options) {
         pollHandle: undefined,
         pollXhr: undefined,
         pauseRecv: false,
-        mustMatchServer: false,
         maxRegistrationAttempts: 3,
 
         // Process incoming messages.
@@ -287,7 +283,6 @@ function chatmore(element, server, port, nick, realname, options) {
             server: self.state.server,
             port: self.state.port
         };
-        if (local.mustMatchServer) initCheckPostData.mustMatchServer = true;
         
         $.ajax(
             'init.php?server=' + self.state.server + '&port=' + self.state.port,
@@ -352,7 +347,6 @@ function chatmore(element, server, port, nick, realname, options) {
             server: self.state.server,
             port: self.state.port
         };
-        if (local.mustMatchServer) initPostData.mustMatchServer = true;
         
         $.ajax(
             'init.php?id=' + self.state.sessionId + '&server=' + self.state.server + '&port=' + self.state.port,
@@ -540,6 +534,5 @@ function chatmore(element, server, port, nick, realname, options) {
     };
 
     // Merge options into properties.
-    if (options.mustMatchServer !== undefined) local.mustMatchServer = options.mustMatchServer;
     if (options.maxRegistrationAttempts !== undefined) local.maxRegistrationAttempts = options.maxRegistrationAttempts;
 }

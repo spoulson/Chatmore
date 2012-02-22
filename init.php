@@ -17,22 +17,13 @@ session_start();
 
 // Create or retrieve session state.
 if ($sessionId === null) {
-    log::info('Creating session');
-    $session = new spIrcSessionDAL_SQLite($sessionDbFilename, $server, $port);
-
-    // Return message indicating new session Id.
-    $data[] = array(
-        'type' => spIrcClient::CLMSG_TYPE_SERVER,
-        'code' => spIrcClient::CLMSG_SESSION_ID,
-        'sessionId' => $session->getId()
-    );
+    $session = createSession();
 }
 else {
-    log::info('Retrieving session Id ' . $sessionId);
-    $session = new spIrcSessionDAL_SQLIte($sessionDbFilename, $sessionId);
+    $session = getSession($sessionId);
 }
 
-$state = $session->load();
+$state = getState($session);
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -113,6 +104,40 @@ echo json_encode($data);
 
 exit;
 
+function createSession() {
+    global $sessionDbFilename, $server, $port, $data;
+    log::info('Creating session');
+    $session = new spIrcSessionDAL_SQLite($sessionDbFilename, $server, $port);
+
+    // Return message indicating new session Id.
+    $data[] = array(
+        'type' => spIrcClient::CLMSG_TYPE_SERVER,
+        'code' => spIrcClient::CLMSG_SESSION_ID,
+        'sessionId' => $session->getId()
+    );
+    
+    return $session;
+}
+
+function getSession($sessionId) {
+    global $sessionDbFilename;
+    log::info('Retrieving session Id ' . $sessionId);
+    $session = new spIrcSessionDAL_SQLIte($sessionDbFilename, $sessionId);
+    return $session;
+}
+
+function getState(&$session) {
+    $state = $session->load();
+    
+    // If session exists but was deleted, start over by creating a new session record.
+    if ($state->deleted) {
+        $session = createSession();
+        $state = $session->load();
+    }
+    
+    return $state;
+}
+
 function connect($state) {
     global $ircConfig, $session;
     
@@ -165,22 +190,6 @@ function validateSession($state, &$data = array()) {
 
     $server = $_POST['server'];
     $port = $_POST['port'];
-    
-    // // Check if session and POST server names match.
-    // if (isset($_POST['mustMatchServer']) && $_POST['mustMatchServer'] &&
-        // $state->server != $server || $state->port != $port) {
-        // log::info("Server:port '" . $server . ':' . $port . " are different than existing session '" . $state->server . ':' . $state->port . "', session invalid.");
-        
-        // // No connection open to resume.
-        // log::info("Connection not open.");
-        // $data[] =
-            // array(
-                // 'type' => spIrcClient::CLMSG_TYPE_SERVER,
-                // 'message' => 'Connection not open.',
-                // 'code' => spIrcClient::CLMSG_CONNECTION_NOT_OPEN
-            // );
-        // return false;
-    // }
     
     // Check if we can connect to domain socket.
     if (!validateSocketFile($socketFile, 5)) {
