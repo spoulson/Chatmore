@@ -113,8 +113,9 @@ class spIrcSessionDAL_SQLite {
             
             $st = $db->prepare(
                 'UPDATE Session ' .
-                'SET deleted = 1, ' .
-                '    lastModified = datetime(\'now\') ' .
+                'SET ' .
+                '    deleted = 1, ' .
+                '    lastModifiedDate = datetime(\'now\') ' .
                 'WHERE ' .
                 '    id = ? AND ' .
                 '    sessionKey = ?;');
