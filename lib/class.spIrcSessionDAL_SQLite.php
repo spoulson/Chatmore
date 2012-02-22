@@ -13,46 +13,27 @@ class spIrcSessionDAL_SQLite {
     //
     // Constructor.
     //
-    public function __construct() {
+    public function __construct($filename, $viewKey) {
         global $ircConfig;
-        $args = func_get_args();
 
-        if (count($args) == 3) {
-            // Constructor to create a session record from server/port arguments.
-            // $filename: Pathname of SQLite database (created by createDatabase).
-            list($filename, $server, $port) = $args;
-            $this->filename = $filename;
-            if (!file_exists($filename)) $this->createDatabase($filename);
+        // Get or create a session record by viewKey.
+        // $filename: Pathname of SQLite database (created by createDatabase).
+        $this->filename = $filename;
+        if (!file_exists($filename)) $this->createDatabase($filename);
 
-            // Lookup model, create new record if not found.
-            $this->id = $this->lookupId($server, $port);
-            if ($this->id === null) {
-				log::info("Creating new session record for server=" . $server . ", port=" . $port);
-                $sessionId = uniqid('', true);
-                $model = new spIrcSessionModel();
-                $model->server = $server;
-                $model->port = $port;
-                $model->primarySocketFilename = $ircConfig['socketFilePath'] . '/chatmore_' . $sessionId . '1.sock';
-                $model->secondarySocketFilename = $ircConfig['socketFilePath'] . '/chatmore_' . $sessionId . '2.sock';
-                log::info('state: ' . var_export($model, true));
-                $this->create($model);
-            }
-			else {
-				log::info("Found session record id=" . $this->id . " for server=" . $server . ", port=" . $port);
-			}
-        }
-        else if (count($args) == 2) {
-            // Constructor to existing session record.
-            list($filename, $id) = $args;
-            $this->filename = $filename;
-            if (!file_exists($filename)) $this->createDatabase($filename);
-            
-            $this->id = $id;
-        }
-        else {
-            $message = sprintf('Constructor to %s called with unsupported number of arguments (%d).',
-                get_class($this), count($args));
-            throw new Exception($message);
+        // Lookup model, create new record if not found.
+        $this->id = $this->lookupId($viewKey);
+        if ($this->id === null) {
+            // Not found, create record.
+			log::info(sprintf("Creating new session record for viewKey=%s", $viewKey));
+            $socketId = uniqid('', true);
+            $model = new spIrcSessionModel();
+            $model->viewKey = $viewKey;
+            $model->sessionKey = session_id();
+            $model->primarySocketFilename = $ircConfig['socketFilePath'] . '/chatmore_' . $socketId . '1.sock';
+            $model->secondarySocketFilename = $ircConfig['socketFilePath'] . '/chatmore_' . $socketId . '2.sock';
+            //log::info('state: ' . var_export($model, true));
+            $this->id = $this->create($model);
         }
     }
     
@@ -70,7 +51,7 @@ class spIrcSessionDAL_SQLite {
 
         // Load model fields from database.
         $st = $db->prepare(
-            'SELECT server, port, primarySocketFilename, secondarySocketFilename, deleted ' .
+            'SELECT id, viewKey, sessionKey, deleted, server, port, primarySocketFilename, secondarySocketFilename ' .
             'FROM Session ' .
             'WHERE ' .
             '    id = ? AND ' .
@@ -83,11 +64,14 @@ class spIrcSessionDAL_SQLite {
 
         // Populate model object.
         $model = new spIrcSessionModel();
+        $model->id = $row['id'];
+        $model->viewKey = $row['viewKey'];
+        $model->sessionKey = $row['sessionKey'];
+        $model->deleted = $row['deleted'];
         $model->server = $row['server'];
         $model->port = $row['port'];
         $model->primarySocketFilename = $row['primarySocketFilename'];
         $model->secondarySocketFilename = $row['secondarySocketFilename'];
-        $model->deleted = $row['deleted'];
         
         return $model;
     }
@@ -100,11 +84,15 @@ class spIrcSessionDAL_SQLite {
         $st = $db->prepare(
             'UPDATE Session ' .
             'SET ' .
+            '    server = ?, ' .
+            '    port = ?, ' .
             '    lastModifiedDate = datetime(\'now\') ' .
             'WHERE ' .
             '    id = ? AND ' .
             '    sessionKey = ?;');
         $st->execute(array(
+            $model->server,
+            $model->port,
             $this->id,
             session_id()));
         
@@ -130,7 +118,6 @@ class spIrcSessionDAL_SQLite {
                 'WHERE ' .
                 '    id = ? AND ' .
                 '    sessionKey = ?;');
-            log::info(sprintf('errorCode: %s, errorInfo: %s', $db->errorCode, $db->errorInfo));
             $st->execute(array($this->id, session_id()));
             
             $rc = $st->rowCount() > 0;
@@ -161,27 +148,24 @@ class spIrcSessionDAL_SQLite {
     // Private Methods.
     //
     // Reverse lookup model, return id if found; NULL if not found.
-    private function lookupId($server, $port) {
+    private function lookupId($viewKey) {
         $id = null;
-        log::info("lookupId(" . $server . ", " . $port . ") by sessionKey=" . session_id());
-
         $db = $this->openDatabase();
         
         $st = $db->prepare(
             'SELECT id ' .
             'FROM Session ' .
             'WHERE ' .
-            '    sessionKey = ? AND ' .
-            '    server = ? AND ' .
-            '    port = ? ' .
+            '    viewKey = ? AND ' .
+            '    sessionKey = ? ' .
             'LIMIT 1;');
-        $st->execute(array(session_id(), $server, $port));
+        $st->execute(array($viewKey, session_id()));
 		$value = $st->fetchColumn(0);
 		if ($value !== FALSE) $id = $value;
         
         $db = null;
         
-        log::info("lookupId() = " . var_export($id, true));
+        log::info(sprintf("lookupId(%s) with sessionKey=%s = %s", $viewKey, session_id(), var_export($id, true)));
         return $id;
     }
     
@@ -189,20 +173,22 @@ class spIrcSessionDAL_SQLite {
     private function create($model) {
         $id = false;
         
-        log::info(sprintf('Creating session to server %s:%d.', $model->server, $model->port));
+        log::info(sprintf('Creating session with viewKey=%s.', $model->viewKey));
         $db = $this->openDatabase();
         
         $modelData = serialize($model);
 
         $st = $db->prepare(
-            'INSERT INTO Session (sessionKey, server, port, primarySocketFilename, secondarySocketFilename, createdDate, lastModifiedDate) ' .
-            'VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'));');
+            'INSERT INTO Session (viewKey, sessionKey, server, port, primarySocketFilename, secondarySocketFilename, createdDate, lastModifiedDate) ' .
+            'VALUES (?, ?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'));');
         $st->execute(array(
-			session_id(),
+            $model->viewKey,
+			$model->sessionKey,
             $model->server,
             $model->port,
             $model->primarySocketFilename,
             $model->secondarySocketFilename));
+        log::info('Rows affected: ' . $st->rowCount());
         if ($st->rowCount() > 0) {
             $id = $this->getLastInsertId($db);
         }
@@ -225,12 +211,13 @@ class spIrcSessionDAL_SQLite {
         $db->exec(
             "CREATE TABLE Session (\n" .
             "    id integer NOT NULL PRIMARY KEY AUTOINCREMENT,\n" .
+            "    viewKey varchar(25) NOT NULL,\n" .
             "    sessionKey varchar(25) NOT NULL,\n" .
-            "    server varchar(255) NOT NULL,\n" .
-            "    port int NOT NULL,\n" .
+            "    deleted bit default(0) NOT NULL,\n" .
+            "    server varchar(255) NULL,\n" .
+            "    port int NULL,\n" .
             "    primarySocketFilename varchar(255) NOT NULL,\n" .
             "    secondarySocketFilename varchar(255) NOT NULL,\n" .
-            "    deleted bit default(0) NOT NULL,\n" .
             "    createdDate datetime NOT NULL,\n" .
             "    lastModifiedDate datetime NOT NULL\n" .
             ");\n" .

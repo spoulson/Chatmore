@@ -16,6 +16,7 @@ $.fn.chatmore = function (p1, p2) {
         var options = {
             port: 6667,
             title: document.title,
+            viewKey: undefined,
             nick: 'user' + Math.floor(Math.random() * 10000),
             quitMessage: 'Chatmore IRC client',
             reactivateAttempts: 6,
@@ -1981,7 +1982,7 @@ $.fn.chatmore = function (p1, p2) {
         self.alignUI();
     
         if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement[0], options.server, options.port, options.nick, options.realname);
+            self.irc = new chatmore(self.ircElement[0], options.viewKey, options.server, options.port, options.nick, options.realname);
             self.irc.activateClient();
         }
         

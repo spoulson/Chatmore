@@ -2,7 +2,7 @@
 // var c = new chatmore(...);
 // element: Associated HTML DOM object
 // options array: <unused>
-function chatmore(element, server, port, nick, realname, options) {
+function chatmore(element, viewKey, server, port, nick, realname, options) {
     if (options === undefined) options = {};
     
     //
@@ -205,11 +205,7 @@ function chatmore(element, server, port, nick, realname, options) {
                         }
                     }
 
-                    if (msg.code === 300) { // define session key
-                        self.state.sessionId = msg.sessionId;
-                        if (window.console) console.log('Session Key: ' + self.state.sessionId);
-                    }
-                    else if (msg.code >= 400) {
+                    if (msg.code >= 400) {
                         if (self.state.isActivated && msg.code === 400) {
                             self.deactivateClient();
                         }
@@ -277,47 +273,66 @@ function chatmore(element, server, port, nick, realname, options) {
         };
         
         // Initialize web client.
-        // Check for open connection.
-        var initCheckPostData = {
-            connect: 0,
-            server: self.state.server,
-            port: self.state.port
-        };
-        
-        $.ajax(
-            'init.php?server=' + self.state.server + '&port=' + self.state.port,
-            {
-                async: false,
-                type: 'POST',
-                cache: false,
-                dataType: 'json',
-                data: initCheckPostData,
-                success: function (data) {
-                    local.processMessages.call(self, data);
-                    
-                    for (var idx in data) {
-                        var msg = data[idx];
-                        if (msg.type === 'servermsg') {
-                            // Check for connection ready message, which indicates a resumable connection.
-                            if (msg.code === 200) {
-                                newConnectionFlag = false;
-                            }
-                            // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
-                            else if (msg.code === '401') {
-                                errorHandler('Connection already active in this session.');
-                                errorFlag = true;
+        var viewKeyRegenCount = 0;
+        do {
+            // Generate new viewKey if undefined.
+            if (viewKey === undefined) viewKey = Math.random().toString(36).substring(8);
+            
+            // Check for open connection.
+            $.ajax('init.php',
+                {
+                    async: false,
+                    type: 'POST',
+                    cache: false,
+                    dataType: 'json',
+                    data: {
+                        connect: 0,
+                        viewKey: viewKey,
+                        server: self.state.server,
+                        port: self.state.port
+                    },
+                    success: function (data) {
+                        local.processMessages.call(self, data);
+                        
+                        for (var idx in data) {
+                            var msg = data[idx];
+                            if (msg.type === 'servermsg') {
+                                // Check for connection ready message, which indicates a resumable connection.
+                                if (msg.code === 200) {
+                                    newConnectionFlag = false;
+                                }
+                                // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
+                                else if (msg.code === '401') {
+                                    errorHandler('Connection already active in this session.');
+                                    errorFlag = true;
+                                }
+                                // 402: CLMSG_SESSION_UNAVAILABLE.
+                                else if (msg.code === '402') {
+                                    // viewKey must be regenerated.
+                                    viewKey = undefined;
+                                }
                             }
                         }
-                    }
-                },
-                error: ajaxErrorFunc
+                    },
+                    error: ajaxErrorFunc
+                }
+            );
+            
+            if (errorFlag) {
+                return;
             }
-        );
-        
-        if (errorFlag) {
+            
+            // If viewKey still undefined, retry activation.
+            viewKeyRegenCount++;
+        } while (viewKey === undefined && viewKeyRegenCount < 3);
+
+        if (viewKey === undefined) {
+            var msg = 'Maximum attempts trying to activate but session is unavailable.';
+            if (windows.console) console.log(msg);
+            errorHandler(msg);
             return;
         }
-        
+
         // Create/resume a connection.
         if (newConnectionFlag) {
             $(element).trigger('activatingClient', [
@@ -340,21 +355,15 @@ function chatmore(element, server, port, nick, realname, options) {
             ]);
         }
         
-        var initPostData = {
-            connect: 1,
-            nick: self.state.nick,
-            realname: self.state.realname,
-            server: self.state.server,
-            port: self.state.port
-        };
-        
-        $.ajax(
-            'init.php?id=' + self.state.sessionId + '&server=' + self.state.server + '&port=' + self.state.port,
+        $.ajax('init.php',
             {
                 type: 'POST',
                 cache: false,
                 dataType: 'json',
-                data: initPostData,
+                data: {
+                    connect: 1,
+                    viewKey: viewKey
+                },
                 success: function (data) {
                     local.processMessages.call(self, data);
                     
@@ -379,31 +388,34 @@ function chatmore(element, server, port, nick, realname, options) {
                             }
                             else {
                                 local.pollHandle = undefined;
-                                local.pollXhr = $.ajax('recv.php', {
-                                    cache: false,
-                                    data: { id: self.state.sessionId },
-                                    dataType: 'json',
-                                    success: function (data) {
-                                        // Validate data is an array.
-                                        if (typeof(data) === 'object') {
-                                            local.processMessages.call(self, data);
-                                        }
-                                        else {
-                                            // Data is invalid!
-                                            if (window.console) {
-                                                console.log('Got invalid data:');
-                                                console.log(data);
+                                local.pollXhr = $.ajax('recv.php',
+                                    {
+                                        cache: false,
+                                        data: {
+                                            viewKey: viewKey
+                                        },
+                                        dataType: 'json',
+                                        success: function (data) {
+                                            // Validate data is an array.
+                                            if (typeof(data) === 'object') {
+                                                local.processMessages.call(self, data);
+                                            }
+                                            else {
+                                                // Data is invalid!
+                                                if (window.console) {
+                                                    console.log('Got invalid data:');
+                                                    console.log(data);
+                                                }
+                                            }
+                                        },
+                                        complete: function () {
+                                            // Schedule next poll.
+                                            local.pollXhr = undefined;
+                                            if (self.state.isActivated) {
+                                                local.pollHandle = setTimeout(pollFunc, 100);
                                             }
                                         }
-                                    },
-                                    complete: function () {
-                                        // Schedule next poll.
-                                        local.pollXhr = undefined;
-                                        if (self.state.isActivated) {
-                                            local.pollHandle = setTimeout(pollFunc, 100);
-                                        }
-                                    }
-                                });
+                                    });
                             }
                         };
                         setTimeout(pollFunc, 0);
@@ -444,29 +456,33 @@ function chatmore(element, server, port, nick, realname, options) {
     self.sendMsg = function (rawMsg, postCallback) {
         $(element).trigger('sendMsg', [ rawMsg ]);
         
-        $.ajax('send.php?id=' + self.state.sessionId, {
-            async: true,
-            type: 'POST',
-            dataType: 'json',
-            cache: false,
-            data: { msg: rawMsg },
-            success: function (data) {
-                if (postCallback) postCallback(rawMsg);
-                $(element).trigger('sentMsg', [ rawMsg ]);
-                
-                // Validate data is an array.
-                if (typeof(data) === 'object') {
-                    local.processMessages.call(self, data);
-                }
-                else {
-                    // Data is invalid!
-                    if (window.console) {
-                        console.log('Got invalid data:');
-                        console.log(data);
+        $.ajax('send.php',
+            {
+                async: true,
+                type: 'POST',
+                dataType: 'json',
+                cache: false,
+                data: {
+                    viewKey: viewKey,
+                    msg: rawMsg
+                },
+                success: function (data) {
+                    if (postCallback) postCallback(rawMsg);
+                    $(element).trigger('sentMsg', [ rawMsg ]);
+                    
+                    // Validate data is an array.
+                    if (typeof(data) === 'object') {
+                        local.processMessages.call(self, data);
+                    }
+                    else {
+                        // Data is invalid!
+                        if (window.console) {
+                            console.log('Got invalid data:');
+                            console.log(data);
+                        }
                     }
                 }
-            }
-        });
+            });
     };
 
     self.register = function (nick, realname) {

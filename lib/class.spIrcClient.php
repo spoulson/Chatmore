@@ -11,9 +11,10 @@ class spIrcClient {
 
     // Message codes associated with CLMSG_TYPE_SERVER messages.
     const CLMSG_CONNECTION_READY = 200;
-    const CLMSG_SESSION_ID = 300;
     const CLMSG_CONNECTION_NOT_OPEN = 400;
     const CLMSG_CONNECTION_ALREADY_ACTIVE = 401;
+    const CLMSG_SESSION_UNAVAILABLE = 402;
+    const CLMSG_INVALID_ARGUMENTS = 403;
     const CLMSG_TIMEOUT_ON_OPEN = 500;
     
     // IRC server message codes.
