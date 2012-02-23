@@ -1,16 +1,13 @@
-$.fn.chatmore = function (p1, p2) {
-    // If no arguments provided, default to empty options array.
-    if (p1 === undefined) p1 = {};
-
+$.fn.chatmore = function () {
     // Private static functions.
     var isEmpty = function (text) {
         return text === undefined || text === null || text === '';
     };
 
-    // charemoreUI constructor(options)
-    if (typeof(p1) === 'object') {
+    // charemoreUI constructor() | constructor({options})
+    if (arguments.length === 0 || typeof(arguments[0]) === 'object') {
         // Construct UI widget.
-        var userOptions = p1;
+        var userOptions = arguments.length > 0 ? arguments[0] : { };
         
         // Parse options.
         var options = {
@@ -1478,6 +1475,18 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 }
             },
+            
+            resize: function (width, height) {
+                var ircConsole = self.ircElement.find('.ircConsole');
+                var sideBar = self.ircElement.find('.sideBar');
+                var userEntrySection = self.ircElement.find('.userEntrySection');
+                
+                ircConsole
+                    .outerWidth(width - sideBar.outerWidth())
+                    .outerHeight(height - userEntrySection.outerHeight());
+                
+                self.alignUI();
+            },
 
             refreshSideBar: function () {
                 if (!self.freezeSideBar) {
@@ -1528,42 +1537,89 @@ $.fn.chatmore = function (p1, p2) {
                 }
             },
             
+            //
+            // Public API.
+            //
             methods: {
                 // Resize chatmoreUI element.
-                // Args: width, height.
-                resize: function (args) {
-                    var ircConsole = self.ircElement.find('.ircConsole');
-                    var sideBar = self.ircElement.find('.sideBar');
-                    var userEntrySection = self.ircElement.find('.userEntrySection');
-                    
-                    ircConsole
-                        .outerWidth(args.width - sideBar.outerWidth())
-                        .outerHeight(args.height - userEntrySection.outerHeight());
-                    
-                    self.alignUI();
-                    
+                resize: function (width, height) {
+                    self.resize(width, height);
                     return self.ircElement;
                 },
-                // Determine if console is scrolled to the bottom.
-                isAtBottom: function () {
-                    return self.isAtBottom();
+                // Resize to fit within parent element.
+                resizeMax: function () {
+                    var parent = self.ircElement.parent();
+                    var atBottom = self.isAtBottom();
+                    
+                    self.resize(
+                        $(window).width() - parent.outerWidth() + parent.width(),
+                        $(window).height() - parent.outerHeight() + parent.height());
+                    
+                    if (atBottom) self.scrollToBottom();
+                    
+                    return self.ircElement;
                 },
                 // Scroll console to bottom.
                 scrollToBottom: function () {
                     self.scrollToBottom();
                     return self.ircElement;
                 },
-                // Bind event 'stateChanged'.  Signature: callback(state)
+                //
+                // Property getters.
+                //
+                // Determine if console is scrolled to the bottom.
+                isAtBottom: function () {
+                    return self.isAtBottom();
+                },
+                //
+                // Event binding methods.
+                //
+                // Bind event 'localMessage'.  Signature: callback(e, msg)
+                localMessage: function (callback) {
+                    self.ircElement.on('localMessage', function (e, msg) {
+                        callback.call(self.ircElement, e, msg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'stateChanged'.  Signature: callback(e, state)
                 stateChanged: function (callback) {
-                    self.ircElement.bind('stateChanged', function (e) {
+                    self.ircElement.on('stateChanged', function (e) {
                         callback.call(self.ircElement, e, self.irc.state);
                     });
                     return self.ircElement;
                 },
-                // Bind event 'processedMessage'.  Signature: callback(msg)
-                processedMessage: function (callback) {
-                    self.ircElement.bind('processedMessage', function (e, msg) {
+                // Bind event 'processingMessage'.  Signature: callback(e, msg)
+                processingMessage: function (callback) {
+                    self.ircElement.on('processingMessage', function (e, msg) {
                         callback.call(self.ircElement, e, msg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'processedMessage'.  Signature: callback(e, msg)
+                processedMessage: function (callback) {
+                    self.ircElement.on('processedMessage', function (e, msg) {
+                        callback.call(self.ircElement, e, msg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'sendMsg'.  Signature: callback(e, rawMsg)
+                sendMsg: function (callback) {
+                    self.ircElement.on('sendMsg', function (e, rawMsg) {
+                        callback.call(self.ircElement, e, rawMsg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'activatingClient'.  Signature: callback(e, stage, message, params)
+                activatingClient: function (callback) {
+                    self.ircElement.on('activatingClient', function (e, stage, message, params) {
+                        callback.call(self.ircElement, e, stage, message, params);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'deactivatingClient'.  Signature: callback(e)
+                deactivatingClient: function (callback) {
+                    self.ircElement.on('deactivatingClient', function (e) {
+                        callback.call(self.ircElement, e);
                     });
                     return self.ircElement;
                 }
@@ -1573,8 +1629,28 @@ $.fn.chatmore = function (p1, p2) {
         //
         // Initialization.
         //
-        // Save object in element.
+        // Persist object in DOM element.
         self.ircElement.data('chatmore', self);
+
+        // Build DOM structure.
+        self.ircElement
+            .empty()
+            .off()
+            .addClass('ui-widget')
+            .append($(
+                '<div style="float:left;overflow:hidden">' +
+                    '<div class="ircConsole ui-widget-content ui-corner-tl"><div class="content ui-corner-all"/></div>' +
+                    '<div class="userEntrySection ui-widget-content ui-corner-bl">' +
+                        '<div class="userEntryModeLine">' +
+                            '<div class="activationIndicator"/>' +
+                            '<div class="nickLabel nick"/>' +
+                            '<div class="targetFragment" style="display:none"><div class="targetLabel"/></div>' +
+                        '</div>' +
+                        '<div class="userEntryLine"><input type="text" class="userEntry" /></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="sideBar ui-widget ui-widget-content ui-corner-right"><ul class="channelList"/></div>'
+            ));
 
         // Client command aliases.
         self.cmdDefs['j'] = self.cmdDefs['join'];
@@ -1584,7 +1660,7 @@ $.fn.chatmore = function (p1, p2) {
         self.cmdDefs['n'] = self.cmdDefs['notice'];
         self.cmdDefs['q'] = self.cmdDefs['query'];
 
-        // Compile templates.
+        // Compile message templates.
         $.each(self.tmpls, function (name, tmpl) {
             $.template(name, tmpl);
         });
@@ -1618,7 +1694,7 @@ $.fn.chatmore = function (p1, p2) {
         
         // Setup chatmore event handlers.
         self.ircElement
-            .bind('localMessage', function (e, message, type, data) {
+            .on('localMessage', function (e, message, type, data) {
                 if (window.console) console.log('UI event: localMessage');
                 switch (data.code) {
                 case 'R1':
@@ -1641,7 +1717,7 @@ $.fn.chatmore = function (p1, p2) {
                     self.writeTmpl(type, { message: message });
                 }
             })
-            .bind('processingMessage', function (e, msg) {
+            .on('processingMessage', function (e, msg) {
                 if (msg.type === 'recv') {
                     // Ensure user is in user state.
                     self.irc.state.addUser(msg.prefixNick);
@@ -1652,7 +1728,7 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 }
             })
-            .bind('processedMessage', function (e, msg) {
+            .on('processedMessage', function (e, msg) {
                 if (msg.type === 'recv') {
                     switch (msg.command) {
                     case 'PRIVMSG':
@@ -1789,7 +1865,7 @@ $.fn.chatmore = function (p1, p2) {
                     }
                 }
             })
-            .bind('stateChanged', function (e) {
+            .on('stateChanged', function (e) {
                 if (window.console) console.log('UI event: stateChanged');
                 if (window.console) console.log(self.irc.state);
                 
@@ -1825,10 +1901,10 @@ $.fn.chatmore = function (p1, p2) {
                 
                 self.prevState = self.clone(self.irc.state);
             })
-            .bind('sendMsg', function (e, rawMsg) {
+            .on('sendMsg', function (e, rawMsg) {
                 if (window.console) console.log('Sent: ' + rawMsg);
             })
-            .bind('activatingClient', function (e, stage, message, params) {
+            .on('activatingClient', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
                     if (window.console) console.log('UI event: activatingClient start');
@@ -1880,7 +1956,7 @@ $.fn.chatmore = function (p1, p2) {
                     break;
                 }
             })
-            .bind('deactivatingClient', function () {
+            .on('deactivatingClient', function () {
                 if (window.console) console.log('UI event: deactivatingClient');
                 self.ircElement
                     .removeClass('activated')
@@ -1982,7 +2058,7 @@ $.fn.chatmore = function (p1, p2) {
                 }
             })
             .keypress(function (e) {
-                // Ignore key codes handled from keyDown event.
+                // Ignore key codes handled in keyDown event.
                 if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
                     if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
                         e.keyCode === 38 || e.keyCode === 40) {
@@ -2008,10 +2084,10 @@ $.fn.chatmore = function (p1, p2) {
         return self.ircElement;
     }
     else {
-        // Invoke method against chatmoreUI object.
-        var method = p1;
-        var args = p2;
-        var selfRef = $(this).data('chatmore');
-        return selfRef.methods[method].call(selfRef, args);
+        // Invoke named method against chatmoreUI object.
+        var method = arguments[0];
+        var args = Array.prototype.slice.call(arguments, 1);
+        var self = $(this).data('chatmore');
+        return self.methods[method].apply(self, args);
     }
 };

@@ -57,8 +57,6 @@ if (array_key_exists('x', $_GET)) {
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {
-            var ircElementTmpl = $('.chatmore').clone();
-            
             var getChannelsFromHash = function () {
                 var channels = document.location.hash.split(',');
                 if (channels[0] == '') return [ ];
@@ -107,57 +105,43 @@ if (array_key_exists('x', $_GET)) {
             };
 
             var startClient = function (opts) {
-                $('.chatmore').replaceWith(ircElementTmpl.clone());
-                $('.chatmore')
+                $('#chatmore')
                     .chatmore(opts)
                     .chatmore('stateChanged', function (e, state) {
                         if (window.console) console.log('User event: stateChanged');
                         setHashWithChannels(state.getChannels());
                     })
                     .chatmore('processedMessage', function (e, msg) {
-                        if (msg.type === 'servermsg') {
-                            if (msg.code === 402) {
-                                // Session deleted.
-                                var query = parseQueryString(getQueryString());
-                                query['viewKey'] = newViewKey();
+                        if (msg.type === 'servermsg' && msg.code === 402) {
+                            // Session deleted error during activation.  Generate new viewKey and reactivate.
+                            var query = parseQueryString(getQueryString());
+                            query['viewKey'] = newViewKey();
 
-                                if (window.history.replaceState) {
-                                    // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
-                                    var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
-                                    window.history.replaceState(null, document.title, updatedUrl);
-                                    opts.viewKey = query['viewKey'];
-                                    startClient(opts);
-                                }
-                                else {
-                                    // HTML4: Redirect back with new viewKey.
-                                    warnOnUnload = false;
-                                    document.location.search = '?' + toQueryString(query);
-                                }
+                            if (window.history.replaceState) {
+                                // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
+                                var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
+                                window.history.replaceState(null, document.title, updatedUrl);
+                                opts.viewKey = query['viewKey'];
+                                startClient(opts);
+                            }
+                            else {
+                                // HTML4: Redirect back with new viewKey.
+                                warnOnUnload = false;
+                                document.location.search = '?' + toQueryString(query);
                             }
                         }
-                    });
-                    
-                stretchClient();
+                    })
+                    .chatmore('resizeMax');
             };
 
-            // Stretch client element to width/height of browser window space.
-            var stretchClient = function () {
-                var ircElement = $('.chatmore');
-                var atBottom = ircElement.chatmore('isAtBottom');
-                
-                ircElement.chatmore('resize', {
-                    width: $(window).width() - ircElement.parent().outerWidth() + ircElement.parent().width(),
-                    height: $(window).height() - ircElement.parent().outerHeight() + ircElement.parent().height()
-                });
-                
-                if (atBottom) ircElement.chatmore('scrollToBottom');
-            };
-            
-            $(window).resize(stretchClient);
+            // Resize client to match window.
+            $(window).resize(function () {
+                $('#chatmore').chatmore('resizeMax');
+            });
 
             // Provide popup warning when navigating away from this page.
             var warnOnUnload = true;
-            $(window).bind('beforeunload', function () {
+            $(window).on('beforeunload', function () {
                 if (warnOnUnload) return 'You are about to navigate away from the Chatmore IRC client, which may disconnect from your session.';
             });
 
@@ -176,32 +160,7 @@ if (array_key_exists('x', $_GET)) {
 </head>
 <body>
 
-    <div class="chatmore ui-widget">
-        <div style="float:left;overflow:hidden">
-
-            <div class="ircConsole ui-widget-content ui-corner-tl">
-                <div class="content ui-corner-all"></div>
-            </div>
-
-            <div class="userEntrySection ui-widget-content ui-corner-bl">
-                <div class="userEntryModeLine">
-                    <div class="activationIndicator"></div>
-                    <div class="nickLabel nick"></div>
-                    <div class="targetFragment" style="display:none">
-                        <div class="targetLabel"></div>
-                    </div>
-                </div>
-                <div class="userEntryLine">
-                    <input type="text" class="userEntry" />
-                </div>
-            </div>
-        </div>
-        
-        <div class="sideBar ui-widget ui-widget-content ui-corner-right">
-            <ul class="channelList"></ul>
-        </div>
-    </div>
-    
+    <div id="chatmore" class="chatmore"></div>
     <div id="connectionDialog"></div>
 </body>
 </html>
