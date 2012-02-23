@@ -1259,9 +1259,9 @@ $.fn.chatmore = function () {
                 var channels = [ ];
                 
                 if (self.irc.state !== undefined) {
-                    for (var channel in self.irc.state.channels) {
-                        channels.push(channel);
-                    }
+                    channels = $.map(self.irc.state.channels, function (val, channel) {
+                        return channel;
+                    });
                 }
 
                 return channels.sort(self.stricmp);
@@ -1274,9 +1274,9 @@ $.fn.chatmore = function () {
                     var channelDesc = self.irc.state.channels[channel];
                     
                     if (channelDesc !== undefined) {
-                        for (var member in channelDesc.members) {
-                            members.push(member);
-                        }
+                        members = $.map(channelDesc.members, function (val, member) {
+                            return member;
+                        });
                     }
                 }
                 
@@ -1349,7 +1349,6 @@ $.fn.chatmore = function () {
             },
             
             acceptAutoComplete: function () {
-                //if (window.console) console.log('acceptAutoComplete()');
                 if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
                     self.ircElement.find('.userEntry').each(function () {
                         // Move caret to end of selection.
@@ -1363,14 +1362,12 @@ $.fn.chatmore = function () {
             },
             
             rejectAutoComplete: function () {
-                //if (window.console) console.log('rejectAutoComplete()');
                 if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
                     self.ircElement.find('.userEntry').each(function () {
                         // Remove autocomplete suggestion.
                         var s = $(this).val();
                         var s1 = this.selectionStart > 1 ? s.substr(0, this.selectionStart) : '';
                         var s2 = this.selectionEnd < s.length ? s.substr(this.selectionEnd) : '';
-                        //console.log('s1: "' + s1 + '", s2: "' + s2 + '"');
                         var caretPos = this.selectionStart;
                         
                         $(this).val(s1 + s2);
@@ -1384,7 +1381,6 @@ $.fn.chatmore = function () {
             },
             
             incrementAutoComplete: function () {
-                //if (window.console) console.log('incrementAutoComplete()');
                 var userEntry = self.ircElement.find('.userEntry');
                 var s = userEntry.val();
                     
@@ -1559,6 +1555,11 @@ $.fn.chatmore = function () {
                     
                     return self.ircElement;
                 },
+                // Deactivate client.
+                deactivateClient: function () {
+                    self.irc.deactivateClient();
+                    return self.ircElement;
+                },
                 // Scroll console to bottom.
                 scrollToBottom: function () {
                     self.scrollToBottom();
@@ -1576,49 +1577,63 @@ $.fn.chatmore = function () {
                 //
                 // Bind event 'localMessage'.  Signature: callback(e, msg)
                 localMessage: function (callback) {
-                    self.ircElement.on('localMessage', function (e, msg) {
+                    self.ircElement.on('localMessage.chatmore', function (e, msg) {
                         callback.call(self.ircElement, e, msg);
                     });
                     return self.ircElement;
                 },
                 // Bind event 'stateChanged'.  Signature: callback(e, state)
                 stateChanged: function (callback) {
-                    self.ircElement.on('stateChanged', function (e) {
+                    self.ircElement.on('stateChanged.chatmore', function (e) {
                         callback.call(self.ircElement, e, self.irc.state);
                     });
                     return self.ircElement;
                 },
                 // Bind event 'processingMessage'.  Signature: callback(e, msg)
                 processingMessage: function (callback) {
-                    self.ircElement.on('processingMessage', function (e, msg) {
+                    self.ircElement.on('processingMessage.chatmore', function (e, msg) {
                         callback.call(self.ircElement, e, msg);
                     });
                     return self.ircElement;
                 },
                 // Bind event 'processedMessage'.  Signature: callback(e, msg)
                 processedMessage: function (callback) {
-                    self.ircElement.on('processedMessage', function (e, msg) {
+                    self.ircElement.on('processedMessage.chatmore', function (e, msg) {
                         callback.call(self.ircElement, e, msg);
                     });
                     return self.ircElement;
                 },
-                // Bind event 'sendMsg'.  Signature: callback(e, rawMsg)
-                sendMsg: function (callback) {
-                    self.ircElement.on('sendMsg', function (e, rawMsg) {
+                // Bind event 'sendingMessage'.  Signature: callback(e, rawMsg)
+                sendingMessage: function (callback) {
+                    self.ircElement.on('sendingMessage.chatmore', function (e, rawMsg) {
                         callback.call(self.ircElement, e, rawMsg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'sentMessage'.  Signature: callback(e, rawMsg)
+                sentMessage: function (callback) {
+                    self.ircElement.on('sentMessage.chatmore', function (e, rawMsg) {
+                        callback.call(self.ircElement, e, rawMsg);
+                    });
+                    return self.ircElement;
+                },
+                // Bind event 'errorSendingMessage'.  Signature: callback(e, xhr, rawMsg)
+                errorSendingMessage: function (callback) {
+                    self.ircElement.on('errorSendingMessage.chatmore', function (e, xhr, rawMsg) {
+                        callback.call(self.ircElement, e, xhr, rawMsg);
                     });
                     return self.ircElement;
                 },
                 // Bind event 'activatingClient'.  Signature: callback(e, stage, message, params)
                 activatingClient: function (callback) {
-                    self.ircElement.on('activatingClient', function (e, stage, message, params) {
+                    self.ircElement.on('activatingClient.chatmore', function (e, stage, message, params) {
                         callback.call(self.ircElement, e, stage, message, params);
                     });
                     return self.ircElement;
                 },
                 // Bind event 'deactivatingClient'.  Signature: callback(e)
                 deactivatingClient: function (callback) {
-                    self.ircElement.on('deactivatingClient', function (e) {
+                    self.ircElement.on('deactivatingClient.chatmore', function (e) {
                         callback.call(self.ircElement, e);
                     });
                     return self.ircElement;
@@ -1629,13 +1644,11 @@ $.fn.chatmore = function () {
         //
         // Initialization.
         //
-        // Persist object in DOM element.
-        self.ircElement.data('chatmore', self);
-
         // Build DOM structure.
         self.ircElement
             .empty()
             .off()
+            .data('chatmore', self) // Persist object in DOM element.
             .addClass('ui-widget')
             .append($(
                 '<div style="float:left;overflow:hidden">' +
@@ -1694,7 +1707,7 @@ $.fn.chatmore = function () {
         
         // Setup chatmore event handlers.
         self.ircElement
-            .on('localMessage', function (e, message, type, data) {
+            .on('localMessage.chatmore', function (e, message, type, data) {
                 if (window.console) console.log('UI event: localMessage');
                 switch (data.code) {
                 case 'R1':
@@ -1710,14 +1723,14 @@ $.fn.chatmore = function () {
                     self.writeTmpl(type, { message: m });
                         
                     self.enableAutoReactivate = false;
-                    self.deactivateClient();
+                    self.irc.deactivateClient();
                     break;
                 
                 default:
                     self.writeTmpl(type, { message: message });
                 }
             })
-            .on('processingMessage', function (e, msg) {
+            .on('processingMessage.chatmore', function (e, msg) {
                 if (msg.type === 'recv') {
                     // Ensure user is in user state.
                     self.irc.state.addUser(msg.prefixNick);
@@ -1728,7 +1741,7 @@ $.fn.chatmore = function () {
                     }
                 }
             })
-            .on('processedMessage', function (e, msg) {
+            .on('processedMessage.chatmore', function (e, msg) {
                 if (msg.type === 'recv') {
                     switch (msg.command) {
                     case 'PRIVMSG':
@@ -1865,7 +1878,7 @@ $.fn.chatmore = function () {
                     }
                 }
             })
-            .on('stateChanged', function (e) {
+            .on('stateChanged.chatmore', function (e) {
                 if (window.console) console.log('UI event: stateChanged');
                 if (window.console) console.log(self.irc.state);
                 
@@ -1901,10 +1914,16 @@ $.fn.chatmore = function () {
                 
                 self.prevState = self.clone(self.irc.state);
             })
-            .on('sendMsg', function (e, rawMsg) {
+            .on('sendingMessage.chatmore', function (e, rawMsg) {
                 if (window.console) console.log('Sent: ' + rawMsg);
             })
-            .on('activatingClient', function (e, stage, message, params) {
+            .on('errorSendingMessage.chatmore', function (e, xhr, rawMsg) {
+                if (window.console) {
+                    console.warn('Error sending message: ' + rawMsg);
+                    console.warn(xhr);
+                }
+            })
+            .on('activatingClient.chatmore', function (e, stage, message, params) {
                 switch (stage) {
                 case 'start':
                     if (window.console) console.log('UI event: activatingClient start');
@@ -1956,7 +1975,7 @@ $.fn.chatmore = function () {
                     break;
                 }
             })
-            .on('deactivatingClient', function () {
+            .on('deactivatingClient.chatmore', function () {
                 if (window.console) console.log('UI event: deactivatingClient');
                 self.ircElement
                     .removeClass('activated')

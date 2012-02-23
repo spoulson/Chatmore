@@ -24,7 +24,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
             self.state.lastRecvTime = new Date().getTime();
             
             $.each(data, function (key, msg) {
-                $(element).trigger('processingMessage', [ msg ]);
+                $(element).trigger('processingMessage.chatmore', [ msg ]);
                 
                 self.state.messageCount++;
 
@@ -182,13 +182,13 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                                 self.state.registrationAttemptCount++;
                                 self.state.isModified = true;
                                 
-                                $(element).trigger('localMessage', [ null, 'clientMsg', { code: 'R1' } ]);
+                                $(element).trigger('localMessage.chatmore', [ null, 'clientMsg', { code: 'R1' } ]);
                                 
                                 self.sendMsg('NICK ' + self.state.nick);
                             }
                             else {
                                 // Trigger error message when connection attempts max out.
-                                $(element).trigger('localMessage', [ null, 'error', { code: 'RE1', maxRegistrationAttempts: local.maxRegistrationAttempts } ]);
+                                $(element).trigger('localMessage.chatmore', [ null, 'error', { code: 'RE1', maxRegistrationAttempts: local.maxRegistrationAttempts } ]);
                             }
                         }
                         break;
@@ -214,11 +214,11 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 }
 
                 // Raise processedMessage event.
-                $(element).trigger('processedMessage', [ msg ]);
+                $(element).trigger('processedMessage.chatmore', [ msg ]);
                 
                 // Check if state has been changed, raise stateChanged event.
                 if (self.state.isModified) {
-                    $(element).trigger('stateChanged');
+                    $(element).trigger('stateChanged.chatmore');
                     self.state.isModified = false;
                 }
             });
@@ -252,7 +252,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
         self.state.isActivated = false;
         self.state.lastRecvTime = undefined;
         
-        $(element).trigger('activatingClient', [
+        $(element).trigger('activatingClient.chatmore', [
             'start',
             undefined,
             { server: self.state.server, port: self.state.port }
@@ -261,7 +261,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
         var newConnectionFlag = true;
         var errorFlag = false;
         var errorHandler = function (message) {
-            $(element).trigger('activatingClient', [
+            $(element).trigger('activatingClient.chatmore', [
                 'error',
                 message,
                 { server: self.state.server, port: self.state.port }
@@ -289,25 +289,23 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 success: function (data) {
                     local.processMessages.call(self, data);
                     
-                    for (var idx in data) {
-                        var msg = data[idx];
+                    $.each(data, function (idx, msg) {
                         if (msg.type === 'servermsg') {
                             // Check for connection ready message, which indicates a resumable connection.
                             if (msg.code === 200) {
                                 newConnectionFlag = false;
                             }
                             // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
-                            else if (msg.code === '401') {
+                            else if (msg.code === 401) {
                                 errorHandler('Connection already active in this session.');
                                 errorFlag = true;
                             }
                             // 402: CLMSG_SESSION_UNAVAILABLE.
-                            else if (msg.code === '402') {
-                                errorHandler('Session viewKey is unavailable.');
+                            else if (msg.code === 402) {
                                 errorFlag = true;
                             }
                         }
-                    }
+                    });
                 },
                 error: ajaxErrorFunc
             }
@@ -319,7 +317,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
             
         // Create/resume a connection.
         if (newConnectionFlag) {
-            $(element).trigger('activatingClient', [
+            $(element).trigger('activatingClient.chatmore', [
                 'connecting',
                 undefined,
                 {
@@ -329,7 +327,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
             ]);
         }
         else {
-            $(element).trigger('activatingClient', [
+            $(element).trigger('activatingClient.chatmore', [
                 'resuming',
                 undefined,
                 {
@@ -353,7 +351,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     
                     if ($.grep(data, function (x) { return x.type === 'servermsg' && x.code === 200; }).length) {
                         // Activated.
-                        $(element).trigger('activatingClient', [
+                        $(element).trigger('activatingClient.chatmore', [
                             'activated',
                             undefined,
                             { server: self.state.server, port: self.state.port }
@@ -387,8 +385,8 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                                             else {
                                                 // Data is invalid!
                                                 if (window.console) {
-                                                    console.log('Got invalid data:');
-                                                    console.log(data);
+                                                    console.warn('Got invalid data:');
+                                                    console.warn(data);
                                                 }
                                             }
                                         },
@@ -403,13 +401,13 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                             }
                         };
                         setTimeout(pollFunc, 0);
-                        $(element).trigger('activatedClient', [
+                        $(element).trigger('activatedClient.chatmore', [
                             { server: self.state.server, port: self.state.port }
                         ]);
                     }
                     else {
                         // Error on activation.
-                        $(element).trigger('activatingClient', [
+                        $(element).trigger('activatingClient.chatmore', [
                             'error',
                             'Error during activation',
                             { server: self.state.server, port: self.state.port }
@@ -422,7 +420,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
 
     self.deactivateClient = function () {
         if (self.state.isActivated) {
-            $(element).trigger('deactivatingClient');
+            $(element).trigger('deactivatingClient.chatmore');
             
             self.state.isActivated = false;
             
@@ -432,13 +430,13 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
             if (local.pollXhr !== undefined) local.pollXhr.abort();
             local.pollXhr = undefined;
                     
-            $(element).trigger('deactivatedClient');
+            $(element).trigger('deactivatedClient.chatmore');
         }
     };
     
     // Send raw message to server.
     self.sendMsg = function (rawMsg, postCallback) {
-        $(element).trigger('sendMsg', [ rawMsg ]);
+        $(element).trigger('sendingMessage.chatmore', [ rawMsg ]);
         
         $.ajax('send.php',
             {
@@ -452,7 +450,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 },
                 success: function (data) {
                     if (postCallback) postCallback(rawMsg);
-                    $(element).trigger('sentMsg', [ rawMsg ]);
+                    $(element).trigger('sentMessage.chatmore', [ rawMsg ]);
                     
                     // Validate data is an array.
                     if (typeof(data) === 'object') {
@@ -461,10 +459,13 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     else {
                         // Data is invalid!
                         if (window.console) {
-                            console.log('Got invalid data:');
-                            console.log(data);
+                            console.warn('Got invalid data:');
+                            console.warn(data);
                         }
                     }
+                },
+                error: function (event, xhr) {
+                    $(element).trigger('errorSendingMessage.chatmore', [ xhr, rawMsg ]);
                 }
             });
     };

@@ -91,16 +91,13 @@ if (array_key_exists('x', $_GET)) {
                 return result;
             };
             
-            var toQueryString = function (arr) {
-                var args = [ ];
-                for (var i in arr) {
-                    var val = arr[i];
+            toQueryString = function (arr) {
+                var args = $.map(arr, function (val, key) {
                     if (val === undefined || val === null)
-                        args.push(encodeURIComponent(i));
+                        return encodeURIComponent(key);
                     else
-                        args.push(encodeURIComponent(i) + '=' + encodeURIComponent(val));
-                }
-                
+                        return encodeURIComponent(key) + '=' + encodeURIComponent(val);
+                });
                 return args.join('&');
             };
 
@@ -113,6 +110,8 @@ if (array_key_exists('x', $_GET)) {
                     })
                     .chatmore('processedMessage', function (e, msg) {
                         if (msg.type === 'servermsg' && msg.code === 402) {
+                            if (window.console) console.warn('Got session deleted error.  Generating new viewKey and reactivating...');
+                            
                             // Session deleted error during activation.  Generate new viewKey and reactivate.
                             var query = parseQueryString(getQueryString());
                             query['viewKey'] = newViewKey();
@@ -122,6 +121,7 @@ if (array_key_exists('x', $_GET)) {
                                 var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
                                 window.history.replaceState(null, document.title, updatedUrl);
                                 opts.viewKey = query['viewKey'];
+                                opts.channels = getChannelsFromHash();
                                 startClient(opts);
                             }
                             else {
