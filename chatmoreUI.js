@@ -18,13 +18,32 @@ $.fn.chatmore = function () {
             quitMessage: 'Chatmore IRC client',
             reactivateAttempts: 6,
             reactivateDelay: 10,
-            channels: [ ]
+            channels: [ ],
+            // DOM builder function.
+            buildDOM: function (element) {
+                $(element)
+                    .addClass('ui-widget')
+                    .append($(
+                        '<div style="float:left;overflow:hidden">' +
+                            '<div class="ircConsole ui-widget-content ui-corner-tl"><div class="content ui-corner-all"/></div>' +
+                            '<div class="userEntrySection ui-widget-content ui-corner-bl">' +
+                                '<div class="userEntryModeLine">' +
+                                    '<div class="activationIndicator"/>' +
+                                    '<div class="nickLabel nick"/>' +
+                                    '<div class="targetFragment" style="display:none"><div class="targetLabel"/></div>' +
+                                '</div>' +
+                                '<div class="userEntryLine"><input type="text" class="userEntry" /></div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="sideBar ui-widget ui-widget-content ui-corner-right"><ul class="channelList"/></div>'
+                    ));
+            }
         };
         $.extend(options, userOptions);
         if (isEmpty(options.realname)) options.realname = options.nick;
         if (typeof(options.channel) === 'object') options.channels = options.channel;
         else if (!isEmpty(options.channel)) options.channels.push(options.channel);
-
+        
         var self = {
             //
             // Private members.
@@ -1146,6 +1165,17 @@ $.fn.chatmore = function () {
                 return self.writeLine(el.html());
             },
 
+            // Compile templates.  names can be string or array of template names, or omitted for all templates.
+            compileTemplates: function (names) {
+                var n;
+                if (names === undefined) n = $.map(self.tmpls, function (val, key) { return key; });
+                else if (typeof(names) !== 'object') n = [ names ];
+                
+                $.each(n, function (idx,name) {
+                    $.template(name, self.tmpls[name]);
+                });
+            },
+            
             // Resize elements to proper alignment based on ircConsole's dimensions.
             alignUI: function () {
                 var ircConsole = self.ircElement.find('.ircConsole');
@@ -1573,6 +1603,37 @@ $.fn.chatmore = function () {
                     return self.isAtBottom();
                 },
                 //
+                // Customization.
+                //
+                // Set DOM builder function.
+                // Usage: .chatmore('buildDOM', callback)
+                // callback signature: func(DOMElement)
+                buildDOM: function (callback) {
+                    options.buildDOM = callback;
+                    options.buildDOM(self.ircElement.get(0));
+                },
+                // Set message templates
+                // Usage: .chatmore('template', name, template)
+                // Usage: .chatmore('template', { name: template, ... })
+                template: function () {
+                    var newTemplates;
+                    if (typeof(arguments[0]) === 'string') {
+                        newTemplates = { };
+                        newTemplates[arguments[0]] = arguments[1];
+                    }
+                    else if (typeof(arguments[0]) === 'object') {
+                        newTemplates = arguments[0];
+                    }
+                    else {
+                        // Unrecognized arguments.
+                        return self.ircElement;
+                    }
+                    
+                    $.extend(self.tmpls, newTemplates);
+                    var names = $.map(newTemplates, function (val, key) { return key; });
+                    self.compileTemplates(names);
+                },
+                //
                 // Event binding methods.
                 //
                 // Bind event 'localMessage'.  Signature: callback(e, msg)
@@ -1648,22 +1709,9 @@ $.fn.chatmore = function () {
         self.ircElement
             .empty()
             .off()
-            .data('chatmore', self) // Persist object in DOM element.
-            .addClass('ui-widget')
-            .append($(
-                '<div style="float:left;overflow:hidden">' +
-                    '<div class="ircConsole ui-widget-content ui-corner-tl"><div class="content ui-corner-all"/></div>' +
-                    '<div class="userEntrySection ui-widget-content ui-corner-bl">' +
-                        '<div class="userEntryModeLine">' +
-                            '<div class="activationIndicator"/>' +
-                            '<div class="nickLabel nick"/>' +
-                            '<div class="targetFragment" style="display:none"><div class="targetLabel"/></div>' +
-                        '</div>' +
-                        '<div class="userEntryLine"><input type="text" class="userEntry" /></div>' +
-                    '</div>' +
-                '</div>' +
-                '<div class="sideBar ui-widget ui-widget-content ui-corner-right"><ul class="channelList"/></div>'
-            ));
+            .data('chatmore', self); // Persist object in DOM element.
+
+        options.buildDOM(self.ircElement.get(0));
 
         // Client command aliases.
         self.cmdDefs['j'] = self.cmdDefs['join'];
@@ -1674,9 +1722,7 @@ $.fn.chatmore = function () {
         self.cmdDefs['q'] = self.cmdDefs['query'];
 
         // Compile message templates.
-        $.each(self.tmpls, function (name, tmpl) {
-            $.template(name, tmpl);
-        });
+        self.compileTemplates();
 
         // Track browser window focus.
         $(window)
@@ -1915,7 +1961,6 @@ $.fn.chatmore = function () {
                 self.prevState = self.clone(self.irc.state);
             })
             .on('sendingMessage.chatmore', function (e, rawMsg) {
-                if (window.console) console.log('Sent: ' + rawMsg);
             })
             .on('errorSendingMessage.chatmore', function (e, xhr, rawMsg) {
                 if (window.console) {
@@ -2092,13 +2137,20 @@ $.fn.chatmore = function () {
                 self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
             })
             .focus();
-        
+
         self.alignUI();
-    
-        if (options.server !== undefined) {
-            self.irc = new chatmore(self.ircElement[0], options.viewKey, options.server, options.port, options.nick, options.realname);
-            self.irc.activateClient();
-        }
+        
+        // Setup user event handlers.
+        $.each([ 'localMessage', 'processingMessage', 'processedMessage', 'sendingMessage', 'errorSendingMessage',
+            'sentMessage', 'activatingClient', 'deactivatingClient' ],
+            function (idx, event) {
+                if (options[event]) self.ircElement.chatmore(event, options[event]);
+            }
+        );
+        
+        // Create chatmore client.
+        self.irc = new chatmore(self.ircElement[0], options.viewKey, options.server, options.port, options.nick, options.realname);
+        if (options.activateImmediately) self.irc.activateClient();
         
         return self.ircElement;
     }

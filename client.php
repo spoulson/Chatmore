@@ -101,39 +101,6 @@ if (array_key_exists('x', $_GET)) {
                 return args.join('&');
             };
 
-            var startClient = function (opts) {
-                $('#chatmore')
-                    .chatmore(opts)
-                    .chatmore('stateChanged', function (e, state) {
-                        if (window.console) console.log('User event: stateChanged');
-                        setHashWithChannels(state.getChannels());
-                    })
-                    .chatmore('processedMessage', function (e, msg) {
-                        if (msg.type === 'servermsg' && msg.code === 402) {
-                            if (window.console) console.warn('Got session deleted error.  Generating new viewKey and reactivating...');
-                            
-                            // Session deleted error during activation.  Generate new viewKey and reactivate.
-                            var query = parseQueryString(getQueryString());
-                            query['viewKey'] = newViewKey();
-
-                            if (window.history.replaceState) {
-                                // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
-                                var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
-                                window.history.replaceState(null, document.title, updatedUrl);
-                                opts.viewKey = query['viewKey'];
-                                opts.channels = getChannelsFromHash();
-                                startClient(opts);
-                            }
-                            else {
-                                // HTML4: Redirect back with new viewKey.
-                                warnOnUnload = false;
-                                document.location.search = '?' + toQueryString(query);
-                            }
-                        }
-                    })
-                    .chatmore('resizeMax');
-            };
-
             // Resize client to match window.
             $(window).resize(function () {
                 $('#chatmore').chatmore('resizeMax');
@@ -146,15 +113,51 @@ if (array_key_exists('x', $_GET)) {
             });
 
             // Prepare chatmore options.
-            var opts = <?=json_encode($opts)?>;
-            $.extend(opts, chatmoreDefaults);
+            var opts = $.extend({ }, chatmoreDefaults);
+            var userOpts = <?=json_encode($opts)?>;
+            $.extend(opts, userOpts);
+            
+            // Event handlers.
+            opts.stateChanged = function (e, state) {
+                //if (window.console) console.log('User event: stateChanged');
+                setHashWithChannels(state.getChannels());
+            };
+            
+            opts.processedMessage = function (e, msg) {
+                //if (window.console) console.log('User event: processedMessage');
+                if (msg.type === 'servermsg' && msg.code === 402) {
+                    if (window.console) console.warn('Got session deleted error.  Generating new viewKey and reactivating...');
+                    
+                    // Session deleted error during activation.  Generate new viewKey and reactivate.
+                    var query = parseQueryString(getQueryString());
+                    query['viewKey'] = newViewKey();
+
+                    if (window.history.replaceState) {
+                        // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
+                        var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
+                        window.history.replaceState(null, document.title, updatedUrl);
+                        opts.viewKey = query['viewKey'];
+                        opts.channels = getChannelsFromHash();
+                        $('#chatmore')
+                            .chatmore(opts)
+                            .chatmore('resizeMax');
+                    }
+                    else {
+                        // HTML4: Redirect back with new viewKey.
+                        warnOnUnload = false;
+                        document.location.search = '?' + toQueryString(query);
+                    }
+                }
+            };
             
             // Parse hash string for channels.
             var channels = getChannelsFromHash();
             if (channels.length > 0) opts.channel = channels;
             
             // Startup the IRC client.
-            startClient(opts);
+            $('#chatmore')
+                .chatmore(opts)
+                .chatmore('resizeMax');
         });
     </script>
 </head>
