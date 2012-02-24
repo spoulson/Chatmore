@@ -297,7 +297,7 @@
     };
             
     // Convert URL patterns into HTML links.
-    var linkifyURLs = function (el) {
+    var linkifyURLs = function (self, el) {
         var nodes = findTextNodesForDecoration(el);
         
         for (var i = 0; i < nodes.length; i++) {
