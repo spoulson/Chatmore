@@ -50,37 +50,37 @@
  *
  * http://docs.jquery.com/UI/Theming/API
  *
- * To view and modify this theme, visit http://jqueryui.com/themeroller/?ffDefault=Segoe%20UI,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=6px&bgColorHeader=333333&bgTextureHeader=12_gloss_wave.png&bgImgOpacityHeader=25&borderColorHeader=333333&fcHeader=ffffff&iconColorHeader=ffffff&bgColorContent=000000&bgTextureContent=05_inset_soft.png&bgImgOpacityContent=25&borderColorContent=666666&fcContent=ffffff&iconColorContent=cccccc&bgColorDefault=555555&bgTextureDefault=02_glass.png&bgImgOpacityDefault=20&borderColorDefault=666666&fcDefault=eeeeee&iconColorDefault=cccccc&bgColorHover=0078a3&bgTextureHover=02_glass.png&bgImgOpacityHover=40&borderColorHover=59b4d4&fcHover=ffffff&iconColorHover=ffffff&bgColorActive=f58400&bgTextureActive=05_inset_soft.png&bgImgOpacityActive=30&borderColorActive=ffaf0f&fcActive=ffffff&iconColorActive=222222&bgColorHighlight=eeeeee&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=80&borderColorHighlight=cccccc&fcHighlight=2e7db2&iconColorHighlight=4b8e0b&bgColorError=ffc73d&bgTextureError=02_glass.png&bgImgOpacityError=40&borderColorError=ffb73d&fcError=111111&iconColorError=a83300&bgColorOverlay=5c5c5c&bgTextureOverlay=01_flat.png&bgImgOpacityOverlay=50&opacityOverlay=80&bgColorShadow=cccccc&bgTextureShadow=01_flat.png&bgImgOpacityShadow=30&opacityShadow=60&thicknessShadow=7px&offsetTopShadow=-7px&offsetLeftShadow=-7px&cornerRadiusShadow=8px
+ * To view and modify this theme, visit http://jqueryui.com/themeroller/?ffDefault=Trebuchet%20MS,%20Tahoma,%20Verdana,%20Arial,%20sans-serif&fwDefault=bold&fsDefault=1.1em&cornerRadius=4px&bgColorHeader=f6a828&bgTextureHeader=12_gloss_wave.png&bgImgOpacityHeader=35&borderColorHeader=e78f08&fcHeader=ffffff&iconColorHeader=ffffff&bgColorContent=eeeeee&bgTextureContent=03_highlight_soft.png&bgImgOpacityContent=100&borderColorContent=dddddd&fcContent=333333&iconColorContent=222222&bgColorDefault=f6f6f6&bgTextureDefault=02_glass.png&bgImgOpacityDefault=100&borderColorDefault=cccccc&fcDefault=1c94c4&iconColorDefault=ef8c08&bgColorHover=fdf5ce&bgTextureHover=02_glass.png&bgImgOpacityHover=100&borderColorHover=fbcb09&fcHover=c77405&iconColorHover=ef8c08&bgColorActive=ffffff&bgTextureActive=02_glass.png&bgImgOpacityActive=65&borderColorActive=fbd850&fcActive=eb8f00&iconColorActive=ef8c08&bgColorHighlight=ffe45c&bgTextureHighlight=03_highlight_soft.png&bgImgOpacityHighlight=75&borderColorHighlight=fed22f&fcHighlight=363636&iconColorHighlight=228ef1&bgColorError=b81900&bgTextureError=08_diagonals_thick.png&bgImgOpacityError=18&borderColorError=cd0a0a&fcError=ffffff&iconColorError=ffd27a&bgColorOverlay=666666&bgTextureOverlay=08_diagonals_thick.png&bgImgOpacityOverlay=20&opacityOverlay=50&bgColorShadow=000000&bgTextureShadow=01_flat.png&bgImgOpacityShadow=10&opacityShadow=20&thicknessShadow=5px&offsetTopShadow=-5px&offsetLeftShadow=-5px&cornerRadiusShadow=5px
  */
 
 
 /* Component containers
 ----------------------------------*/
-.ui-widget { font-family: Segoe UI, Arial, sans-serif; font-size: 1.1em; }
+.ui-widget { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1.1em; }
 .ui-widget .ui-widget { font-size: 1em; }
-.ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button { font-family: Segoe UI, Arial, sans-serif; font-size: 1em; }
-.ui-widget-content { border: 1px solid #666666; background: #000000 url(images/ui-bg_inset-soft_25_000000_1x100.png) 50% bottom repeat-x; color: #ffffff; }
-.ui-widget-content a { color: #ffffff; }
-.ui-widget-header { border: 1px solid #333333; background: #333333 url(images/ui-bg_gloss-wave_25_333333_500x100.png) 50% 50% repeat-x; color: #ffffff; font-weight: bold; }
+.ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button { font-family: Trebuchet MS, Tahoma, Verdana, Arial, sans-serif; font-size: 1em; }
+.ui-widget-content { border: 1px solid #dddddd; background: #eeeeee url(images/ui-bg_highlight-soft_100_eeeeee_1x100.png) 50% top repeat-x; color: #333333; }
+.ui-widget-content a { color: #0000ff; }
+.ui-widget-header { border: 1px solid #e78f08; background: #f6a828 url(images/ui-bg_gloss-wave_35_f6a828_500x100.png) 50% 50% repeat-x; color: #ffffff; font-weight: bold; }
 .ui-widget-header a { color: #ffffff; }
 
 /* Interaction states
 ----------------------------------*/
-.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { border: 1px solid #666666; background: #555555 url(images/ui-bg_glass_20_555555_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #eeeeee; }
-.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: #eeeeee; text-decoration: none; }
-.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: 1px solid #59b4d4; background: #0078a3 url(images/ui-bg_glass_40_0078a3_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #ffffff; }
-.ui-state-hover a, .ui-state-hover a:hover { color: #ffffff; text-decoration: none; }
-.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: 1px solid #ffaf0f; background: #f58400 url(images/ui-bg_inset-soft_30_f58400_1x100.png) 50% 50% repeat-x; font-weight: bold; color: #ffffff; }
-.ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { color: #ffffff; text-decoration: none; }
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { border: 1px solid #cccccc; background: #f6f6f6 url(images/ui-bg_glass_100_f6f6f6_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #1c94c4; }
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: #1c94c4; text-decoration: none; }
+.ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: 1px solid #fbcb09; background: #fdf5ce url(images/ui-bg_glass_100_fdf5ce_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #c77405; }
+.ui-state-hover a, .ui-state-hover a:hover { color: #c77405; text-decoration: none; }
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: 1px solid #fbd850; background: #ffffff url(images/ui-bg_glass_65_ffffff_1x400.png) 50% 50% repeat-x; font-weight: bold; color: #eb8f00; }
+.ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { color: #eb8f00; text-decoration: none; }
 .ui-widget :active { outline: none; }
 
 /* Interaction Cues
 ----------------------------------*/
-.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight  {border: 1px solid #cccccc; background: #eeeeee url(images/ui-bg_highlight-soft_80_eeeeee_1x100.png) 50% top repeat-x; color: #2e7db2; }
-.ui-state-highlight a, .ui-widget-content .ui-state-highlight a,.ui-widget-header .ui-state-highlight a { color: #2e7db2; }
-.ui-state-error, .ui-widget-content .ui-state-error, .ui-widget-header .ui-state-error {border: 1px solid #ffb73d; background: #ffc73d url(images/ui-bg_glass_40_ffc73d_1x400.png) 50% 50% repeat-x; color: #111111; }
-.ui-state-error a, .ui-widget-content .ui-state-error a, .ui-widget-header .ui-state-error a { color: #111111; }
-.ui-state-error-text, .ui-widget-content .ui-state-error-text, .ui-widget-header .ui-state-error-text { color: #111111; }
+.ui-state-highlight, .ui-widget-content .ui-state-highlight, .ui-widget-header .ui-state-highlight  {border: 1px solid #fed22f; background: #ffe45c url(images/ui-bg_highlight-soft_75_ffe45c_1x100.png) 50% top repeat-x; color: #363636; }
+.ui-state-highlight a, .ui-widget-content .ui-state-highlight a,.ui-widget-header .ui-state-highlight a { color: #363636; }
+.ui-state-error, .ui-widget-content .ui-state-error, .ui-widget-header .ui-state-error {border: 1px solid #cd0a0a; background: #b81900 url(images/ui-bg_diagonals-thick_18_b81900_40x40.png) 50% 50% repeat; color: #ffffff; }
+.ui-state-error a, .ui-widget-content .ui-state-error a, .ui-widget-header .ui-state-error a { color: #ffffff; }
+.ui-state-error-text, .ui-widget-content .ui-state-error-text, .ui-widget-header .ui-state-error-text { color: #ffffff; }
 .ui-priority-primary, .ui-widget-content .ui-priority-primary, .ui-widget-header .ui-priority-primary { font-weight: bold; }
 .ui-priority-secondary, .ui-widget-content .ui-priority-secondary,  .ui-widget-header .ui-priority-secondary { opacity: .7; filter:Alpha(Opacity=70); font-weight: normal; }
 .ui-state-disabled, .ui-widget-content .ui-state-disabled, .ui-widget-header .ui-state-disabled { opacity: .35; filter:Alpha(Opacity=35); background-image: none; }
@@ -89,14 +89,14 @@
 ----------------------------------*/
 
 /* states and images */
-.ui-icon { width: 16px; height: 16px; background-image: url(images/ui-icons_cccccc_256x240.png); }
-.ui-widget-content .ui-icon {background-image: url(images/ui-icons_cccccc_256x240.png); }
+.ui-icon { width: 16px; height: 16px; background-image: url(images/ui-icons_222222_256x240.png); }
+.ui-widget-content .ui-icon {background-image: url(images/ui-icons_222222_256x240.png); }
 .ui-widget-header .ui-icon {background-image: url(images/ui-icons_ffffff_256x240.png); }
-.ui-state-default .ui-icon { background-image: url(images/ui-icons_cccccc_256x240.png); }
-.ui-state-hover .ui-icon, .ui-state-focus .ui-icon {background-image: url(images/ui-icons_ffffff_256x240.png); }
-.ui-state-active .ui-icon {background-image: url(images/ui-icons_222222_256x240.png); }
-.ui-state-highlight .ui-icon {background-image: url(images/ui-icons_4b8e0b_256x240.png); }
-.ui-state-error .ui-icon, .ui-state-error-text .ui-icon {background-image: url(images/ui-icons_a83300_256x240.png); }
+.ui-state-default .ui-icon { background-image: url(images/ui-icons_ef8c08_256x240.png); }
+.ui-state-hover .ui-icon, .ui-state-focus .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
+.ui-state-active .ui-icon {background-image: url(images/ui-icons_ef8c08_256x240.png); }
+.ui-state-highlight .ui-icon {background-image: url(images/ui-icons_228ef1_256x240.png); }
+.ui-state-error .ui-icon, .ui-state-error-text .ui-icon {background-image: url(images/ui-icons_ffd27a_256x240.png); }
 
 /* positioning */
 .ui-icon-carat-1-n { background-position: 0 0; }
@@ -280,14 +280,14 @@
 ----------------------------------*/
 
 /* Corner radius */
-.ui-corner-all, .ui-corner-top, .ui-corner-left, .ui-corner-tl { -moz-border-radius-topleft: 6px; -webkit-border-top-left-radius: 6px; -khtml-border-top-left-radius: 6px; border-top-left-radius: 6px; }
-.ui-corner-all, .ui-corner-top, .ui-corner-right, .ui-corner-tr { -moz-border-radius-topright: 6px; -webkit-border-top-right-radius: 6px; -khtml-border-top-right-radius: 6px; border-top-right-radius: 6px; }
-.ui-corner-all, .ui-corner-bottom, .ui-corner-left, .ui-corner-bl { -moz-border-radius-bottomleft: 6px; -webkit-border-bottom-left-radius: 6px; -khtml-border-bottom-left-radius: 6px; border-bottom-left-radius: 6px; }
-.ui-corner-all, .ui-corner-bottom, .ui-corner-right, .ui-corner-br { -moz-border-radius-bottomright: 6px; -webkit-border-bottom-right-radius: 6px; -khtml-border-bottom-right-radius: 6px; border-bottom-right-radius: 6px; }
+.ui-corner-all, .ui-corner-top, .ui-corner-left, .ui-corner-tl { -moz-border-radius-topleft: 4px; -webkit-border-top-left-radius: 4px; -khtml-border-top-left-radius: 4px; border-top-left-radius: 4px; }
+.ui-corner-all, .ui-corner-top, .ui-corner-right, .ui-corner-tr { -moz-border-radius-topright: 4px; -webkit-border-top-right-radius: 4px; -khtml-border-top-right-radius: 4px; border-top-right-radius: 4px; }
+.ui-corner-all, .ui-corner-bottom, .ui-corner-left, .ui-corner-bl { -moz-border-radius-bottomleft: 4px; -webkit-border-bottom-left-radius: 4px; -khtml-border-bottom-left-radius: 4px; border-bottom-left-radius: 4px; }
+.ui-corner-all, .ui-corner-bottom, .ui-corner-right, .ui-corner-br { -moz-border-radius-bottomright: 4px; -webkit-border-bottom-right-radius: 4px; -khtml-border-bottom-right-radius: 4px; border-bottom-right-radius: 4px; }
 
 /* Overlays */
-.ui-widget-overlay { background: #5c5c5c url(images/ui-bg_flat_50_5c5c5c_40x100.png) 50% 50% repeat-x; opacity: .80;filter:Alpha(Opacity=80); }
-.ui-widget-shadow { margin: -7px 0 0 -7px; padding: 7px; background: #cccccc url(images/ui-bg_flat_30_cccccc_40x100.png) 50% 50% repeat-x; opacity: .60;filter:Alpha(Opacity=60); -moz-border-radius: 8px; -khtml-border-radius: 8px; -webkit-border-radius: 8px; border-radius: 8px; }/*
+.ui-widget-overlay { background: #666666 url(images/ui-bg_diagonals-thick_20_666666_40x40.png) 50% 50% repeat; opacity: .50;filter:Alpha(Opacity=50); }
+.ui-widget-shadow { margin: -5px 0 0 -5px; padding: 5px; background: #000000 url(images/ui-bg_flat_10_000000_40x100.png) 50% 50% repeat-x; opacity: .20;filter:Alpha(Opacity=20); -moz-border-radius: 5px; -khtml-border-radius: 5px; -webkit-border-radius: 5px; border-radius: 5px; }/*
  * jQuery UI Resizable 1.8.16
  *
  * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
@@ -344,7 +344,7 @@
  *
  * http://docs.jquery.com/UI/Autocomplete#theming
  */
-.ui-autocomplete { position: absolute; cursor: default; }	
+.ui-autocomplete { position: absolute; cursor: default; }    
 
 /* workarounds */
 * html .ui-autocomplete { width:1px; } /* without this, the menu expands to 100% in IE6 */
@@ -359,34 +359,34 @@
  * http://docs.jquery.com/UI/Menu#theming
  */
 .ui-menu {
-	list-style:none;
-	padding: 2px;
-	margin: 0;
-	display:block;
-	float: left;
+    list-style:none;
+    padding: 2px;
+    margin: 0;
+    display:block;
+    float: left;
 }
 .ui-menu .ui-menu {
-	margin-top: -3px;
+    margin-top: -3px;
 }
 .ui-menu .ui-menu-item {
-	margin:0;
-	padding: 0;
-	zoom: 1;
-	float: left;
-	clear: left;
-	width: 100%;
+    margin:0;
+    padding: 0;
+    zoom: 1;
+    float: left;
+    clear: left;
+    width: 100%;
 }
 .ui-menu .ui-menu-item a {
-	text-decoration:none;
-	display:block;
-	padding:.2em .4em;
-	line-height:1.5;
-	zoom:1;
+    text-decoration:none;
+    display:block;
+    padding:.2em .4em;
+    line-height:1.5;
+    zoom:1;
 }
 .ui-menu .ui-menu-item a.ui-state-hover,
 .ui-menu .ui-menu-item a.ui-state-active {
-	font-weight: normal;
-	margin: -1px;
+    font-weight: normal;
+    margin: -1px;
 }
 /*
  * jQuery UI Button 1.8.16
@@ -470,8 +470,7 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .ui-slider-vertical .ui-slider-handle { left: -.3em; margin-left: 0; margin-bottom: -.6em; }
 .ui-slider-vertical .ui-slider-range { left: 0; width: 100%; }
 .ui-slider-vertical .ui-slider-range-min { bottom: 0; }
-.ui-slider-vertical .ui-slider-range-max { top: 0; }
-/*
+.ui-slider-vertical .ui-slider-range-max { top: 0; }/*
  * jQuery UI Tabs 1.8.16
  *
  * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
@@ -490,6 +489,73 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .ui-tabs .ui-tabs-panel { display: block; border-width: 0; padding: 1em 1.4em; background: none; }
 .ui-tabs .ui-tabs-hide { display: none !important; }
 /*
+ * jQuery UI Datepicker 1.8.16
+ *
+ * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ * http://jquery.org/license
+ *
+ * http://docs.jquery.com/UI/Datepicker#theming
+ */
+.ui-datepicker { width: 17em; padding: .2em .2em 0; display: none; }
+.ui-datepicker .ui-datepicker-header { position:relative; padding:.2em 0; }
+.ui-datepicker .ui-datepicker-prev, .ui-datepicker .ui-datepicker-next { position:absolute; top: 2px; width: 1.8em; height: 1.8em; }
+.ui-datepicker .ui-datepicker-prev-hover, .ui-datepicker .ui-datepicker-next-hover { top: 1px; }
+.ui-datepicker .ui-datepicker-prev { left:2px; }
+.ui-datepicker .ui-datepicker-next { right:2px; }
+.ui-datepicker .ui-datepicker-prev-hover { left:1px; }
+.ui-datepicker .ui-datepicker-next-hover { right:1px; }
+.ui-datepicker .ui-datepicker-prev span, .ui-datepicker .ui-datepicker-next span { display: block; position: absolute; left: 50%; margin-left: -8px; top: 50%; margin-top: -8px;  }
+.ui-datepicker .ui-datepicker-title { margin: 0 2.3em; line-height: 1.8em; text-align: center; }
+.ui-datepicker .ui-datepicker-title select { font-size:1em; margin:1px 0; }
+.ui-datepicker select.ui-datepicker-month-year {width: 100%;}
+.ui-datepicker select.ui-datepicker-month, 
+.ui-datepicker select.ui-datepicker-year { width: 49%;}
+.ui-datepicker table {width: 100%; font-size: .9em; border-collapse: collapse; margin:0 0 .4em; }
+.ui-datepicker th { padding: .7em .3em; text-align: center; font-weight: bold; border: 0;  }
+.ui-datepicker td { border: 0; padding: 1px; }
+.ui-datepicker td span, .ui-datepicker td a { display: block; padding: .2em; text-align: right; text-decoration: none; }
+.ui-datepicker .ui-datepicker-buttonpane { background-image: none; margin: .7em 0 0 0; padding:0 .2em; border-left: 0; border-right: 0; border-bottom: 0; }
+.ui-datepicker .ui-datepicker-buttonpane button { float: right; margin: .5em .2em .4em;  pointer; padding: .2em .6em .3em .6em; width:auto; overflow:visible; }
+.ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current { float:left; }
+
+/* with multiple calendars */
+.ui-datepicker.ui-datepicker-multi { width:auto; }
+.ui-datepicker-multi .ui-datepicker-group { float:left; }
+.ui-datepicker-multi .ui-datepicker-group table { width:95%; margin:0 auto .4em; }
+.ui-datepicker-multi-2 .ui-datepicker-group { width:50%; }
+.ui-datepicker-multi-3 .ui-datepicker-group { width:33.3%; }
+.ui-datepicker-multi-4 .ui-datepicker-group { width:25%; }
+.ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header { border-left-width:0; }
+.ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header { border-left-width:0; }
+.ui-datepicker-multi .ui-datepicker-buttonpane { clear:left; }
+.ui-datepicker-row-break { clear:both; width:100%; font-size:0em; }
+
+/* RTL support */
+.ui-datepicker-rtl { direction: rtl; }
+.ui-datepicker-rtl .ui-datepicker-prev { right: 2px; left: auto; }
+.ui-datepicker-rtl .ui-datepicker-next { left: 2px; right: auto; }
+.ui-datepicker-rtl .ui-datepicker-prev:hover { right: 1px; left: auto; }
+.ui-datepicker-rtl .ui-datepicker-next:hover { left: 1px; right: auto; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane { clear:right; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane button { float: left; }
+.ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current { float:right; }
+.ui-datepicker-rtl .ui-datepicker-group { float:right; }
+.ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+.ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header { border-right-width:0; border-left-width:1px; }
+
+/* IE6 IFRAME FIX (taken from datepicker 1.5.3 */
+.ui-datepicker-cover {
+    display: none; /*sorry for IE5*/
+    display/**/: block; /*sorry for IE5*/
+    position: absolute; /*must have*/
+    z-index: -1; /*must have*/
+    filter: mask(); /*must have*/
+    top: -4px; /*must have*/
+    left: -4px; /*must have*/
+    width: 200px; /*must have*/
+    height: 200px; /*must have*/
+}/*
  * jQuery UI Progressbar 1.8.16
  *
  * Copyright 2011, AUTHORS.txt (http://jqueryui.com/about)
@@ -504,24 +570,26 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 /*
  * Chatmore
  */
-.chatmore {
-    font: 14px Tahoma, Helvetica, sans-serif;
+.chatmore.-fullpage-layout {
+    font: 14px Verdana, sans-serif;
     white-space: nowrap;
 }
 
-.chatmore .ircConsole {
+.chatmore.-fullpage-layout .ircConsole {
     padding: 12px 16px;
     width: 740px;
     height: 360px;
 }
 
-.chatmore .ircConsole .content {
+.chatmore.-fullpage-layout .ircConsole .content {
     overflow: auto;
-    font: 1.1em Tahoma, Helvetica, sans-serif;
+    font-size: 1.1em;
+    color: black;
+    background-color: #f8f8f8;
     white-space: pre-wrap;
 }
 
-.chatmore .activationIndicator {
+.chatmore.-fullpage-layout .activationIndicator {
     width: 16px;
     height: 16px;
     padding-right: 3px;
@@ -537,16 +605,16 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     background: transparent url(images/stop.png) no-repeat left top;
 }
 
-.chatmore .userEntrySection {
+.chatmore.-fullpage-layout .userEntrySection {
     padding: 3px 16px;
     white-space: nowrap;
 }
 
-.chatmore .userEntryModeLine {
+.chatmore.-fullpage-layout .userEntryModeLine {
     height: 20px;
 }
 
-.chatmore .userEntryModeLine .targetLabel {
+.chatmore.-fullpage-layout .userEntryModeLine .targetLabel {
     display: block;
     float: left;
     padding-left: 19px;
@@ -554,67 +622,213 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     background: transparent url(images/bullet_go.png) no-repeat left center;
 }
 
-.chatmore .nickLabel {
-    overflow: hidden;
+.chatmore.-fullpage-layout .userEntryLine {
+    clear: both;
 }
 
-.chatmore .userEntry {
-    background-color: rgba(0, 0, 0, 0.8);
+.chatmore.-fullpage-layout .nickLabel {
+    overflow: hidden;
+    display: block;
+    float: left;
+}
+
+.chatmore.-fullpage-layout .userEntry {
+    background-color: #f8f8f8;
     border: 1px solid #666;
-    color: white;
+    color: black;
     padding: 3px;
 }
 
-.chatmore .channel {
-    color: #c0c090;
+.chatmore.-fullpage-layout .channel {
+    color: #000080;
     font-weight: bold;
-}
-
-.chatmore .channel:hover {
-    color: #909060;
+    background-color: transparent;
+    border: 0;
     cursor: pointer;
 }
 
-.chatmore .nick {
-    color: white;
+.chatmore.-fullpage-layout .nick {
+    color: #800000;
+    font-weight: bold;
+    background-color: transparent;
+    border: 0;
 }
 
-.chatmore .nick:hover {
-    color: #cfcfcf;
+.chatmore.-fullpage-layout .nick.color0 {
+    color: #800000;
+}
+
+.chatmore.-fullpage-layout .nick.color1 {
+    color: #400080;
+}
+
+.chatmore.-fullpage-layout .nick.color2 {
+    color: #408000;
+}
+
+.chatmore.-fullpage-layout .nick.color3 {
+    color: #008080;
+}
+
+.chatmore.-fullpage-layout .nick.color4 {
+    color: #802a00;
+}
+
+.chatmore.-fullpage-layout .nick.color5 {
+    color: #008000;
+}
+
+.chatmore.-fullpage-layout .nick.color6 {
+    color: #804000;
+}
+
+.chatmore.-fullpage-layout .nick.color7 {
+    color: #004080;
+}
+
+.chatmore.-fullpage-layout .nick.color8 {
+    color: #800080;
+}
+
+.chatmore.-fullpage-layout .nick.color9 {
+    color: #00802a;
+}
+
+.chatmore.-fullpage-layout .nick.color10 {
+    color: #000080;
+}
+
+.chatmore.-fullpage-layout .nick.color11 {
+    color: #008040;
+}
+
+.chatmore.-fullpage-layout .nick.color12 {
+    color: #800040;
+}
+
+.chatmore.-fullpage-layout .nick.color13 {
+    color: #808000;
+}
+
+.chatmore.-fullpage-layout .nick.color14 {
+    color: #2a0080;
+}
+
+.chatmore.-fullpage-layout .nick.color15 {
+    color: #404040;
+}
+
+.chatmore.-fullpage-layout .nick.color16 {
+    color: #a00000;
+}
+
+.chatmore.-fullpage-layout .nick.color17 {
+    color: #8000a0;
+}
+
+.chatmore.-fullpage-layout .nick.color18 {
+    color: #80a000;
+}
+
+.chatmore.-fullpage-layout .nick.color19 {
+    color: #00a0a0;
+}
+
+.chatmore.-fullpage-layout .nick.color20 {
+    color: #a04c00;
+}
+
+.chatmore.-fullpage-layout .nick.color21 {
+    color: #00a000;
+}
+
+.chatmore.-fullpage-layout .nick.color22 {
+    color: #a08000;
+}
+
+.chatmore.-fullpage-layout .nick.color23 {
+    color: #0080a0;
+}
+
+.chatmore.-fullpage-layout .nick.color24 {
+    color: #a000a0;
+}
+
+.chatmore.-fullpage-layout .nick.color25 {
+    color: #00a04a;
+}
+
+.chatmore.-fullpage-layout .nick.color26 {
+    color: #0000a0;
+}
+
+.chatmore.-fullpage-layout .nick.color27 {
+    color: #00a080;
+}
+
+.chatmore.-fullpage-layout .nick.color28 {
+    color: #a00080;
+}
+
+.chatmore.-fullpage-layout .nick.color29 {
+    color: #a0a000;
+}
+
+.chatmore.-fullpage-layout .nick.color30 {
+    color: #4a00a0;
+}
+
+.chatmore.-fullpage-layout .nick.color31 {
+    color: #808080;
+}
+
+.chatmore.-fullpage-layout .nick:hover, .chatmore.-fullpage-layout .nick:active {
     cursor: pointer;
 }
 
-.chatmore .mode {
-    color: #F58400;
+.chatmore.-fullpage-layout .mode {
+    color: #0000ff;
 }
 
-.chatmore .sideBar {
+.chatmore.-fullpage-layout .sideBar {
     display: inline-block;
     width: 140px;
     padding: 12px 16px;
 }
 
-.chatmore .sideBar .channelList {
+.chatmore.-fullpage-layout .sideBar .channelList {
     overflow: auto;
     white-space: nowrap;
 }
 
-.chatmore .sideBar ul {
+.chatmore.-fullpage-layout .sideBar ul {
     list-style: none;
     padding: 0;
     margin: 0;
     clear: both;
 }
 
-.chatmore .sideBar ul.channelList > li {
+.chatmore.-fullpage-layout .sideBar ul.channelList > li {
     padding-bottom: 6px;
 }
 
-.chatmore .sideBar ul.channelList > li .channel {
+.chatmore.-fullpage-layout .sideBar ul.channelList > li.leaving {
+    background-image: url(images/leaving.png);
+}
+
+.chatmore.-fullpage-layout .sideBar ul.channelList > li .channel {
     float: left;
 }
 
-.chatmore .sideBar .channelList .leaveButton {
+.chatmore.-fullpage-layout .sideBar .channelList .memberCount {
+    float: left;
+    padding-left: 6px;
+    font-size: 0.80em;
+    font-weight: normal;
+    color: black;
+}
+
+.chatmore.-fullpage-layout .sideBar .channelList .leaveButton {
     float: left;
     width: 16px;
     height: 16px;
@@ -623,26 +837,26 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     margin-left: 6px;
 }
 
-.chatmore .sideBar .channelList .leaveButton:hover {
-    background-color: #3f3f3f;
+.chatmore.-fullpage-layout .sideBar .channelList .leaveButton:hover {
+    background-color: #BFBFBF;
 }
 
-.chatmore .sideBar ul.memberList {
+.chatmore.-fullpage-layout .sideBar ul.memberList {
     padding-left: 16px;
 }
 
-.chatmore .sideBar ul.memberList .mode {
+.chatmore.-fullpage-layout .sideBar ul.memberList .mode {
     padding-right: 3px;
 }
 
-.chatmore .ircConsole .content {
-    background-color: rgba(0, 0, 0, 0.8);
+.chatmore.-fullpage-layout .ircConsole .content {
+    background-color: rgba(255, 255, 255, 0.8);
     padding: 3px;
     margin: -3px;
 }
 
 /* Console line styles */
-.chatmore .ircConsole .content .line {
+.chatmore.-fullpage-layout .ircConsole .content .line {
     clear: both;
     padding: 0 0 0 50px;
     text-indent: -50px;
@@ -650,60 +864,70 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
     padding-bottom: 0.1em;
 }
 
-.chatmore .ircConsole .content .timestamp {
-    color: #d0d0d0;
-    display: block;
+.chatmore.-fullpage-layout .ircConsole .content .timestamp {
+    color: #404040;
+    /*display: block;*/
     float: left;
     width: 55px;
+    font: 0.8em monospace;
 }
 
-.chatmore .ircConsole .content .line {
-    color: #dfdfdf;
+.chatmore.-fullpage-layout .ircConsole .content .line {
+    color: black;
 }
 
-.chatmore .ircConsole .content .prefix {
+.chatmore.-fullpage-layout .ircConsole .content .prefix {
     font-weight: bold;
 }
 
-.chatmore .ircConsole .content .help {
-    color: #00cfcf;
+.chatmore.-fullpage-layout .ircConsole .content .help {
+    color: #003030;
 }
 
-.chatmore .ircConsole .content .privateMsg,
-.chatmore .ircConsole .content .privateNotice {
-    background-color: #202010;
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg,
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice {
+    background-color: #ffffe6;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg .prefix,
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice .prefix {
+    color: black;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .nickHighlight {
+    background-color: #eaeaf2;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .ERROR .message {
+    color: #ff0000;
     font-weight: bold;
 }
 
-.chatmore .ircConsole .content .privateMsg .prefix,
-.chatmore .ircConsole .content .privateNotice .prefix {
-    color: #FFAF0F;
-}
-
-.chatmore .ircConsole .content .nickHighlight .nick {
-    color: #F58400;
-}
-
-.chatmore .ircConsole .content .nickHighlight .message {
-    color: #FFAF0F;
-    padding-right: 3px;
-}
-
-.chatmore .ircConsole .content .ERROR .message {
-    color: #cf3f3f;
-}
-
-.chatmore .ircConsole .content .serverMsg .message {
+.chatmore.-fullpage-layout .ircConsole .content .serverMsg .message {
     font-family: monospace;
 }
 
-.chatmore .ircConsole .content .clientMsg .message,
-.chatmore .ircConsole .content .queryMsg .message
- {
+.chatmore.-fullpage-layout .ircConsole .content .clientMsg .message,
+.chatmore.-fullpage-layout .ircConsole .content .queryMsg .message {
     font-style: italic;
-    color: white;
+    color: #008000;
 }
 
-.chatmore .ircConsole .content .MODE .modeString {
+.chatmore.-fullpage-layout .ircConsole .content .MODE .modeString {
     font-family: monospace;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .line.new {
+    background-color: #FAFFB3; /*#CEFF84*/
+}
+
+.chatmore.-fullpage-layout .ircConsole .content > .line.separator {
+    height: 4px;
+    background-color: #F0FF1D; /*#A5FF1E*/
+}
+
+.chatmore.-fullpage-layout .helpText {
+    font-style: italic;
+    font-weight: normal;
+    font-size: 0.8em;
 }

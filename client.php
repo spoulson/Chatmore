@@ -47,14 +47,14 @@ if (array_key_exists('x', $_GET)) {
     <title>Experimental IRC chat client</title>
     <base href="<?=$scriptPath?>/" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="stylesheet" type="text/css" href="themes/atwood/atwood.css" />
+    <link rel="stylesheet" type="text/css" href="layouts/fullpage/style.css" />
     <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="chatmoreState.js"></script>
     <script type="text/javascript" src="chatmore.js"></script>
     <script type="text/javascript" src="chatmoreUI.js"></script>
-    <script type="text/javascript" src="chatmoreUI.layout.js"></script>
+    <script type="text/javascript" src="chatmoreUI.fullpage.js"></script>
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {

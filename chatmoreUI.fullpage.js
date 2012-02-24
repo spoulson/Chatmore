@@ -601,6 +601,7 @@
         initialize: function (self, options) {
             $(self.ircElement)
                 .addClass('chatmore')
+                .addClass('-fullpage-layout')
                 .addClass('ui-widget')
                 .append($(
                     '<div style="float:left;overflow:hidden">' +
