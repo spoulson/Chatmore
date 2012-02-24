@@ -33,15 +33,15 @@
             '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
             '</span>',
         outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
-            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
+            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
-            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
+            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice">' +
-            '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
+            '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg">' +
@@ -57,15 +57,15 @@
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
-            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
+            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
-            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
+            '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         incomingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice">' +
-            '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
+            '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
         incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg">' +
@@ -98,15 +98,15 @@
             '</span></span>',
         join: '{{tmpl "timestamp"}}<span class="JOIN">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> (${msg.prefixUser}@${msg.prefixHost}) has joined the channel</span>' +
+            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> (${msg.prefixUser}@${msg.prefixHost}) has joined the channel</span>' +
             '</span>',
         leave: '{{tmpl "timestamp"}}<span class="PART">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> has left the channel{{if !!msg.info.comment}}: ${msg.info.comment}{{/if}}</span>' +
+            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> has left the channel{{if !!msg.info.comment}}: ${msg.info.comment}{{/if}}</span>' +
             '</span>',
         kick: '{{tmpl "timestamp"}}<span class="KICK">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(op, channel)}">${op}</span> has kicked <span class="nick ${layout.getColorizeCSSClass(nick, channel)}">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
+            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, op, channel)}">${op}</span> has kicked <span class="nick ${layout.getColorizeCSSClass(nick, channel)}">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
             '</span>',
         nick: '{{tmpl "timestamp"}}<span class="NICK">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
@@ -135,7 +135,7 @@
             '</span>',
         changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="no-decorate"><span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> ' +
+            '<span class="message"><span class="no-decorate"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> ' +
             '{{if msg.info.topic == ""}}' +
                 'has cleared the topic</span>' +
             '{{else}}' +
@@ -144,7 +144,7 @@
             '</span></span>',
         topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
-            '<span class="message no-decorate">Topic set by <span class="nick ${layout.getColorizeCSSClass(msg.info.nick, msg.info.channel)}">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
+            '<span class="message no-decorate">Topic set by <span class="nick ${layout.getColorizeCSSClass(self, msg.info.nick, msg.info.channel)}">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
             '</span>',
         serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
             '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${msg.info.server}</span>: <span class="time">${msg.info.timeString}</span></span>' +
@@ -159,7 +159,7 @@
             '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${msg.info.mode}</span>" for ' +
             '{{if self.isChannel(msg.info.target)}}' +
                 'channel <span class="channel">${msg.info.target}</span> ' +
-                'by <span class="nick ${layout.getColorizeCSSClass(msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span>' +
+                'by <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span>' +
             '{{else}}'  +
                 'user <span class="nick">${msg.info.target}</span> ' +
                 'by <span class="nick">${msg.prefixNick}</span></span>' +
@@ -399,11 +399,6 @@
         }
     };
 
-    var getColorizeCSSClass = function (nick, channel) {
-        var number = getColorizeNumber(nick, channel);
-        return number !== undefined ? 'color' + number : '';
-    };
-    
     var getColorizeNumber = function (self, nick, channel) {
         var channelDesc = self.irc.state.channels[channel];
         if (channelDesc === undefined) return;
@@ -763,6 +758,14 @@
                 layout.freezeSideBar = true;
             else
                 layout.freezeSideBar = false;
+        },
+
+        //
+        // Internal methods.
+        //
+        getColorizeCSSClass: function (self, nick, channel) {
+            var number = getColorizeNumber(self, nick, channel);
+            return number !== undefined ? 'color' + number : '';
         }
     };
 
