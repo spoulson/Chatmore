@@ -115,7 +115,13 @@
                         // Update form action URL.
                         var channel = channels.join(',');
                         $('#channelTextbox').val(channel);
-                        document.form1.action = 'client.php' + channel;
+
+                        // Must clone form to change action URL.
+                        // Changing action attribute directly does not work in Safari.
+                        $(document.form1).replaceWith($(document.form1)
+                            .clone(true)
+                            .attr('action', 'client.php' + channel)
+                        );
                     }
                 })
                 .blur(function () {
@@ -132,12 +138,14 @@
             $('#serverTextbox').val(chatmoreDefaults.server);
             $('#portTextbox').val(chatmoreDefaults.port);
             $('#channelTextbox').val(chatmoreDefaults.channel);
+            $('#viewKey').val(Math.random().toString(36).substring(10));
             validateLaunch();
         });
     </script>
 </head>
 <body>
     <form action="client.php" name="form1" method="GET">
+        <input type="hidden" id="viewKey" name="viewKey" />
         <div class="chatmore ui-widget" style="float:left;overflow:hidden">
             <div class="launcher ui-widget-content ui-corner-all">
             <table>

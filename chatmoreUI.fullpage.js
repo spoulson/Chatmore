@@ -730,10 +730,12 @@
                     // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
                     var updatedUrl = document.location.pathname + '?' + toQueryString(query) + document.location.hash;
                     window.history.replaceState(null, document.title, updatedUrl);
-                    opts.viewKey = query['viewKey'];
-                    opts.channels = getChannelsFromHash();
+
+                    var options = $.extend({ }, self.options);
+                    options.viewKey = query['viewKey'];
+                    options.channels = getChannelsFromHash();
                     $('#chatmore')
-                        .chatmore(self.options)
+                        .chatmore(options)
                         .chatmore('resize');
                 }
                 else {
