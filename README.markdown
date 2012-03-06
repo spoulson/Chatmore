@@ -1,7 +1,7 @@
 Chatmore web-based IRC client
 =============================
 
-Release 0.01, 2011-09-14  
+Release 2012-02-21  
 Github repo: https://github.com/spoulson/Chatmore  
 Shawn Poulson, http://explodingcoder.com
 
@@ -33,7 +33,8 @@ SYSTEM REQUIREMENTS
 
 ### Client
  - Browser supporting HTML5.
- - Tested on browsers on Windows: Firefox 5+, Chrome 13+, IE9, Safari 5.1.
+ - Tested on browsers on Windows: Chrome 13+, Firefox 5+, IE9, Safari 5.1.
+ - Tested on browsers on Mac OS X Lion: Chrome 17, Firefox 9, Safari 5.1.
 
 INSTALLATION
 ------------
@@ -52,10 +53,10 @@ USER ACCESS
 http://server/chatmore/  
 Startup with defaults.
 
-http://server/chatmore/?server=irc.example.com  
-http://server/chatmore/?server=irc.example.com&nick=yournick  
-http://server/chatmore/?server=irc.example.com&nick=yournick#channel  
-http://server/chatmore/?server=irc.example.com&nick=yournick#channel,#channel2
+http://server/chatmore/client.php?server=irc.example.com  
+http://server/chatmore/client.php?server=irc.example.com&nick=yournick  
+http://server/chatmore/client.php?server=irc.example.com&nick=yournick#channel  
+http://server/chatmore/client.php?server=irc.example.com&nick=yournick#channel,#channel2
 
 Connect to IRC server name.  
 If nick is omitted, use randomly generated nick.  
@@ -70,10 +71,16 @@ To implement, update .htaccess in parent directory:
 Assuming /chatmore is the chat client virtual directory, append /.htaccess with:
 
     RewriteEngine On  
+    # Do not rewrite legit URLs to files.  
+    RewriteRule \.(html|php|js|css)$ - [L]
     # http://server/<IRC server>  
-    RewriteRule ^/?([^/]*\.[^/]*)/?(#.+)?$ /chatmore/?server=$1$2  
+    RewriteRule ^/?([^/]*\.[^/]*)/?(#.+)?$ /chatmore/client.php?server=$1$2  
     # http://server/<IRC server>/<nick>  
-    RewriteRule ^/?([^/]*\.[^/]*)/([^/]+)[^#]*(#.+)?$ /chatmore/?server=$1&nick=$2$3
+    RewriteRule ^/?([^/]*\.[^/]*)/([^/]+)[^#]*(#.+)?$ /chatmore/client.php?server=$1&nick=$2$3
+
+KNOWN ISSUES
+------------
+- UI not compatible with Mobile Safari on iOS.
 
 LICENSING
 ---------

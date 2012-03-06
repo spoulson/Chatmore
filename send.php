@@ -4,9 +4,14 @@ ini_set('display_errors', false);
 require_once 'config.php';
 require_once 'class.spIrcClient.php';
 
+$viewKey = $_POST['viewKey'];
+
 session_start();
-$session = new spIrcSessionDAL_SQLite($sessionDbFilename, $_GET['id']);
+
+$session = new spIrcSessionDAL_SQLite($sessionDbFilename, $viewKey);
 $state = $session->load();
+
+//log::info('Got state: ' . var_export($state, true));
 
 header('Content-type: application/json');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -49,7 +54,6 @@ if ($state !== null) {
     }
     else {
         // Socket no longer available.
-        //unset($_SESSION[$clientStateKey]);
         $session->delete();
         $data[] = array(
             'type' => spIrcClient::CLMSG_TYPE_SERVER,

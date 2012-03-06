@@ -1,5 +1,32 @@
 <?
+function redirectNewViewKey() {
+    // Generate random viewKey string.
+    $viewKey = substr(base_convert(rand(0, 1679616), 10, 36) . base_convert(rand(0, 1679616), 10, 36), 0, 8);
+    $_GET['viewKey'] = $viewKey;
+    $redirectUrl = $_SERVER['SCRIPT_URI'] . '?' . http_build_query($_GET);
+    
+    header('Location: ' . $redirectUrl);
+}
+
+// Check for viewKey in querystring.
+// If not found, generate one and redirect back with viewKey included.
+if (!isset($_GET['viewKey'])) {
+    redirectNewViewKey();
+    exit;
+}
+
 require_once 'config.php';
+
+// Parse querystring into options array to pass to chatmore.
+$opts = array(
+    'viewKey' => $_GET['viewKey']
+);
+
+if (isset($_GET['nick'])) $opts['nick'] = $_GET['nick'];
+if (isset($_GET['realname'])) $opts['realname'] = $_GET['realname'];
+if (isset($_GET['server'])) $opts['server'] = $_GET['server'];
+if (isset($_GET['port'])) $opts['port'] = intval($_GET['port']);
+    
 
 session_start();
 
@@ -20,136 +47,31 @@ if (array_key_exists('x', $_GET)) {
     <title>Experimental IRC chat client</title>
     <base href="<?=$scriptPath?>/" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="stylesheet" type="text/css" href="themes/atwood/atwood.css" />
+    <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
+    <link rel="stylesheet" type="text/css" href="layouts/fullpage/fullpage.css" />
     <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="chatmoreState.js"></script>
     <script type="text/javascript" src="chatmore.js"></script>
     <script type="text/javascript" src="chatmoreUI.js"></script>
+    <script type="text/javascript" src="chatmoreUI.fullpage.js"></script>
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
         $(function () {
-            var getChannelsFromHash = function () {
-                var channels = document.location.hash.split(',');
-                if (channels[0] == '') return [ ];
-                else return channels;
-            };
-            
-            var setHashWithChannels = function (channels) {
-                var hash = channels.sort().join(',');
-                if (document.location.hash !== hash) document.location.hash = hash;
-            };
-
-            var objectSize = function (obj) {
-                var count = 0;
-                for (var prop in obj) {
-                    if (obj.hasOwnProperty(prop)) count++;
-                }
-                return count;
-            };
-            
-            var clone;
-            clone = function(obj) {
-                var newObj = (obj instanceof Array) ? [] : {};
-                for (i in obj) {
-                    if (obj[i] && typeof(obj[i]) === "object")
-                        newObj[i] = clone(obj[i]);
-                    else
-                        newObj[i] = obj[i];
-                }
-                return newObj;
-            };
-
-            // Parse querystring.
+            // Prepare chatmore options.
             var opts = $.extend({ }, chatmoreDefaults);
-            var form = { };
-            var pairs = '<?=$_SERVER['QUERY_STRING']?>'.split('&');
-            
-            for (var i in pairs) {
-                var pair = pairs[i].split('=');
-                var key = decodeURIComponent(pair[0]);
-                var value = decodeURIComponent(pair[1]);
-                
-                if (typeof(form[key]) === 'string') {
-                    form[key] = [ form[key], value ];
-                }
-                else if (typeof(form[key]) === 'object') {
-                    form[key].push(value);
-                }
-                else {
-                    form[key] = value;
-                }
-                
-                if (form.server !== undefined) opts.server = form.server;
-                if (form.port !== undefined) opts.port = form.port;
-                if (form.nick !== undefined) opts.nick = form.nick;
-            }
-            
-            // Parse hash string for channels.
-            var channels = getChannelsFromHash();
-            if (channels.length > 0) opts.channel = channels;
-            
-            // Determine if any options were set.
-            // If not, assume defaults.
-            //if (objectSize(opts) === 0) opts = clone(chatmoreDefaults);
-            //else opts.mustMatchServer = true;
+            var userOpts = <?=json_encode($opts)?>;
+            $.extend(opts, userOpts);
             
             // Startup the IRC client.
-            var ircElement = $('.chatmore');
-            ircElement
-                .chatmore(opts)
-                .chatmore('stateChanged', function (state) {
-                    if (window.console) console.log('User event: stateChanged');
-                    setHashWithChannels(state.getChannels());
-                });
-
-            // Stretch client element to width/height of browser window space.
-            var stretchClient = function () {
-                var atBottom = ircElement.chatmore('isAtBottom');
-                
-                ircElement.chatmore('resize', {
-                    width: $(window).width() - ircElement.parent().outerWidth() + ircElement.parent().width(),
-                    height: $(window).height() - ircElement.parent().outerHeight() + ircElement.parent().height()
-                });
-                
-                if (atBottom) ircElement.chatmore('scrollToBottom');
-            };
-            
-            $(window).resize(stretchClient);
-
-            stretchClient();
+            $('#chatmore').chatmore(opts);
         });
     </script>
 </head>
 <body>
 
-    <div class="chatmore ui-widget">
-        <div style="float:left;overflow:hidden">
-
-            <div class="ircConsole ui-widget-content ui-corner-tl">
-                <div class="content ui-corner-all"></div>
-            </div>
-
-            <div class="userEntrySection ui-widget-content ui-corner-bl">
-                <div class="userEntryModeLine">
-                    <div class="activationIndicator"></div>
-                    <div class="nickLabel nick"></div>
-                    <div class="targetFragment" style="display:none">
-                        <div class="targetLabel"></div>
-                    </div>
-                </div>
-                <div class="userEntryLine">
-                    <input type="text" class="userEntry" />
-                </div>
-            </div>
-        </div>
-        
-        <div class="sideBar ui-widget ui-widget-content ui-corner-right">
-            <ul class="channelList"></ul>
-        </div>
-    </div>
-    
+    <div id="chatmore"></div>
     <div id="connectionDialog"></div>
 </body>
 </html>

@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Experimental IRC chat client</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="stylesheet" type="text/css" href="themes/atwood/atwood.css" />
+    <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
     <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
@@ -115,7 +115,13 @@
                         // Update form action URL.
                         var channel = channels.join(',');
                         $('#channelTextbox').val(channel);
-                        document.form1.action = 'client.php' + channel;
+
+                        // Must clone form to change action URL.
+                        // Changing action attribute directly does not work in Safari.
+                        $(document.form1).replaceWith($(document.form1)
+                            .clone(true)
+                            .attr('action', 'client.php' + channel)
+                        );
                     }
                 })
                 .blur(function () {
@@ -132,12 +138,14 @@
             $('#serverTextbox').val(chatmoreDefaults.server);
             $('#portTextbox').val(chatmoreDefaults.port);
             $('#channelTextbox').val(chatmoreDefaults.channel);
+            $('#viewKey').val(Math.random().toString(36).substring(10));
             validateLaunch();
         });
     </script>
 </head>
 <body>
     <form action="client.php" name="form1" method="GET">
+        <input type="hidden" id="viewKey" name="viewKey" />
         <div class="chatmore ui-widget" style="float:left;overflow:hidden">
             <div class="launcher ui-widget-content ui-corner-all">
             <table>
