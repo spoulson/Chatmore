@@ -105,12 +105,18 @@
             '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> has left the channel{{if !!msg.info.comment}}: ${msg.info.comment}{{/if}}</span>' +
             '</span>',
         kick: '{{tmpl "timestamp"}}<span class="KICK">' +
-            '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${channel}</span>&gt;</span> ' +
-            '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, op, channel)}">${op}</span> has kicked <span class="nick ${layout.getColorizeCSSClass(nick, channel)}">${nick}</span> from the channel{{if comment !== undefined}}: ${comment}{{/if}}</span>' +
+            '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.kick.channel}</span>&gt;</span> ' +
+            '<span class="message">' +
+            '{{if self.stricmp(self.irc.state.nick, msg.info.kick.nick) === 0}}' +
+                'You have been kicked from the channel by <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.kick.channel)}">${msg.prefixNick}</span>' +
+            '{{else}}' +
+                '<span class="nick ${layout.getColorizeCSSClass(self, msg.info.kick.nick, msg.info.kick.channel)}">${msg.info.kick.nick}</span> has been kicked from the channel by <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.kick.channel)}">${msg.prefixNick}</span>' +
+            '{{/if}}' +
+            '{{if msg.info.comment !== undefined && msg.info.comment !== msg.prefixNick}}: ${msg.info.comment}{{/if}}</span>' +
             '</span>',
         nick: '{{tmpl "timestamp"}}<span class="NICK">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
-            '{{if self.stricmp(self.irc.state.nick, msg.prefixNick) == 0}}' +
+            '{{if self.stricmp(self.irc.state.nick, msg.prefixNick) === 0}}' +
                 'Nick changed to <span class="nick">${msg.info.nick}</span>' +
             '{{else}}' +
                 '<span class="nick">${msg.prefixNick}</span> is now known as <span class="nick">${msg.info.nick}</span>' +

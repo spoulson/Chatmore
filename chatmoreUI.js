@@ -1233,13 +1233,11 @@
                             break;
                             
                         case 'KICK':
+                            var kickMsg = $.extend(true, { }, msg);
+                            delete kickMsg.info.kicks;
                             $.each(msg.info.kicks, function (i, kick) {
-                                self.writeTmpl('kick', {
-                                    channel: kick.channel,
-                                    nick: kick.nick,
-                                    op: msg.prefixNick,
-                                    comment: msg.info.comment
-                                });
+                                kickMsg.info.kick = kick;
+                                self.writeTmpl('kick', { msg: kickMsg });
                             });
                             break;
                             

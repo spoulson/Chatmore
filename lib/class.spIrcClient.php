@@ -294,7 +294,7 @@ class spIrcClient {
             break;
             
         case 'KICK':
-            if (!preg_match("/^(\\S+)\\s+(\\S+)\\s+:[#&+!][^\s,:\cg]+\s+(.*)/", $params, $msgParams)) return false;
+            if (!preg_match("/^([#&+!][^\s,:\cg]+)\s(\\S+)\\s+:(.*)/", $params, $msgParams)) return false;
             
             $channelList = explode(',', $msgParams[1]);
             $nickList = explode(',', $msgParams[2]);
@@ -323,6 +323,7 @@ class spIrcClient {
                 'kicks' => $kicks,
                 'comment' => $msgParams[3]
             );
+            log::info('KICK: ' . var_export($msg, true));
             break;
             
         case 'TOPIC':

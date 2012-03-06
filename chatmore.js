@@ -170,7 +170,9 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     case '366': // RPL_ENDOFNAMES
                         // Track last RPL_ENDOFNAMES for the channel.
                         // Used to terminate RPL_NAMREPLY messages.
-                        self.state.channels[msg.info.channel].lastRPL_ENDOFNAMES = self.state.messageCount;
+                        if (self.state.channels[msg.info.channel] !== undefined) {
+                            self.state.channels[msg.info.channel].lastRPL_ENDOFNAMES = self.state.messageCount;
+                        }
                         break;
                         
                     case '433': // ERR_NICKNAMEINUSE
