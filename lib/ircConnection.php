@@ -2,7 +2,9 @@
 // TODO: set_error_handler/set_exception_handler implementations.
 // Clean up sockets on error/exception.
 
-ini_set('error_log', '/home/ip90904j/tmp/php_errors.log');
+$tmpDir = dirname($_SERVER['SCRIPT_FILENAME']) . '/../tmp';
+
+ini_set('error_log', "$tmpDir/php_errors.log");
 
 require_once 'class.log.php';
 require_once 'class.spSocketProxy.php';

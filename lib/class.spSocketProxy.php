@@ -19,12 +19,14 @@ class spSocketProxy {
     private $proxySocket = null;
     private $proxySocketFunc = null;
     private $proxySocketInitialized = false;
-    private $idleTime;
+    private $proxyIdleTime;
+    private $clientIdleTime;
     private $proxyBuffer = null;
     private $clientBuffer = null;
     
-    public $idleTimeout = 300;  // in seconds
-    public $pollTimeout = 100;  // in milliseconds
+    public $proxyIdleTimeout = 300;     // in seconds of inactivity from proxy socket.
+    public $clientIdleTimeout = 300;    // in seconds of inactivity from client domain sockets.
+    public $pollTimeout = 100;          // in milliseconds
     public $proxyReadBufSize = 10240;
     public $clientReadBufSize = 10240;
     
@@ -124,6 +126,9 @@ class spSocketProxy {
                     if ($this->isProxySocketConnected()) {
                         // Data waiting in proxy socket.
                         //log::info("rP");
+                        // Reset idle timer when reading from proxy socket.
+                        $this->proxyIdleTime = time();
+
                         $size = @socket_recv($socket, $buf, $this->proxyReadBufSize, 0);
                         if ($size) {
                             //log::info("proxy: $buf");
@@ -156,6 +161,9 @@ class spSocketProxy {
                     }
                     else if ($size) {
                         //log::info("client: $buf");
+                        // Reset idle timer when client attempts to write.
+                        $this->clientIdleTime = time();
+
                         log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                         $this->proxyBuffer .= $buf;
                     }
@@ -184,6 +192,9 @@ class spSocketProxy {
                     }
                     else if ($size) {
                         //log::info("client: $buf");
+                        // Reset idle timer when client attempts to write.
+                        $this->clientIdleTime = time();
+
                         log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                         $this->proxyBuffer .= $buf;
                     }
@@ -243,9 +254,6 @@ class spSocketProxy {
                         $this->PrimaryClientSocket = null;
                     }
                     else {
-                        // Reset idle timer when client attempts to read.
-                        $this->idleTime = time();
-
                         if ($size < strlen($this->clientBuffer)) {
                             // Not all bytes were sent.  Buffer the remainder.
                             log::info("sent($size) buffered(" . (strlen($this->clientBuffer) - $size) . ") ");
@@ -272,6 +280,10 @@ class spSocketProxy {
                 socket_close($this->PrimaryClientSocket);
             }
             $this->PrimaryClientSocket = $newPrimaryClientSocket;
+
+            // Reset idle timer when client connects to domain socket.
+            $this->clientIdleTime = time();
+
             log::info('Primary client socket connected.');
 
             // Connect proxy socket on initial client connection.
@@ -286,6 +298,10 @@ class spSocketProxy {
                 socket_close($this->SecondaryClientSocket);
             }
             $this->SecondaryClientSocket = $newSecondaryClientSocket;
+
+            // Reset idle timer when client connects to domain socket.
+            $this->clientIdleTime = time();
+
             log::info('Secondary client socket connected.');
 
             // Connect proxy socket on initial client connection.
@@ -294,9 +310,15 @@ class spSocketProxy {
             }
         }
         
-        // Check idle timeout.
-        if ($this->idleTime != null && (time() - $this->idleTime) >= $this->idleTimeout) {
-            log::error("Idle timeout.  Disconnecting!");
+        // Check idle timeouts.
+        if ($this->proxyIdleTime !== null && (time() - $this->proxyIdleTime) >= $this->proxyIdleTimeout) {
+            log::error("Server idle timeout of " . $this->proxyIdleTimeout . " seconds.  Disconnecting!");
+            $this->disconnect();
+            return false;
+        }
+        
+        if ($this->clientIdleTime !== null && (time() - $this->clientIdleTime) >= $this->clientIdleTimeout) {
+            log::error("Client idle timeout of " . $this->clientIdleTimeout . " seconds.  Disconnecting!");
             $this->disconnect();
             return false;
         }
