@@ -25,8 +25,7 @@ $opts = array(
 if (isset($_GET['nick'])) $opts['nick'] = $_GET['nick'];
 if (isset($_GET['realname'])) $opts['realname'] = $_GET['realname'];
 if (isset($_GET['server'])) $opts['server'] = $_GET['server'];
-if (isset($_GET['port'])) $opts['port'] = intval($_GET['port']);
-    
+if (isset($_GET['port'])) $opts['port'] = $_GET['port'];
 
 session_start();
 

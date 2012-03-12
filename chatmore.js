@@ -297,13 +297,9 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                             if (msg.code === 200) {
                                 newConnectionFlag = false;
                             }
-                            // 401: CLMSG_CONNECTION_ALREADY_ACTIVE.
-                            else if (msg.code === 401) {
-                                errorHandler('Connection already active in this session.');
-                                errorFlag = true;
-                            }
-                            // 402: CLMSG_SESSION_UNAVAILABLE.
-                            else if (msg.code === 402) {
+                            else if (msg.code > 400) {
+                                // All error codes except 400 will abort activation.
+                                errorHandler(msg.message);
                                 errorFlag = true;
                             }
                         }

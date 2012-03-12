@@ -32,6 +32,10 @@ require_once('class.spIrcSessionDAL_SQLite.php');
 
 // IRC client's server-side configuration.
 $ircConfig = array(
+    // IRC server/port policy, or null to allow user-specified server/port.
+    'server' => null,
+    'port' => null,
+    
     // Path to create domain sockets.
     'socketFilePath' => $tmpDir,
     
