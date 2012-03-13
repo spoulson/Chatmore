@@ -42,8 +42,10 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 if ($connectMode === 0) {
     // Validate form parameters.
-    $server = $_POST['server'];
-    $port = isset($_POST['port']) ? $_POST['port'] : '6667';
+    $isValid = true;
+    $server = coalesce($ircConfig['server'], $_POST['server']);
+    $port = coalesce($ircConfig['port'], $_POST['port'], 6667);
+	
     if (empty($server)) {
         // Invalid.
         $data[] =
@@ -52,11 +54,20 @@ if ($connectMode === 0) {
                 'message' => 'Server not provided.',
                 'code' => spIrcClient::CLMSG_INVALID_ARGUMENTS
             );
+        $isValid = false;
     }
-    else {
-        // Validate session.
-        validateSession($state, $data);
+
+    if (!is_numeric($port)) {
+        $data[] =
+            array(
+                'type' => spIrcClient::CLMSG_TYPE_SERVER,
+                'message' => 'Invalid server port.',
+                'code' => spIrcClient::CLMSG_INVALID_ARGUMENTS
+            );
+        $isValid = false;
+    }
     
+    if ($isValid) {
         // If this is a new session, initialize with connection details.
         if (empty($state->server)) {
             $state->server = $server;
@@ -65,6 +76,9 @@ if ($connectMode === 0) {
             
             log::info('Session state initialized: ' . var_export($state, true));
         }
+
+        // Validate session.
+        validateSession($state, $data);
     }
     
     log::info('connectMode 0 returned: ' . var_export($data, true));
@@ -99,6 +113,16 @@ log::info("connectMode $connectMode returned: " . var_export($data, true));
 echo json_encode($data);
 exit;
 
+// http://stackoverflow.com/a/1013502/3347
+function coalesce() {
+    $args = func_get_args();
+    foreach ($args as $arg) {
+        if (!empty($arg)) {
+            return $arg;
+        }
+    }
+    return null;
+}
 
 function getSession($viewKey) {
     global $sessionDbFilename;

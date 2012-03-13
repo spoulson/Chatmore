@@ -10,11 +10,21 @@ class spIrcClient {
     const CLMSG_TYPE_RECV = 'recv';          // Received IRC message
 
     // Message codes associated with CLMSG_TYPE_SERVER messages.
+	// CLMSG_CONNECTION_READY:
+	// returned by init.php on successful activation.
     const CLMSG_CONNECTION_READY = 200;
+	// CLMSG_CONNECTION_NOT_OPEN:
+	// returned by init.php to indicate no existing connection available to resume.
+	// returned by recv.php to indicate the connection was closed.
     const CLMSG_CONNECTION_NOT_OPEN = 400;
-    const CLMSG_CONNECTION_ALREADY_ACTIVE = 401;
+	// CLMSG_SESSION_UNAVAILABLE:
+	// returned by recv.php when attempting to access a session by viewKey but it has been marked as deleted.
     const CLMSG_SESSION_UNAVAILABLE = 402;
+	// CLMSG_INVALID_ARGUMENTS:
+	// returned by init.php when argument validation fails.
     const CLMSG_INVALID_ARGUMENTS = 403;
+	// CLMSG_TIMEOUT_ON_OPEN:
+	// returned by init.php when a new connection fails to open properly.
     const CLMSG_TIMEOUT_ON_OPEN = 500;
     
     // IRC server message codes.
