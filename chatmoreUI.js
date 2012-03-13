@@ -1281,7 +1281,10 @@
                         case '252': // RPL_LUSEROP
                         case '253': // RPL_LUSERUNKNOWN
                         case '254': // RPL_LUSERCHANNELS
-                            self.writeTmpl('serverMsgNumber', { msg: msg });
+                            self.writeTmpl('serverMsg', {
+                                number: msg.info.number,
+                                message: msg.info.message
+                            });
                             break;
                             
                         case '322': // RPL_LIST
@@ -1309,7 +1312,7 @@
                             break;
                             
                         case '477': // ERR_NOCHANMODES
-                            self.writeTmpl('serverChannelMsg', {
+                            self.writeTmpl('serverMsg', {
                                 channel: msg.info.channel,
                                 message: msg.info.message
                             });
