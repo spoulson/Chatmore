@@ -1307,6 +1307,13 @@
                         case '403': // ERR_NOSUCHCHANNEL
                             self.writeTmpl('serverMsg', { message: msg.info.message });
                             break;
+                            
+                        case '477': // ERR_NOCHANMODES
+                            self.writeTmpl('serverChannelMsg', {
+                                channel: msg.info.channel,
+                                message: msg.info.message
+                            });
+                            break;
     
                         // Disregard these messages.
                         case '004': // RPL_MYINFO

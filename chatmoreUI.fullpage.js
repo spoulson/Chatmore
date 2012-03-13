@@ -26,6 +26,10 @@
         serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
             '</span>',
+        serverChannelMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+            '{{tmpl "notePrefix"}} &lt;<span class="channel">${channel}</span>&gt; ' +
+            '<span class="message">${message}</span>' +
+            '</span>',
         serverMsgNumber: '{{tmpl "timestamp"}}<span class="serverMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">${msg.info.number} ${msg.info.message}</span>' +
             '</span>',
