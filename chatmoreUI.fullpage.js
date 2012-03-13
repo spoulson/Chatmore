@@ -24,10 +24,11 @@
             '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
             '</span>',
         serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-            '</span>',
-        serverMsgNumber: '{{tmpl "timestamp"}}<span class="serverMsg">' +
-            '{{tmpl "notePrefix"}} <span class="message">${msg.info.number} ${msg.info.message}</span>' +
+            '{{tmpl "notePrefix"}} ' +
+            '{{if channel}}&lt;<span class="channel">${channel}</span>&gt; {{/if}}' +
+            '<span class="message">' +
+            '{{if number}}${number} {{/if}}' +
+            '${message}</span>' +
             '</span>',
         clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
@@ -197,6 +198,11 @@
             // Is the console's scroll within 4 pixels from the bottom?
             var atBottom = layout.isAtBottom(self);
             
+            // Roll off oldest line if at maximum lines.
+            for (var lineCount = ircContent.find('.line').length; lineCount >= self.options.maximumConsoleLines; lineCount--) {
+                ircContent.find('.line').first().remove();
+            }
+
             // Auto decorate nicks and channels in message.
             var channel = element.find('.prefix .channel').text();
             element.closest('.channelMsg,.privateMsg,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')

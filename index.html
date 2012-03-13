@@ -5,6 +5,22 @@
     <title>Experimental IRC chat client</title>
     <link rel="stylesheet" type="text/css" href="style.css" />
     <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
+	<style type="text/css">
+		BODY {
+			text-align: center;
+		}
+
+		.launcher {
+			position: static;
+			margin: 0 auto;
+			width: 320px;
+			text-align: left;
+		}		
+
+		.launcher input[type=text] {
+			width: 140px;
+		}
+	</style>
     <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="config.js"></script>
     <script type="text/javascript">
@@ -92,10 +108,17 @@
                 
             $('#channelTextbox')
                 .keypress(function (e) {
+					// Simulate form submission on Enter.
+					if (e.charCode === 13) {
+						document.forms.form1.submit();
+						return;
+					}
+					
                     // Block spaces.
                     if (/^\s$/.test(String.fromCharCode(e.charCode))) return false;
 
                     validateLaunch();
+
                 })
                 .change(function () {
                     var channel = $('#channelTextbox').val();
@@ -140,26 +163,34 @@
             $('#channelTextbox').val(chatmoreDefaults.channel);
             $('#viewKey').val(Math.random().toString(36).substring(10));
             validateLaunch();
+            
+            $('#nickTextbox').focus();
         });
     </script>
 </head>
 <body>
     <form action="client.php" name="form1" method="GET">
         <input type="hidden" id="viewKey" name="viewKey" />
-        <div class="chatmore ui-widget" style="float:left;overflow:hidden">
-            <div class="launcher ui-widget-content ui-corner-all">
-            <table>
-                <col width="150" />
-                <col width="*" />
-                <tr><th id="nickLabel" class="left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
-                <tr><th class="left">Real name:</th><td><input type="text" name="realname" /></td></tr>
-                <tr><th id="serverLabel" class="left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
-                <tr><th id="portLabel" class="left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
-                <tr><th id="channelLabel" class="left wrap">Channel:<br/><span class="helpText">Can provide multiple channels separated by commas.</span></th><td><input type="text" id="channelTextbox" /></td></tr>
-                <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
-            </table>
-            </div>
-        </div>
+		<div class="chatmore">
+	        <div class="launcher ui-dialog ui-widget ui-widget-content ui-corner-all">
+				<div class="ui-dialog-titlebar ui-widget-header ui-corner-all ui-helper-clearfix">
+					<span class="ui-dialog-title">Start IRC Chat</span>
+				</div>
+	            <div class="ui-widget-content ui-dialog-content">
+	            <table>
+	                <col width="*" />
+	                <col width="148" />
+	                <tr><th id="nickLabel" class="left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
+	                <tr><th class="left">Real name:</th><td><input type="text" name="realname" /></td></tr>
+	                <tr><th id="serverLabel" class="left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
+	                <tr><th id="portLabel" class="left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
+	                <tr><th id="channelLabel" class="left wrap">Channel:</th><td><input type="text" id="channelTextbox" /></td></tr>
+					<tr><td colspan="2"><span class="helpText">Can provide multiple channels separated by commas.</span></td></tr>
+	                <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
+	            </table>
+	            </div>
+	        </div>
+		</div>
         
     </form>
 </body>

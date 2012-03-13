@@ -53,6 +53,7 @@ class spIrcClient {
     const ERR_NOSUCHCHANNEL = 403;
     const ERR_NICKNAMEINUSE = 433;
     const ERR_NOTREGISTERED = 451;
+    const ERR_NOCHANMODES = 477;
     
     private $isConnected = false;
 
@@ -504,6 +505,14 @@ class spIrcClient {
                 'error' => $msgParams[2]
             );
             break;
+            
+        case self::ERR_NOCHANMODES:
+            if (!preg_match("/\S+\s+([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'channel' => $msgParams[1],
+                'message' => $msgParams[2]
+            );
+            break;
 
         // Disregard these messages.
         case self::RPL_LISTSTART:
@@ -520,7 +529,7 @@ class spIrcClient {
         }
         
         $msg['type'] = self::CLMSG_TYPE_RECV;
-        //log::info('Parsed message: ' . var_export($msg, true));
+        log::info('Parsed message: ' . var_export($msg, true));
         return $msg;
     }
     
