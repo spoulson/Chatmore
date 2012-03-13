@@ -45,7 +45,6 @@ if ($connectMode === 0) {
     $isValid = true;
     $server = coalesce($ircConfig['server'], $_POST['server']);
     $port = coalesce($ircConfig['port'], $_POST['port'], 6667);
-	log::info("server: $server, port: $port");
 	
     if (empty($server)) {
         // Invalid.

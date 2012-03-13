@@ -1,7 +1,12 @@
-// Instantiate chatmore as an object.
-// var c = new chatmore(...);
-// element: Associated HTML DOM object
-// options array: <unused>
+/*
+Instantiate chatmore as an object.
+var c = new chatmore(...);
+element: Associated HTML DOM object
+options array: {
+    maxRegistrationAttempts: 3, // Maximum attempts to register in the event of a nick collision during registration.
+    maxResendAttempts: 4        // Maximum retries to resend messages after encountering an error in delivery.
+}
+*/
 function chatmore(element, viewKey, server, port, nick, realname, options) {
     if (options === undefined) options = {};
     
@@ -14,7 +19,6 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
         pollHandle: undefined,
         pollXhr: undefined,
         pauseRecv: false,
-        maxRegistrationAttempts: 3,
 
         // Process incoming messages.
         processMessages: function (data) {
@@ -178,7 +182,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     case '433': // ERR_NICKNAMEINUSE
                         // If nick collision before successful registration, modify nick and try again.
                         if (!self.state.isRegistered) {
-                            if (self.state.registrationAttemptCount < local.maxRegistrationAttempts) {
+                            if (self.state.registrationAttemptCount < self.options.maxRegistrationAttempts) {
                                 if (self.state.baseNick === undefined) self.state.baseNick = self.state.nick;
                                 self.state.nick = '' + self.state.baseNick + '_' + self.state.registrationAttemptCount;
                                 self.state.registrationAttemptCount++;
@@ -190,7 +194,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                             }
                             else {
                                 // Trigger error message when connection attempts max out.
-                                $(element).trigger('localMessage.chatmore', [ null, 'error', { code: 'RE1', maxRegistrationAttempts: local.maxRegistrationAttempts } ]);
+                                $(element).trigger('localMessage.chatmore', [ null, 'error', { code: 'RE1', maxRegistrationAttempts: self.options.maxRegistrationAttempts } ]);
                             }
                         }
                         break;
@@ -230,6 +234,12 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
     //
     // Public members.
     //
+    // Apply defaults for unspecified options.
+    self.options = $.extend({
+        maxRegistrationAttempts: 3,
+        maxResendAttempts: 4
+    }, options);
+    
     // Client state model.  Initialize client state with constructor parameters.
     self.state = new chatmoreState();
     self.state.server = server;
@@ -434,38 +444,60 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
     
     // Send raw message to server.
     self.sendMsg = function (rawMsg, postCallback) {
-        $(element).trigger('sendingMessage.chatmore', [ rawMsg ]);
-        
-        $.ajax('send.php',
-            {
-                async: true,
-                type: 'POST',
-                dataType: 'json',
-                cache: false,
-                data: {
-                    viewKey: viewKey,
-                    msg: rawMsg
-                },
-                success: function (data) {
-                    if (postCallback) postCallback(rawMsg);
-                    $(element).trigger('sentMessage.chatmore', [ rawMsg ]);
-                    
-                    // Validate data is an array.
-                    if (typeof(data) === 'object') {
-                        local.processMessages.call(self, data);
-                    }
-                    else {
-                        // Data is invalid!
-                        if (window.console) {
-                            console.warn('Got invalid data:');
-                            console.warn(data);
-                        }
-                    }
-                },
-                error: function (event, xhr) {
-                    $(element).trigger('errorSendingMessage.chatmore', [ xhr, rawMsg ]);
+        var sendHandler = function (resendCount) {
+            var resendHandler = function () {
+                // Give up after 3 resends.
+                if (resendCount < self.options.maxResendAttempts) {
+                    if (window.console) console.warn('Resending: ' + rawMsg);
+
+                    // First attempt retry immediately.
+                    // Successive attempts delay a moment.
+                    var retryDelay = resendCount > 0 ? 3000 : 100;
+                    setTimeout(function () { sendHandler(resendCount + 1); }, retryDelay);
                 }
-            });
+            };
+
+            $(element).trigger('sendingMessage.chatmore', [ rawMsg, resendCount ]);
+            
+            $.ajax('send.php',
+                {
+                    async: true,
+                    type: 'POST',
+                    dataType: 'json',
+                    cache: false,
+                    data: {
+                        viewKey: viewKey,
+                        msg: rawMsg
+                    },
+                    success: function (data) {
+                        if (postCallback) postCallback(rawMsg);
+                        $(element).trigger('sentMessage.chatmore', [ rawMsg, resendCount ]);
+                
+                        // Validate data is an array.
+                        if (typeof(data) === 'object') {
+                            local.processMessages.call(self, data);
+                        }
+                        else {
+                            // Data is invalid!
+                            if (window.console) {
+                                console.warn('Got invalid data:');
+                                console.warn(data);
+                            }
+                        
+                            resendHandler();
+                            
+                            return false;
+                        }
+                    },
+                    error: function (event, xhr) {
+                        $(element).trigger('errorSendingMessage.chatmore', [ xhr, rawMsg, resendCount ]);
+                        
+                        resendHandler();
+                    }
+                });
+        };
+        
+        sendHandler(0);
     };
 
     self.register = function (nick, realname) {
@@ -531,7 +563,4 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
     self.isChannel = function (target) {
         return target.match(/^[#&+!][^\s,:\cg]+/);
     };
-
-    // Merge options into properties.
-    if (options.maxRegistrationAttempts !== undefined) local.maxRegistrationAttempts = options.maxRegistrationAttempts;
 }

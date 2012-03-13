@@ -1095,24 +1095,24 @@
                         });
                         return self.ircElement;
                     },
-                    // Bind event 'sendingMessage'.  Signature: callback(e, rawMsg)
+                    // Bind event 'sendingMessage'.  Signature: callback(e, rawMsg, resendCount)
                     onSendingMessage: function (callback) {
-                        self.ircElement.on('sendingMessage.chatmore', function (e, rawMsg) {
-                            callback.call(self.ircElement, e, rawMsg);
+                        self.ircElement.on('sendingMessage.chatmore', function (e, rawMsg, resendCount) {
+                            callback.call(self.ircElement, e, rawMsg, resendCount);
                         });
                         return self.ircElement;
                     },
-                    // Bind event 'sentMessage'.  Signature: callback(e, rawMsg)
+                    // Bind event 'sentMessage'.  Signature: callback(e, rawMsg, resendCount)
                     onSentMessage: function (callback) {
-                        self.ircElement.on('sentMessage.chatmore', function (e, rawMsg) {
-                            callback.call(self.ircElement, e, rawMsg);
+                        self.ircElement.on('sentMessage.chatmore', function (e, rawMsg, resendCount) {
+                            callback.call(self.ircElement, e, rawMsg, resendCount);
                         });
                         return self.ircElement;
                     },
-                    // Bind event 'errorSendingMessage'.  Signature: callback(e, xhr, rawMsg)
+                    // Bind event 'errorSendingMessage'.  Signature: callback(e, xhr, rawMsg, resendCount)
                     onErrorSendingMessage: function (callback) {
-                        self.ircElement.on('errorSendingMessage.chatmore', function (e, xhr, rawMsg) {
-                            callback.call(self.ircElement, e, xhr, rawMsg);
+                        self.ircElement.on('errorSendingMessage.chatmore', function (e, xhr, rawMsg, resendCount) {
+                            callback.call(self.ircElement, e, xhr, rawMsg, resendCount);
                         });
                         return self.ircElement;
                     },
@@ -1365,15 +1365,24 @@
                     
                     self.prevState = self.clone(self.irc.state);
                 })
-                .on('sendingMessage.chatmore', function (e, rawMsg) {
-                    self.layoutPlugin.onSendingMessage(self, rawMsg);
+                .on('sendingMessage.chatmore', function (e, rawMsg, resendCount) {
+                    self.layoutPlugin.onSendingMessage(self, rawMsg, resendCount);
                 })
-                .on('errorSendingMessage.chatmore', function (e, xhr, rawMsg) {
+                .on('errorSendingMessage.chatmore', function (e, xhr, rawMsg, resendCount) {
                     if (window.console) {
-                        console.warn('Error sending message: ' + rawMsg);
+                        console.warn('Error sending message: ' + rawMsg + ', resendCount: ' + resendCount);
                         console.warn(xhr);
                     }
-                    self.layoutPlugin.onErrorSendingMessage(self, xhr, rawMsg);
+                    self.layoutPlugin.onErrorSendingMessage(self, xhr, rawMsg, resendCount);
+
+                    if (resendCount == self.irc.options.maxResendAttempts) {
+                        // Give user error that a message could not be sent after max attempts.
+                        self.writeTmpl('clientMsg', { message: 'Unable to send message: ' + rawMsg });
+                    }
+                    else if (resendCount == 2) {
+                        // Give user warning that a message could not be sent after a second attempt.
+                        self.writeTmpl('clientMsg', { message: 'Error sending message to server, will try again: ' + rawMsg });
+                    }
                 })
                 .on('activatingClient.chatmore', function (e, stage, message, params) {
                     switch (stage) {
