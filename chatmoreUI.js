@@ -1377,11 +1377,11 @@
 
                     if (resendCount == self.irc.options.maxResendAttempts) {
                         // Give user error that a message could not be sent after max attempts.
-                        self.writeTmpl('clientMsg', { message: 'Unable to send message: ' + rawMsg });
+                        self.writeTmpl('error', { message: 'Unable to send message: ' + rawMsg });
                     }
                     else if (resendCount == 2) {
                         // Give user warning that a message could not be sent after a second attempt.
-                        self.writeTmpl('clientMsg', { message: 'Error sending message to server, will try again: ' + rawMsg });
+                        self.writeTmpl('error', { message: 'Error sending message to server, will try again: ' + rawMsg });
                     }
                 })
                 .on('activatingClient.chatmore', function (e, stage, message, params) {
