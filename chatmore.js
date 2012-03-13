@@ -8,7 +8,7 @@ options array: {
 }
 */
 function chatmore(element, viewKey, server, port, nick, realname, options) {
-    if (options === undefined) options = {};
+    if (options === undefined) options = { };
     
     //
     // Private members.
@@ -299,21 +299,31 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     port: self.state.port
                 },
                 success: function (data) {
-                    local.processMessages.call(self, data);
-                    
-                    $.each(data, function (idx, msg) {
-                        if (msg.type === 'servermsg') {
-                            // Check for connection ready message, which indicates a resumable connection.
-                            if (msg.code === 200) {
-                                newConnectionFlag = false;
+                    try {
+                        local.processMessages.call(self, data);
+
+                        $.each(data, function (idx, msg) {
+                            if (msg.type === 'servermsg') {
+                                // Check for connection ready message, which indicates a resumable connection.
+                                if (msg.code === 200) {
+                                    newConnectionFlag = false;
+                                }
+                                else if (msg.code > 400) {
+                                    // All error codes except 400 will abort activation.
+                                    errorHandler(msg.message);
+                                    errorFlag = true;
+                                }
                             }
-                            else if (msg.code > 400) {
-                                // All error codes except 400 will abort activation.
-                                errorHandler(msg.message);
-                                errorFlag = true;
-                            }
+                        });
+                    }
+                    catch (e) {
+                        // Exception during activation.  Client state is undetermined.  User may need to start over.
+                        if (window.console) {
+                            console.error('Exception caught while processing messages:');
+                            console.error(data);
+                            console.error(e);
                         }
-                    });
+                    }
                 },
                 error: ajaxErrorFunc
             }
@@ -355,71 +365,90 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     viewKey: viewKey
                 },
                 success: function (data) {
-                    local.processMessages.call(self, data);
-                    
-                    if ($.grep(data, function (x) { return x.type === 'servermsg' && x.code === 200; }).length) {
-                        // Activated.
-                        $(element).trigger('activatingClient.chatmore', [
-                            'activated',
-                            undefined,
-                            { server: self.state.server, port: self.state.port }
-                        ]);
-                        self.state.isActivated = true;
-                        
-                        if (newConnectionFlag) {
-                            // Register with IRC server.
-                            self.register(self.state.nick, self.state.realname);
-                        }
-                
-                        // Repeatedly poll for IRC activity.
-                        var pollFunc = function () {
-                            if (local.pauseRecv) {
-                                setTimeout(pollFunc, 100);
+                    try {
+                        local.processMessages.call(self, data);
+
+                        if ($.grep(data, function (x) { return x.type === 'servermsg' && x.code === 200; }).length) {
+                            // Activated.
+                            $(element).trigger('activatingClient.chatmore', [
+                                'activated',
+                                undefined,
+                                { server: self.state.server, port: self.state.port }
+                            ]);
+                            self.state.isActivated = true;
+
+                            if (newConnectionFlag) {
+                                // Register with IRC server.
+                                self.register(self.state.nick, self.state.realname);
                             }
-                            else {
-                                local.pollHandle = undefined;
-                                local.pollXhr = $.ajax('recv.php',
-                                    {
-                                        cache: false,
-                                        data: {
-                                            viewKey: viewKey
-                                        },
-                                        dataType: 'json',
-                                        success: function (data) {
-                                            // Validate data is an array.
-                                            if (typeof(data) === 'object') {
-                                                local.processMessages.call(self, data);
-                                            }
-                                            else {
-                                                // Data is invalid!
-                                                if (window.console) {
-                                                    console.warn('Got invalid data:');
-                                                    console.warn(data);
+
+                            // Repeatedly poll for IRC activity.
+                            var pollFunc = function () {
+                                if (local.pauseRecv) {
+                                    setTimeout(pollFunc, 100);
+                                }
+                                else {
+                                    local.pollHandle = undefined;
+                                    local.pollXhr = $.ajax('recv.php',
+                                        {
+                                            cache: false,
+                                            data: {
+                                                viewKey: viewKey
+                                            },
+                                            dataType: 'json',
+                                            success: function (data) {
+                                                // Validate data is an array.
+                                                if (typeof(data) === 'object') {
+                                                    try {
+                                                        local.processMessages.call(self, data);
+                                                    }
+                                                    catch (e) {
+                                                        if (window.console) {
+                                                            console.error('Exception caught while processing messages:');
+                                                            console.error(data);
+                                                            console.error(e);
+                                                        }
+                                                    }
+                                                }
+                                                else {
+                                                    // Data is invalid!
+                                                    if (window.console) {
+                                                        console.warn('Got invalid data:');
+                                                        console.warn(data);
+                                                    }
+                                                }
+                                            },
+                                            complete: function () {
+                                                // Schedule next poll.
+                                                local.pollXhr = undefined;
+                                                if (self.state.isActivated) {
+                                                    local.pollHandle = setTimeout(pollFunc, 100);
                                                 }
                                             }
-                                        },
-                                        complete: function () {
-                                            // Schedule next poll.
-                                            local.pollXhr = undefined;
-                                            if (self.state.isActivated) {
-                                                local.pollHandle = setTimeout(pollFunc, 100);
-                                            }
-                                        }
-                                    });
-                            }
-                        };
-                        setTimeout(pollFunc, 0);
-                        $(element).trigger('activatedClient.chatmore', [
-                            { server: self.state.server, port: self.state.port }
-                        ]);
+                                        });
+                                }
+                            };
+                            setTimeout(pollFunc, 0);
+                            $(element).trigger('activatedClient.chatmore', [
+                                { server: self.state.server, port: self.state.port }
+                            ]);
+                        }
+                        else {
+                            // Error on activation.
+                            $(element).trigger('activatingClient.chatmore', [
+                                'error',
+                                'Error during activation',
+                                { server: self.state.server, port: self.state.port }
+                            ]);
+                        }
                     }
-                    else {
-                        // Error on activation.
-                        $(element).trigger('activatingClient.chatmore', [
-                            'error',
-                            'Error during activation',
-                            { server: self.state.server, port: self.state.port }
-                        ]);
+                    catch (e) {
+                        // Exception during activation.  Client state is undetermined.  User may need to start over.
+                        if (window.console) {
+                            console.error('Exception caught while processing messages:');
+                            console.error(data);
+                            console.error(e);
+                        }
                     }
                 },
                 error: ajaxErrorFunc
@@ -475,7 +504,16 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 
                         // Validate data is an array.
                         if (typeof(data) === 'object') {
-                            local.processMessages.call(self, data);
+                            try {
+                                local.processMessages.call(self, data);
+                            }
+                            catch (e) {
+                                if (window.console) {
+                                    console.error('Exception caught while processing messages:');
+                                    console.error(data);
+                                    console.error(e);
+                                }
+                            }
                         }
                         else {
                             // Data is invalid!
