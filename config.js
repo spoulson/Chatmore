@@ -3,5 +3,6 @@ var chatmoreDefaults = {
     server: 'irc.dsm.org',
     port: 6667,
     channel: undefined,
-    activateImmediately: true
+    activateImmediately: true,
+    maximumConsoleLines: 20000
 };

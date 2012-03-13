@@ -198,6 +198,11 @@
             // Is the console's scroll within 4 pixels from the bottom?
             var atBottom = layout.isAtBottom(self);
             
+            // Roll off oldest line if at maximum lines.
+            for (var lineCount = ircContent.find('.line').length; lineCount >= self.options.maximumConsoleLines; lineCount--) {
+                ircContent.find('.line').first().remove();
+            }
+
             // Auto decorate nicks and channels in message.
             var channel = element.find('.prefix .channel').text();
             element.closest('.channelMsg,.privateMsg,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
