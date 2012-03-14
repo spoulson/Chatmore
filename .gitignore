@@ -1,4 +1,6 @@
-build/*
+build/tmp/*.db
+build/tmp/*.log
+build.tmp/*.sock
 src/obj/*
 src/tmp/*.db
 src/tmp/*.log
