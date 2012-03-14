@@ -1,23 +1,24 @@
 Chatmore web-based IRC client
 =============================
 
-Release 2012-02-21  
+Release 2012-03-14  
 Github repo: https://github.com/spoulson/Chatmore  
 Shawn Poulson, http://explodingcoder.com
 
 INTRODUCTION
 ------------
-
 ### What does Chatmore do?
  - Chatmore implements the IRC client protocol (RFC 2812) in order to chat in realtime on IRC chat networks.
  - Enables web-based IRC access where installation of a native client is prohibited or inconvenient.
+ - User interface is focused on simplistic and functional for ease of use.
 
 ### What *doesn't* Chatmore do?
  - Chatmore doesn't make IRC connections from the browser PC.  It only talks over HTTP(S) to the hosting web server.  The web server maintains the IRC connection.
+ - There are no tabs or multiple chat windows.  All activity is in one view.
  - Chatmore doesn't do everything because it's not finished.  It is under heavy development, so is currently considered alpha grade software.
 
 ### Why use Chatmore?
- - No end-user client installation.
+ - No end-user client installation.  Minimal server requirements.
  - Chatmore aims to be a better web IRC client.  At the time of writing, there are few alternatives for self-hosting web-based IRC clients.
  - You want to access IRC networks from anywhere there's a web browser, such as an Internet cafe, while using a computer that you don't own, etc.
 
@@ -26,57 +27,40 @@ INTRODUCTION
 
 SYSTEM REQUIREMENTS
 -------------------
-
 ### Server
  - PHP 5.2+.
  - Linux/Unix OS.  Windows is not supported.
+   - Tested on Debian Linux 3.1, Apache 2.2, PHP 5.2.17
 
 ### Client
  - Browser supporting HTML5.
- - Tested on browsers on Windows: Chrome 13+, Firefox 5+, IE9, Safari 5.1.
- - Tested on browsers on Mac OS X Lion: Chrome 17, Firefox 9, Safari 5.1.
+   - Tested browsers on Windows: Chrome 13+, Firefox 5+, IE9, Safari 5.1.
+   - Tested browsers on Mac OS X: Chrome 17+, Firefox 9+, Safari 5.1.
 
 INSTALLATION
 ------------
-
 - Copy all files to a web hosted directory.
 - Customize settings in config.php.
 - In a browser, access the directory's associated URL.
 
 USER ACCESS
 -----------
-### In a browser, access the directory's associated URL.  
+### In a browser, access the hosted URL.  
  Assuming the installed virtual directory is /chatmore.  
 
  Chatmore accepts access URLs in formats:
 
 http://server/chatmore/  
-Startup with defaults.
+View landing page, prompting for connection details.
 
 http://server/chatmore/client.php?server=irc.example.com  
 http://server/chatmore/client.php?server=irc.example.com&nick=yournick  
 http://server/chatmore/client.php?server=irc.example.com&nick=yournick#channel  
-http://server/chatmore/client.php?server=irc.example.com&nick=yournick#channel,#channel2
+http://server/chatmore/client.php?server=irc.example.com&nick=yournick#channel,#channel2  
+http://server/chatmore/client.php?server=irc.example.com&port=6667&nick=yournick&realname=yourname#channel
 
-Connect to IRC server name.  
 If nick is omitted, use randomly generated nick.  
 If #channel is provided, join the channel(s) automatically.
-
-### Alternatively, user friendly URLs:
-http://server/irc.example.com  
-http://server/irc.example.com/yournick  
-http://server/irc.example.com/yournick#channel
-
-To implement, update .htaccess in parent directory:  
-Assuming /chatmore is the chat client virtual directory, append /.htaccess with:
-
-    RewriteEngine On  
-    # Do not rewrite legit URLs to files.  
-    RewriteRule \.(html|php|js|css)$ - [L]
-    # http://server/<IRC server>  
-    RewriteRule ^/?([^/]*\.[^/]*)/?(#.+)?$ /chatmore/client.php?server=$1$2  
-    # http://server/<IRC server>/<nick>  
-    RewriteRule ^/?([^/]*\.[^/]*)/([^/]+)[^#]*(#.+)?$ /chatmore/client.php?server=$1&nick=$2$3
 
 KNOWN ISSUES
 ------------
@@ -84,6 +68,5 @@ KNOWN ISSUES
 
 LICENSING
 ---------
-
 Unless otherwise attributed, these works are licensed under the Creative Commons Attribution license:  
 http://creativecommons.org/licenses/by/3.0/legalcode.

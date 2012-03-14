@@ -784,5 +784,5 @@
     };
 
     // Register layout.
-    $.chatmore('layouts').default = layout;
+    $.chatmore('layouts')['default'] = layout;
 })();
