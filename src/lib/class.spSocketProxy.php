@@ -27,8 +27,8 @@ class spSocketProxy {
     public $proxyIdleTimeout = 300;     // in seconds of inactivity from proxy socket.
     public $clientIdleTimeout = 300;    // in seconds of inactivity from client domain sockets.
     public $pollTimeout = 100;          // in milliseconds
-    public $proxyReadBufSize = 10240;
-    public $clientReadBufSize = 10240;
+    public $proxyReadBufSize = 262144;
+    public $clientReadBufSize = 262144;
     
     public function spSocketProxy($primaryDomainSocketFile, $secondaryDomainSocketFile) {
         $this->primaryDomainSocketFile = $primaryDomainSocketFile;
