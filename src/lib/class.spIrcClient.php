@@ -384,16 +384,16 @@ class spIrcClient {
             break;
 
         case self::RPL_WHOREPLY:
-            if (!preg_match("/^(\S+)\s+(#\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+:(\d+)\s+(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+:(\d+)\s+(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
-                'channel' => $msgParams[2],
-                'user' => $msgParams[3],
-                'host' => $msgParams[4],
-                'server' => $msgParams[5],
-                'nick' => $msgParams[6],
-                'mode' => $msgParams[7],
-                'hopcount' => $msgParams[8],
-                'realname' => $msgParams[9]
+                'channel' => $msgParams[1],
+                'user' => $msgParams[2],
+                'host' => $msgParams[3],
+                'server' => $msgParams[4],
+                'nick' => $msgParams[5],
+                'mode' => $msgParams[6],
+                'hopcount' => $msgParams[7],
+                'realname' => $msgParams[8]
             );
             break;
             

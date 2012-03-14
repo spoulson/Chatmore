@@ -153,6 +153,9 @@
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message no-decorate">Topic set by <span class="nick ${layout.getColorizeCSSClass(self, msg.info.nick, msg.info.channel)}">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
             '</span>',
+        who: '{{tmpl "timestamp"}}<span class="WHO">' +
+            '{{tmpl "notePrefix"}} <span class="message">WHO for <span class="nick ${layout.getColorizeCSSClass(self, msg.info.nick, msg.info.channel)}">${msg.info.nick}</span>: "${msg.info.realname}" ${msg.info.user}@${msg.info.host} on server ${msg.info.server}' +
+            '</span>',
         serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
             '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${msg.info.server}</span>: <span class="time">${msg.info.timeString}</span></span>' +
             '</span>',

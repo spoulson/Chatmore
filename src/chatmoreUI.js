@@ -600,6 +600,11 @@
                                 meta.error = 'Error: Must be connected to send a raw IRC request.';
                                 return false;
                             }
+                            
+                            if (isEmpty(meta.param)) {
+                                meta.error = 'Missing parameter to /quote.';
+                                return false;
+                            }
                         },
                         exec: function (meta) {
                             self.irc.sendMsg(meta.param);
@@ -630,6 +635,8 @@
                         helpUsage: 'Usage: /topic [message]',
                         helpText: 'Get or set the selected channel\'s topic',
                         parseParam: function (param, meta) {
+                            meta.topic = param;
+
                             if (self.irc.target() === undefined) {
                                 meta.error = 'Error: No target selected.  Doubleclick a channel or nick on the side bar or enter: /query &lt;nick|#channel&gt;.';
                                 return false;
@@ -639,8 +646,6 @@
                                 meta.error = 'Error: Must be connected to get or set the topic.';
                                 return false;
                             }
-                            
-                            meta.topic = param;
                         },
                         exec: function (meta) {
                             if (meta.topic === undefined) {
@@ -652,10 +657,23 @@
                         }
                     },
                     who: {
-                        helpUsage: 'Usage: /who',
-                        helpText: 'Get info on a nick.',
-                        exec: function () {
-                            self.irc.sendMsg('WHO');
+                        helpUsage: 'Usage: /who &lt;nick | channel&gt;',
+                        helpText: 'Get info on a nick or all users in a channel.',
+                        parseParam: function (param, meta) {
+                            meta.target = param;
+
+                            if (!self.irc.state.isActivated) {
+                                meta.error = 'Error: Must be connected to get WHO information.';
+                                return false;
+                            }
+                            
+                            if (isEmpty(meta.target)) {
+                                meta.error = 'Missing parameter to /quote.';
+                                return false;
+                            }
+                        },
+                        exec: function (meta) {
+                            self.irc.sendMsg('WHO ' + meta.target);
                         }
                     }
                 },
@@ -1301,6 +1319,10 @@
                             
                         case '333': // Topic set by
                             self.writeTmpl('topicSetBy', { msg: msg });
+                            break;
+                            
+                        case '352': // RPL_WHOREPLY
+                            self.writeTmpl('who', { msg: msg });
                             break;
                             
                         case '391': // RPL_TIME
