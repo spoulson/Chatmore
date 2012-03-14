@@ -55,7 +55,7 @@
             var getLayoutPlugin = function () {
                 if (options.layout === undefined) {
                     if ('default' in layouts) {
-                        return layouts.default;
+                        return layouts['default'];
                     }
                     else {
                         for (var name in layouts) {
