@@ -15,6 +15,7 @@ rm -rf $BUILD_DIR/*
 
 # Copy src files.
 rsync -av $SRC_DIR/* $BUILD_DIR --exclude=chatmore*.js --exclude=obj
+rsync -lptgoDv $SRC_DIR/.* $BUILD_DIR --exclude=chatmore*.js --exclude=obj
 
 # Copy minified output.
 cp -a $OBJ_DIR/chatmoreAll.min.js $BUILD_DIR
