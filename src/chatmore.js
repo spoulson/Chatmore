@@ -400,6 +400,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                                                 // Validate data is an array.
                                                 if (typeof(data) === 'object') {
                                                     try {
+                                                        if (window.console) console.debug('msg count: ' + data.length);
                                                         local.processMessages.call(self, data);
                                                     }
                                                     catch (e) {
@@ -553,29 +554,29 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
     };
     
     self.sendChannelMsg = function (channel, message) {
-        this.sendMsg('PRIVMSG ' + channel + ' ' + message);
+        this.sendMsg('PRIVMSG ' + channel + ' :' + message);
     };
 
     self.sendPrivateMsg = function (nick, message) {
-        this.sendMsg('PRIVMSG ' + nick + ' ' + message);
+        this.sendMsg('PRIVMSG ' + nick + ' :' + message);
     };
     
     self.sendChannelAction = function (channel, message) {
         var quote = String.fromCharCode(1);
-        this.sendMsg('PRIVMSG ' + channel + ' ' + quote + 'ACTION ' + message + quote);
+        this.sendMsg('PRIVMSG ' + channel + ' :' + quote + 'ACTION ' + message + quote);
     };
 
     self.sendPrivateAction = function (nick, message) {
         var quote = String.fromCharCode(1);
-        this.sendMsg('PRIVMSG ' + nick + ' ' + quote + 'ACTION ' + message + quote);
+        this.sendMsg('PRIVMSG ' + nick + ' :' + quote + 'ACTION ' + message + quote);
     };
     
     self.sendChannelNotice = function (channel, message) {
-        this.sendMsg('NOTICE ' + channel + ' ' + message);
+        this.sendMsg('NOTICE ' + channel + ' :' + message);
     };
 
     self.sendPrivateNotice = function (nick, message) {
-        this.sendMsg('NOTICE ' + nick + ' ' + message);
+        this.sendMsg('NOTICE ' + nick + ' :' + message);
     };
 
     self.renameNick = function (oldNick, newNick) {

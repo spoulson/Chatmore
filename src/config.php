@@ -39,7 +39,7 @@ $ircConfig = array(
     'socketFilePath' => $tmpDir,
     
     // PHP command line options for launching the background process.
-    'php_opts' => '-d memory_limit=1M',
+    'php_opts' => '-d memory_limit=4M',
 
     // Client side timeout in ms waiting for recv.php to return data.
     // - Higher timeout means less frequent client reconnections.

@@ -214,9 +214,9 @@ class spIrcClient {
             else {
                  log::info('Non-UTF-8 message found.  Detected "' . $encType . '" encoding.');
             }
-            log::info('line before: ' . $line);
+            //log::info('line before: ' . $line);
             $line = mb_convert_encoding($line, 'UTF-8', $encType);
-            log::info('line after: ' . $line);
+            //log::info('line after: ' . $line);
         }
         
         // Parse raw message for prefix, command, and params.
@@ -334,7 +334,6 @@ class spIrcClient {
                 'kicks' => $kicks,
                 'comment' => $msgParams[3]
             );
-            log::info('KICK: ' . var_export($msg, true));
             break;
             
         case 'TOPIC':
@@ -385,16 +384,16 @@ class spIrcClient {
             break;
 
         case self::RPL_WHOREPLY:
-            if (!preg_match("/^(\S+)\s+(#\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+:(\d+)\s+(.+)/", $params, $msgParams)) return false;
+            if (!preg_match("/^\S+\s+([#&+!][^\s,:\cg]+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+:(\d+)\s+(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
-                'channel' => $msgParams[2],
-                'user' => $msgParams[3],
-                'host' => $msgParams[4],
-                'server' => $msgParams[5],
-                'nick' => $msgParams[6],
-                'mode' => $msgParams[7],
-                'hopcount' => $msgParams[8],
-                'realname' => $msgParams[9]
+                'channel' => $msgParams[1],
+                'user' => $msgParams[2],
+                'host' => $msgParams[3],
+                'server' => $msgParams[4],
+                'nick' => $msgParams[5],
+                'mode' => $msgParams[6],
+                'hopcount' => $msgParams[7],
+                'realname' => $msgParams[8]
             );
             break;
             
@@ -479,7 +478,6 @@ class spIrcClient {
                 'memberCount' => $msgParams[2],
                 'topic' => $msgParams[3]
             );
-            log::info(var_export($msg, true));
             break;
             
         case self::ERR_NOSUCHCHANNEL:
@@ -529,7 +527,7 @@ class spIrcClient {
         }
         
         $msg['type'] = self::CLMSG_TYPE_RECV;
-        log::info('Parsed message: ' . var_export($msg, true));
+        //log::info('Parsed message: ' . var_export($msg, true));
         return $msg;
     }
     

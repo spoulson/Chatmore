@@ -27,8 +27,8 @@ class spSocketProxy {
     public $proxyIdleTimeout = 300;     // in seconds of inactivity from proxy socket.
     public $clientIdleTimeout = 300;    // in seconds of inactivity from client domain sockets.
     public $pollTimeout = 100;          // in milliseconds
-    public $proxyReadBufSize = 10240;
-    public $clientReadBufSize = 10240;
+    public $proxyReadBufSize = 262144;
+    public $clientReadBufSize = 262144;
     
     public function spSocketProxy($primaryDomainSocketFile, $secondaryDomainSocketFile) {
         $this->primaryDomainSocketFile = $primaryDomainSocketFile;
@@ -132,7 +132,7 @@ class spSocketProxy {
                         $size = @socket_recv($socket, $buf, $this->proxyReadBufSize, 0);
                         if ($size) {
                             //log::info("proxy: $buf");
-                            log::info("Buffering to client, size(" . strlen($buf) . ")");
+                            //log::info("Buffering to client, size(" . strlen($buf) . ")");
                             $this->clientBuffer .= $buf;
                         }
                         else {
@@ -164,7 +164,7 @@ class spSocketProxy {
                         // Reset idle timer when client attempts to write.
                         $this->clientIdleTime = time();
 
-                        log::info("Buffering to proxy, size(" . strlen($buf) . ")");
+                        //log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                         $this->proxyBuffer .= $buf;
                     }
                     else {
@@ -195,7 +195,7 @@ class spSocketProxy {
                         // Reset idle timer when client attempts to write.
                         $this->clientIdleTime = time();
 
-                        log::info("Buffering to proxy, size(" . strlen($buf) . ")");
+                        //log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                         $this->proxyBuffer .= $buf;
                     }
                     else {
@@ -218,7 +218,7 @@ class spSocketProxy {
                     if ($this->isProxySocketConnected()) {
                         // Proxy socket ready for writing.
                         //log::info("wP");
-                        log::info("Sending " . strlen($this->proxyBuffer) . " to proxy...");
+                        log::info("Sending " . strlen($this->proxyBuffer) . " bytes to proxy...");
                         $size = @socket_send($this->proxySocket, $this->proxyBuffer, strlen($this->proxyBuffer), 0);
                         if ($size === false) {
                             // Error with proxy socket!
@@ -230,7 +230,7 @@ class spSocketProxy {
                         else {
                             if ($size < strlen($this->proxyBuffer)) {
                                 // Not all bytes were sent.  Buffer the remainder.
-                                log::info("sent($size) buffered(" . (strlen($this->proxyBuffer) - $size) . ") ");
+                                log::info("sent $size of buffered " . (strlen($this->proxyBuffer) - $size) . " bytes ");
                                 $this->proxyBuffer = substr($this->proxyBuffer, $size);
                             }
                             else {
@@ -243,7 +243,7 @@ class spSocketProxy {
                 else if ($socket === $this->PrimaryClientSocket) {
                     // Client socket ready for writing.
                     //log::info("wC");
-                    log::info("Sending " . strlen($this->clientBuffer) . " to client... ");
+                    log::info("Sending " . strlen($this->clientBuffer) . " bytes to client... ");
                     $size = @socket_send($socket, $this->clientBuffer, strlen($this->clientBuffer), 0);
                     if ($size === false) {
                         // Error with client, close its connection.
@@ -256,7 +256,7 @@ class spSocketProxy {
                     else {
                         if ($size < strlen($this->clientBuffer)) {
                             // Not all bytes were sent.  Buffer the remainder.
-                            log::info("sent($size) buffered(" . (strlen($this->clientBuffer) - $size) . ") ");
+                            log::info("sent $size of buffered " . (strlen($this->clientBuffer) - $size) . " bytes ");
                             $this->clientBuffer = substr($this->clientBuffer, $size);
                         }
                         else {
@@ -284,7 +284,7 @@ class spSocketProxy {
             // Reset idle timer when client connects to domain socket.
             $this->clientIdleTime = time();
 
-            log::info('Primary client socket connected.');
+            //log::info('Primary client socket connected.');
 
             // Connect proxy socket on initial client connection.
             if (!$this->isProxySocketConnected()) {
@@ -302,7 +302,7 @@ class spSocketProxy {
             // Reset idle timer when client connects to domain socket.
             $this->clientIdleTime = time();
 
-            log::info('Secondary client socket connected.');
+            //log::info('Secondary client socket connected.');
 
             // Connect proxy socket on initial client connection.
             if (!$this->isProxySocketConnected()) {
