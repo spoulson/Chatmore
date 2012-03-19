@@ -39,8 +39,10 @@ SYSTEM REQUIREMENTS
 
 INSTALLATION
 ------------
-- Copy all files to a web hosted directory.
-- Customize settings in config.php.
+# cd src
+# make
+- Copy build/* files to a web hosted directory.
+- Customize settings in config.php, if necessary.
 - In a browser, access the directory's associated URL.
 
 USER ACCESS
