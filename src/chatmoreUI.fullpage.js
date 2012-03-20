@@ -41,19 +41,19 @@
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice">' +
+        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice outgoing">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg">' +
-            '<span class="prefix">&#x21E8; &bull;<span class="nick">${msg.info.target}</span>&bull;</span> ' +
+        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg outgoing">' +
+            '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull;</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg action">' +
-            '<span class="prefix">&#x21E8; &bull;<span class="nick">${msg.info.target}</span>&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
+        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg outgoing action">' +
+            '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice">' +
+        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice outgoing">' +
             '<span class="prefix">-<span class="nick">${msg.info.target}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
@@ -65,19 +65,19 @@
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice">' +
+        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice incoming">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg">' +
+        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg incoming">' +
             '<span class="prefix">&bull;<span class="nick">${msg.prefixNick}</span>&bull;</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg action">' +
+        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg incoming action">' +
             '<span class="prefix">&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
-        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice">' +
+        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice incoming">' +
             '<span class="prefix">-<span class="nick">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${msg.info.text}</span>' +
             '</span>',
@@ -244,9 +244,7 @@
             if (!layout.isWindowFocused) {
                 if (layout.blurMessageCount === (layout.messageCount - 1)) {
                     var content = self.ircElement.find('.ircConsole .content');
-                    content.find('.line.new').removeClass('new');
-                    content.find('.line.separator').remove();
-                    lineElement.before('<div class="line separator"/>');
+                    content.find('.line.viewed').removeClass('viewed');
                 }
                 lineElement
                     .addClass('new')
@@ -651,7 +649,11 @@
                         // Indicate new messages since blur.
                         if (layout.blurMessageCount) {
                             var msgElements = self.ircElement.find('.ircConsole .content > .line.new');
-                            msgElements.fadeTo(2000, 1, 'easeOutExpo');
+                            msgElements.fadeTo(2000, 1, 'easeOutExpo', function () {
+                                msgElements
+                                    .removeClass('new')
+                                    .addClass('viewed');
+                            });
                         }
                         
                         layout.blurMessageCount = undefined;
