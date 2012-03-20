@@ -317,12 +317,14 @@
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg.outgoing,
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.outgoing {
-    background-color: #ffffe6;
+    background-color: #FFFFC7;
+    padding-right: 10px;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg.incoming,
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.incoming {
-    background-color: #ffffc7;
+    background-color: #F1E7C8;
+    padding-right: 10px;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg .prefix,
@@ -338,6 +340,10 @@
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.outgoing .prefix {
     padding-left: 30px;
     background: transparent url(images/note_go.png) no-repeat 10px top;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .outgoing .message {
+    font-style: italic;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .line.new .privateMsg.incoming .prefix {
