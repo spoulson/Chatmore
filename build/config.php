@@ -1,14 +1,12 @@
 <?
-// scriptPath is URI to script directory.
+// scriptPath is URI to script directory (with trailing slash).
 $scriptName = $_SERVER['SCRIPT_NAME'];
-if ($scriptName == '/') {
-    $scriptPath = '/';
-}
-else if (substr($scriptName, -1) == '/') {
-    $scriptPath = substr($scriptName, 0, strlen($scriptName) - 1);
+if (substr($scriptName, -1) === '/') {
+    $scriptPath = $scriptName;
 }
 else {
     $scriptPath = dirname($scriptName);
+    if (substr($scriptPath, -1) !== '/') $scriptPath .= '/';
 }
 
 $tmpDir = dirname($_SERVER['SCRIPT_FILENAME']) . '/tmp';

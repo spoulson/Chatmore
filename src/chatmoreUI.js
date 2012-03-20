@@ -131,29 +131,87 @@
                             self.irc.activateClient();
                         }
                     },
+                    deop: {
+                        helpUsage: 'Usage: /deop &lt;nick&gt; [nick ...]',
+                        helpText: 'Revoke channel operator status from a user.',
+                        parseParam: function (param, meta) {
+                            if (param === undefined) {
+                                meta.error = self.cmdDefs['deop'].helpUsage;
+                                return false;
+                            }
+                            
+                            meta.channel = self.irc.target();
+                            meta.nicks = param.split(/\s+/);
+                            
+                            if (isEmpty(meta.channel) || !self.isChannel(meta.channel)) {
+                                meta.error = 'Error: Must select a channel to revoke operator status.';
+                                return false;
+                            }
+                            
+                            if (!self.irc.state.isActivated) {
+                                meta.error = 'Error: Must be connected to revoke operator status.';
+                                return false;
+                            }
+                        },
+                        exec: function (meta) {
+                            var os = Array(meta.nicks.length + 1).join('o');
+                            var nicks = meta.nicks.join(' ');
+                            self.irc.sendMsg('MODE ' + meta.channel + ' -' + os + ' ' + nicks);
+                        }
+                    },
+                    devoice: {
+                        helpUsage: 'Usage: /devoice &lt;nick&gt; [nick ...]',
+                        helpText: 'Revoke channel voice status from a user.',
+                        parseParam: function (param, meta) {
+                            if (param === undefined) {
+                                meta.error = self.cmdDefs['devoice'].helpUsage;
+                                return false;
+                            }
+                            
+                            meta.channel = self.irc.target();
+                            meta.nicks = param.split(/\s+/);
+                            
+                            if (isEmpty(meta.channel) || !self.isChannel(meta.channel)) {
+                                meta.error = 'Error: Must select a channel to revoke voice status.';
+                                return false;
+                            }
+                            
+                            if (!self.irc.state.isActivated) {
+                                meta.error = 'Error: Must be connected to revoke voice status.';
+                                return false;
+                            }
+                        },
+                        exec: function (meta) {
+                            var os = Array(meta.nicks.length + 1).join('v');
+                            var nicks = meta.nicks.join(' ');
+                            self.irc.sendMsg('MODE ' + meta.channel + ' -' + os + ' ' + nicks);
+                        }
+                    },
                     help: {
                         helpUsage: 'Usage: /help &lt;command&gt;',
                         helpText: [
                             'Show help for client commands.',
                             'Commands:',
                             ' clear - Clear the chat console',
-                            ' cleartopic - Clear the channel\'s topic',
+                            ' cleartopic - Clear the channel\'s topic (must be an operator)',
                             ' connect - Reconnect to IRC server',
                             ' join - Join a channel',
-                            ' kick - Kick user from channel',
+                            ' kick - Kick user from channel (must be an operator)',
                             ' leave - Leave a channel',
                             ' list - Get channel listing',
                             ' me - Send an action message',
                             ' motd - Get the server message of the day',
                             ' msg - Send a private message',
                             ' nick - Change your nick',
-                            ' notice - Send a notice to a nick or channel',
+                            ' notice - Send a notice to a user or channel',
+                            ' op/deop - Grant/revoke channel operator status to a user (must be an operator)',
                             ' query - Select a target for messaging',
                             ' quit - Quit IRC session',
                             ' quote - Send raw IRC message',
                             ' time - Get the server time',
-                            ' topic - Get or set the channel\'s topic',
-                            ' who - Get info on a nick'
+                            ' topic - Get or set the channel\'s topic (must be an operator)',
+                            ' voice/devoice - Grant/revoke channel voice to a user (must be an operator)',
+                            ' who - Get info on a user'
                         ],
                         parseParam: function (param, meta) {
                             if (param === undefined) param = 'help';
@@ -202,7 +260,7 @@
                     },
                     kick: {
                         helpUsage: 'Usage: /kick &gt;nick&lt; [comment]',
-                        helpText: 'Kick user from channel',
+                        helpText: 'Kick user from channel.',
                         parseParam: function (param, meta) {
                             var usage = self.cmdDefs['kick'].helpUsage;
                             var m = /^(\S+)(\s+(.+))?/.exec(param);
@@ -317,7 +375,7 @@
                     },
                     me: {
                         helpUsage: 'Usage: /me &lt;message&gt;',
-                        helpText: 'Send an action message to currently selected channel or nick.',
+                        helpText: 'Send an action message to currently selected channel or user.',
                         parseParam: function (param, meta) {
                             var usage = self.cmdDefs['msg'].helpUsage;
                             
@@ -328,6 +386,11 @@
                             
                             meta.target = self.irc.target();
                             meta.message = param;
+                            
+                            if (isEmpty(meta.target)) {
+                                meta.error = 'Error: Must select a channel or nick to send a message.';
+                                return false;
+                            }
                             
                             if (!self.irc.state.isActivated) {
                                 meta.error = 'Error: Must be connected to send an action message.';
@@ -418,7 +481,7 @@
                     },
                     msg: {
                         helpUsage: 'Usage: /msg &lt;nick|#channel&gt; &lt;message&gt;',
-                        helpText: 'Send a private message to a nick.',
+                        helpText: 'Send a private message to a user.',
                         parseParam: function (param, meta) {
                             var usage = self.cmdDefs['msg'].helpUsage;
                             
@@ -493,7 +556,7 @@
                     },
                     notice: {
                         helpUsage: 'Usage: /notice &lt;nick|#channel&gt; &lt;message&gt;',
-                        helpText: 'Send a notice to a nick or channel.',
+                        helpText: 'Send a notice to a user or channel.',
                         parseParam: function (param, meta) {
                             var usage = self.cmdDefs['msg'].helpUsage;
                             
@@ -544,9 +607,37 @@
                             }
                         }
                     },
+                    op: {
+                        helpUsage: 'Usage: /op &lt;nick&gt; [nick ...]',
+                        helpText: 'Grant channel operator status to a user.',
+                        parseParam: function (param, meta) {
+                            if (param === undefined) {
+                                meta.error = self.cmdDefs['op'].helpUsage;
+                                return false;
+                            }
+                            
+                            meta.channel = self.irc.target();
+                            meta.nicks = param.split(/\s+/);
+                            
+                            if (isEmpty(meta.channel) || !self.isChannel(meta.channel)) {
+                                meta.error = 'Error: Must select a channel to grant operator status.';
+                                return false;
+                            }
+                            
+                            if (!self.irc.state.isActivated) {
+                                meta.error = 'Error: Must be connected to grant operator status.';
+                                return false;
+                            }
+                        },
+                        exec: function (meta) {
+                            var os = Array(meta.nicks.length + 1).join('o');
+                            var nicks = meta.nicks.join(' ');
+                            self.irc.sendMsg('MODE ' + meta.channel + ' +' + os + ' ' + nicks);
+                        }
+                    },
                     query: {
                         helpUsage: 'Usage: /query &lt;nick|#channel&gt;',
-                        helpText: 'Select a nick or channel to send messages.',
+                        helpText: 'Select a user or channel to send messages.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
                                 meta.error = self.cmdDefs['query'].helpUsage;
@@ -638,7 +729,7 @@
                             meta.topic = param;
 
                             if (self.irc.target() === undefined) {
-                                meta.error = 'Error: No target selected.  Doubleclick a channel or nick on the side bar or enter: /query &lt;nick|#channel&gt;.';
+                                meta.error = 'Error: No target selected.  Doubleclick a channel or user on the side bar or enter: /query &lt;nick|#channel&gt;.';
                                 return false;
                             }
                             
@@ -656,9 +747,37 @@
                             }
                         }
                     },
+                    voice: {
+                        helpUsage: 'Usage: /voice &lt;nick&gt; [nick ...]',
+                        helpText: 'Grant channel voice status to a user.',
+                        parseParam: function (param, meta) {
+                            if (param === undefined) {
+                                meta.error = self.cmdDefs['voice'].helpUsage;
+                                return false;
+                            }
+                            
+                            meta.channel = self.irc.target();
+                            meta.nicks = param.split(/\s+/);
+                            
+                            if (isEmpty(meta.channel) || !self.isChannel(meta.channel)) {
+                                meta.error = 'Error: Must select a channel to grant voice status.';
+                                return false;
+                            }
+                            
+                            if (!self.irc.state.isActivated) {
+                                meta.error = 'Error: Must be connected to grant voice status.';
+                                return false;
+                            }
+                        },
+                        exec: function (meta) {
+                            var os = Array(meta.nicks.length + 1).join('v');
+                            var nicks = meta.nicks.join(' ');
+                            self.irc.sendMsg('MODE ' + meta.channel + ' +' + os + ' ' + nicks);
+                        }
+                    },
                     who: {
                         helpUsage: 'Usage: /who &lt;nick | channel&gt;',
-                        helpText: 'Get info on a nick or all users in a channel.',
+                        helpText: 'Get info on a user or all users in a channel.',
                         parseParam: function (param, meta) {
                             meta.target = param;
 

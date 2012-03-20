@@ -315,14 +315,50 @@
     color: #003030;
 }
 
-.chatmore.-fullpage-layout .ircConsole .content .privateMsg,
-.chatmore.-fullpage-layout .ircConsole .content .privateNotice {
-    background-color: #ffffe6;
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg.outgoing,
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice.outgoing {
+    background-color: #FFFFC7;
+    padding-right: 10px;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg.incoming,
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice.incoming {
+    background-color: #F1E7C8;
+    padding-right: 10px;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg .prefix,
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice .prefix {
     color: black;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg.outgoing .prefix {
+    padding-left: 30px;
+    background: transparent url(images/email_go.png) no-repeat 10px top;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice.outgoing .prefix {
+    padding-left: 30px;
+    background: transparent url(images/note_go.png) no-repeat 10px top;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .outgoing .message {
+    font-style: italic;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .line.new .privateMsg.incoming .prefix {
+    padding-left: 20px;
+    background: transparent url(images/email.png) no-repeat left top;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg.incoming .prefix {
+    padding-left: 20px;
+    background: transparent url(images/email_open.png) no-repeat left top;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice.incoming .prefix {
+    padding-left: 20px;
+    background: transparent url(images/note.png) no-repeat left top;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .nickHighlight {
@@ -349,10 +385,20 @@
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .line.new {
-    background-color: #FAFFB3; /*#CEFF84*/
+    background-color: #FAFFB3;
+    opacity: 0.5;
+    border-top: 4px solid #F0FF1D;
 }
 
-.chatmore.-fullpage-layout .ircConsole .content > .line.separator {
-    height: 4px;
-    background-color: #F0FF1D; /*#A5FF1E*/
+.chatmore.-fullpage-layout .ircConsole .content .line.new + .line.new {
+    border-top: 0;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .line.viewed {
+    background-color: #FAFFB3;
+    border-top: 4px solid #F0FF1D;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content .line.viewed + .line.viewed {
+    border-top: 0;
 }
