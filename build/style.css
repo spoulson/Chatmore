@@ -1,10 +1,3 @@
-BODY {
-    padding: 6px;
-    margin: 0;
-    overflow: hidden;
-    font: 14px Verdana, sans-serif;
-}
-
 TD, TH {
     vertical-align: top;
 }

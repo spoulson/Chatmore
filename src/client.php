@@ -48,6 +48,14 @@ if (array_key_exists('x', $_GET)) {
     <link rel="stylesheet" type="text/css" href="style.css" />
     <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
     <link rel="stylesheet" type="text/css" href="layouts/fullpage/fullpage.css" />
+    <style type="text/css">
+        BODY {
+            padding: 6px;
+            margin: 0;
+            overflow: hidden;
+            font: 14px Verdana, sans-serif;
+        }
+    </style>
     <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
     <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
