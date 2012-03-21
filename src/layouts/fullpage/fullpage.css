@@ -325,6 +325,8 @@
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.incoming {
     background-color: #F1E7C8;
     padding-right: 10px;
+    font-weight: bold;
+    color: #202020;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg .prefix,
