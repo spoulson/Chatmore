@@ -38,19 +38,44 @@
                 return parseInt(port) > 0;
             };
             
-            var validateChannel = function (channel) {
-                return /^[#&+!]?[^\s:\cg]+(,[#&+!]?[^\s:\cg]+)*$/.test(channel);
-            };
-            
             var validateLaunch = function () {
                 var channel = $('#channelTextbox').val();
                 if (validateNick($('#nickTextbox').val()) &&
                     validateServer($('#serverTextbox').val()) &&
-                    validatePort($('#portTextbox').val()) &&
-                    (channel == '' || validateChannel(channel)))
-                    $('#launchButton').removeAttr('disabled');
-                else
-                    $('#launchButton').attr('disabled', 'disabled');
+                    validatePort($('#portTextbox').val())) {
+                    if ($('#launchButton').attr('disabled')) {
+                        $('#launchButton').removeAttr('disabled');
+                    }
+                }
+                else {
+                    if (!$('#launchButton').attr('disabled')) {
+                        $('#launchButton').attr('disabled', 'disabled');
+                    }
+                }
+            };
+            
+            // Normalize channel(s) with proper channel prefix.
+            var normalizeChannel = function () {
+                var channel = $('#channelTextbox').val();
+
+                // Automatically prepend channels with '#'.
+                var channels = channel.split(',');
+
+                // Remove empty array elements.
+                channels = $.grep(channels, function (c) { return !/^#?$/.test(c); });
+
+                $.each(channels, function (idx, c) {
+                    if (/^[^#&+!]/.test(c)) {
+                        channels[idx] = '#' + c;
+                    }
+                });
+                
+                // Update form action URL.
+                var channel = channels.join(',');
+                $('#channelTextbox').val(channel);
+
+                // Set form action with channel.
+                $(document.launchForm).attr('action', 'client.php' + channel);
             };
             
             $('#nickTextbox')
@@ -110,53 +135,24 @@
                 .keypress(function (e) {
 					// Simulate form submission on Enter.
 					if (e.charCode === 13) {
-						document.forms.form1.submit();
+					    validateLaunch();
+					    normalizeChannel();
+						document.forms.launchForm.submit();
 						return;
 					}
-					
-                    // Block spaces.
-                    if (/^\s$/.test(String.fromCharCode(e.charCode))) return false;
+					else {
+                        // Block spaces.
+                        if (/^\s$/.test(String.fromCharCode(e.charCode))) return false;
 
-                    validateLaunch();
-
-                })
-                .change(function () {
-                    var channel = $('#channelTextbox').val();
-                    if (validateChannel(channel)) {
-                        // Automatically prepend channels with '#'.
-                        var channels = channel.split(',');
-
-                        // Remove empty array elements.
-                        channels = $.grep(channels, function (c) { return !/^#?$/.test(c); });
-
-                        $.each(channels, function (idx, c) {
-                            if (/^[^#&+!]/.test(c)) {
-                                channels[idx] = '#' + c;
-                            }
-                        });
-                        
-                        // Update form action URL.
-                        var channel = channels.join(',');
-                        $('#channelTextbox').val(channel);
-
-                        // Must clone form to change action URL.
-                        // Changing action attribute directly does not work in Safari.
-                        $(document.form1).replaceWith($(document.form1)
-                            .clone(true)
-                            .attr('action', 'client.php' + channel)
-                        );
+                        validateLaunch();
                     }
                 })
-                .blur(function () {
-                    var channel = $('#channelTextbox').val();
-                    if (validateChannel(channel)) {
-                        $('#channelLabel').removeClass('ui-state-error');
-                    }
-                    else {
-                        $('#channelLabel').addClass('ui-state-error');
-                    }
-                });
-
+                .change(normalizeChannel);
+                
+            $(document.launchForm).submit(function () {
+                normalizeChannel();
+            });
+            
             // Apply default values.
             $('#serverTextbox').val(chatmoreDefaults.server);
             $('#portTextbox').val(chatmoreDefaults.port);
@@ -169,7 +165,7 @@
     </script>
 </head>
 <body>
-    <form action="client.php" name="form1" method="GET">
+    <form action="client.php" name="launchForm" method="GET">
         <input type="hidden" id="viewKey" name="viewKey" />
 		<div class="chatmore">
 	        <div class="launcher ui-dialog ui-widget ui-widget-content ui-corner-all">
