@@ -43,7 +43,7 @@ $ircConfig = array(
     // - Higher timeout means less frequent client reconnections.
     // - If the background process dies while the recv thread was running,
     //   the error will not be caught until timeout.
-    'recv_timeout' => 30 * 1000,
+    'recv_timeout' => 500,
 
     'debug' => array(
         // Include received raw IRC messages in AJAX responses from recv.php.

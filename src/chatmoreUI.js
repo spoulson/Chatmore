@@ -51,7 +51,7 @@
             if (isEmpty(options.realname)) options.realname = options.nick;
             if (typeof(options.channel) === 'object') autoJoinChannels = options.channel;
             else if (!isEmpty(options.channel)) autoJoinChannels.push(options.channel);
-    
+                
             var getLayoutPlugin = function () {
                 if (options.layout === undefined) {
                     if ('default' in layouts) {
@@ -1718,7 +1718,7 @@
             );
             
             // Create chatmore client.
-            self.irc = new chatmore(self.ircElement[0], options.viewKey, options.server, options.port, options.nick, options.realname);
+            self.irc = new chatmore(self.ircElement[0], options);
             if (options.activateImmediately) self.irc.activateClient();
             
             return self.ircElement;

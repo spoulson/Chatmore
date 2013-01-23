@@ -1,13 +1,19 @@
 /*
 Instantiate chatmore as an object.
-var c = new chatmore(...);
+var c = new chatmore(element, {options});
 element: Associated HTML DOM object
 options array: {
+    viewKey: string,
+    server: string,
+    port: number,
+    nick: string,
+    realname: string,
     maxRegistrationAttempts: 3, // Maximum attempts to register in the event of a nick collision during registration.
-    maxResendAttempts: 4        // Maximum retries to resend messages after encountering an error in delivery.
+    maxResendAttempts: 4,       // Maximum retries to resend messages after encountering an error in delivery.
+    pollIntervalDelayMs: 100    // Delay between polls.
 }
 */
-function chatmore(element, viewKey, server, port, nick, realname, options) {
+function chatmore(element, options) {
     if (options === undefined) options = { };
     
     //
@@ -237,15 +243,16 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
     // Apply defaults for unspecified options.
     self.options = $.extend({
         maxRegistrationAttempts: 3,
-        maxResendAttempts: 4
+        maxResendAttempts: 4,
+        pollIntervalDelayMs: 100
     }, options);
     
     // Client state model.  Initialize client state with constructor parameters.
     self.state = new chatmoreState();
-    self.state.server = server;
-    self.state.port = port;
-    self.state.nick = nick;
-    self.state.realname = realname;
+    self.state.server = options.server;
+    self.state.port = options.port;
+    self.state.nick = options.nick;
+    self.state.realname = options.realname;
     self.state.isModified = true;
     
     // Get selected target nick or channel, such as by /query command.
@@ -294,7 +301,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 dataType: 'json',
                 data: {
                     connect: 0,
-                    viewKey: viewKey,
+                    viewKey: options.viewKey,
                     server: self.state.server,
                     port: self.state.port
                 },
@@ -362,7 +369,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                 dataType: 'json',
                 data: {
                     connect: 1,
-                    viewKey: viewKey
+                    viewKey: options.viewKey
                 },
                 success: function (data) {
                     try {
@@ -393,7 +400,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                                         {
                                             cache: false,
                                             data: {
-                                                viewKey: viewKey
+                                                viewKey: options.viewKey
                                             },
                                             dataType: 'json',
                                             success: function (data) {
@@ -421,9 +428,10 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                                             },
                                             complete: function () {
                                                 // Schedule next poll.
+                                                if (window.console) console.log(self.options);
                                                 local.pollXhr = undefined;
                                                 if (self.state.isActivated) {
-                                                    local.pollHandle = setTimeout(pollFunc, 100);
+                                                    local.pollHandle = setTimeout(pollFunc, self.options.pollIntervalDelayMs);
                                                 }
                                             }
                                         });
@@ -496,7 +504,7 @@ function chatmore(element, viewKey, server, port, nick, realname, options) {
                     dataType: 'json',
                     cache: false,
                     data: {
-                        viewKey: viewKey,
+                        viewKey: options.viewKey,
                         msg: rawMsg
                     },
                     success: function (data) {
