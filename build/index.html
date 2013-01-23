@@ -80,6 +80,9 @@
             
             $('#nickTextbox')
                 .keypress(function (e) {
+                    // non-ASCII keypresses have charCode 0.
+                    if (e.charCode === 0) return;
+
                     validateLaunch();
                     var newNick = $('#nickTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validateNick(newNick)) return false;
@@ -99,6 +102,9 @@
             $('#serverTextbox')
                 .keypress(function (e) {
                     // http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
+                    // non-ASCII keypresses have charCode 0.
+                    if (e.charCode === 0) return;
+                    
                     var newServer = $('#serverTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validateServer(newServer)) return false;
 
@@ -116,6 +122,9 @@
 
             $('#portTextbox')
                 .keypress(function (e) {
+                    // non-ASCII keypresses have charCode 0.
+                    if (e.charCode === 0) return;
+
                     var newPort = $('#portTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validatePort(newPort)) return false;
 
@@ -134,7 +143,10 @@
             $('#channelTextbox')
                 .keypress(function (e) {
 					// Simulate form submission on Enter.
-					if (e.charCode === 13) {
+					                    // non-ASCII keypresses have charCode 0.
+                    if (e.charCode === 0)
+                        return;
+					else if (e.charCode === 13) {
 					    validateLaunch();
 					    normalizeChannel();
 						document.forms.launchForm.submit();
