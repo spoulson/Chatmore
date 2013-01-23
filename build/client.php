@@ -47,6 +47,7 @@ if (array_key_exists('x', $_GET)) {
     <base href="<?=$scriptPath?>" />
     <link rel="stylesheet" type="text/css" href="style.css" />
     <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
+
     <link rel="stylesheet" type="text/css" href="layouts/fullpage/fullpage.css" />
     <style type="text/css">
         BODY {
@@ -56,8 +57,8 @@ if (array_key_exists('x', $_GET)) {
             font: 14px Verdana, sans-serif;
         }
     </style>
-    <script type="text/javascript" src="jquery-1.7.1.min.js"></script>
-    <script type="text/javascript" src="jquery-ui-1.8.16.min.js"></script>
+    <script type="text/javascript" src="jquery-1.9.0.min.js"></script>
+    <script type="text/javascript" src="jquery-ui-1.10.0.custom.min.js"></script>
     <script type="text/javascript" src="jquery.tmpl.min.js"></script>
     <script type="text/javascript" src="chatmoreAll.min.js"></script>
     <script type="text/javascript" src="config.js"></script>

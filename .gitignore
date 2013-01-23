@@ -1,3 +1,4 @@
+.DS_Store
 build/tmp/*.db
 build/tmp/*.log
 build.tmp/*.sock
