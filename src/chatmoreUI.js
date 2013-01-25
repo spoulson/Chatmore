@@ -81,10 +81,10 @@
                 options: options,
                 autoJoinChannels: [ ],              // Channels provided at startup.
                 prevState: undefined,
-                msgSenders: [ ],                    // History of private message senders for autocomplete.
-                autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
+                msgSenders: [ ],                    // History of private message senders for autoreply.
                 autoCompletePrefix: undefined,      // Autocomplete filter, word typed at first Tab completion.
-                autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
+                autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion.
+                autoReplyIndex: undefined,          // Autoreply index against msgSenders array.
                 enableAutoReactivate: true,
                 reactivateAttempts: 0,
                 isPendingActivation: false,
@@ -881,7 +881,7 @@
                         self.msgSenders.unshift(nick);
                         
                         // Preserve placement of auto complete reply index so that additions to the list don't interfere.
-                        if (self.autoCompleteReplyIndex !== undefined) self.autoCompleteReplyIndex++;
+                        if (self.autoReplyIndex !== undefined) self.autoReplyIndex++;
                     }
                 },
     
@@ -1024,23 +1024,66 @@
                     return newObj;
                 },
                 
-                acceptAutoComplete: function () {
-                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                // Accept presented autoreply.
+                acceptAutoReply: function () {
+                    if (self.autoReplyIndex !== undefined) {
+                        // Accept autoreply.
                         self.ircElement.find('.userEntry').each(function () {
-                            // Move caret to end of selection.
-                            this.selectionStart = this.selectionEnd;
-            
-                            // Clear autocomplete state.
-                            self.autoCompleteReplyIndex = undefined;
-                            self.autoCompletePrefix = undefined;
+                            // User entry value and caret are already set from incrementAutoReply.
+                            
+                            // Clear autoreply state.
+                            self.autoReplyIndex = undefined;
+
+                            $(this)
+                                .tooltip('option', 'content', '')
+                                .tooltip('close');
                         });
                     }
                 },
                 
-                rejectAutoComplete: function () {
-                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                // Accept presented autosuggest.
+                acceptAutoSuggest: function () {
+                    if (self.autoCompletePrefix !== undefined) {
+                        // Accept autocomplete.
+                        self.ircElement.find('.userEntry').each(function () {
+                            // Set value and move caret to end.
+                            /*
+                            this.selectionStart = this.selectionEnd;
+                            */
+                            
+                            // Clear autocomplete state.
+                            self.autoCompletePrefix = undefined;
+
+                            $(this)
+                                .tooltip('option', 'content', '')
+                                .tooltip('close');
+                        });
+                    }
+                },
+                
+                // Reject presented autoreply.
+                rejectAutoReply: function () {
+                    if (self.autoReplyIndex !== undefined) {
+                        // Reject autoreply.
+                        self.ircElement.find('.userEntry').each(function () {
+                            // Clear user entry and autoreply state.
+                            $(this).val('');
+                            self.autoReplyIndex = undefined;
+
+                            $(this)
+                                .tooltip('option', 'content', '')
+                                .tooltip('close');
+                        });
+                    }
+                },
+                
+                // Reject presented autosuggest.
+                rejectAutoSuggest: function () {
+                    if (self.autoCompletePrefix !== undefined) {
+                        // Reject autocomplete.
                         self.ircElement.find('.userEntry').each(function () {
                             // Remove autocomplete suggestion.
+                            /*
                             var s = $(this).val();
                             var s1 = this.selectionStart > 1 ? s.substr(0, this.selectionStart) : '';
                             var s2 = this.selectionEnd < s.length ? s.substr(this.selectionEnd) : '';
@@ -1049,100 +1092,112 @@
                             $(this).val(s1 + s2);
                             this.selectionStart = caretPos;
                             this.selectionEnd = caretPos;
+                            */
+
+                            $(this)
+                                .tooltip('option', 'content', '')
+                                .tooltip('close');
                         });
                         
-                        self.autoCompleteReplyIndex = undefined;
                         self.autoCompletePrefix = undefined;
                     }
                 },
                 
-                incrementAutoComplete: function () {
+                // Iterate over autoreply possibilities.
+                incrementAutoReply: function () {
                     var userEntry = self.ircElement.find('.userEntry');
                     var s = userEntry.val();
                         
-                    if (s === '' || self.autoCompleteReplyIndex !== undefined) {
-                        // When user entry is blank, autocomplete as reply to recent private message senders.
+                    if (s === '' || self.autoReplyIndex !== undefined) {
+                        // When user entry is blank, suggest autoreply to recent private message senders.
                         if (self.msgSenders.length) {
-                            if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
+                            if (self.autoReplyIndex === undefined) self.autoReplyIndex = 0;
                             
-                            // Quick send message to next recent sender.
-                            var s = '/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ';
+                            // Suggest quick send message to next recent sender.
+                            var recipient = self.msgSenders[self.autoReplyIndex];
+                            var s = '/msg ' + recipient + ' ';
                             userEntry.val(s);
-                            userEntry[0].selectionStart = 0;
-                            userEntry[0].selectionEnd = s.length;
+                            userEntry[0].selectionStart = userEntry[0].selectionEnd = s.length;
+                            self.autoReplyIndex++;
+                            if (self.autoReplyIndex >= self.msgSenders.length) self.autoReplyIndex = 0;
                             
-                            self.autoCompleteReplyIndex++;
-                            if (self.autoCompleteReplyIndex >= self.msgSenders.length) self.autoCompleteReplyIndex = 0;
+                            // Show autoreply suggestion as tooltip.
+                            userEntry
+                                .tooltip('close')
+                                .tooltip('option', 'content', 'Reply to <span class="nick">' + recipient + '</span>')
+                                .tooltip('open');
+                        }
+                    }
+                },
+                
+                // Scan user entry at caret position for autosuggest.
+                scanAutoSuggest: function () {
+                    // Autocomplete.
+                    var caretPos = userEntry[0].selectionEnd;
+                    if (self.autoCompletePrefix === undefined) {
+                        // Advance caret to end of word.
+                        var m1 = s.substr(caretPos).match(/^\S+/);
+                        if (m1 !== null) caretPos += m1[0].length;
+                        
+                        // Get last word of user entry, up to the caret position.
+                        var m2 = /\S+$/.exec(s.substr(0, caretPos));
+                        if (m2 !== null) {
+                            self.autoCompletePrefix = m2[0];
+                            self.autoCompleteSuggest = undefined;
                         }
                     }
                     else {
-                        // Autocomplete.
-                        var caretPos = userEntry[0].selectionEnd;
-                        if (self.autoCompletePrefix === undefined) {
-                            // Advance caret to end of word.
-                            var m1 = s.substr(caretPos).match(/^\S+/);
-                            if (m1 !== null) caretPos += m1[0].length;
-                            
-                            // Get last word of user entry, up to the caret position.
-                            var m2 = /\S+$/.exec(s.substr(0, caretPos));
-                            if (m2 !== null) {
-                                self.autoCompletePrefix = m2[0];
-                                self.autoCompleteSuggest = undefined;
-                            }
-                        }
-                        else {
-                            // Delete selected text from last suggestion.
-                            var s1 = '';
-                            if (userEntry[0].selectionStart > 0) s1 += s.substr(0, userEntry[0].selectionStart);
-                            if (userEntry[0].selectionEnd < s.length) s1 += s.substr(userEntry[0].selectionEnd);
-                            s = s1;
-                            userEntry[0].selectionEnd = userEntry[0].selectionStart;
-                            caretPos = userEntry[0].selectionStart;
-                        }
+                        // Delete selected text from last suggestion.
+                        var s1 = '';
+                        if (userEntry[0].selectionStart > 0) s1 += s.substr(0, userEntry[0].selectionStart);
+                        if (userEntry[0].selectionEnd < s.length) s1 += s.substr(userEntry[0].selectionEnd);
+                        s = s1;
+                        userEntry[0].selectionEnd = userEntry[0].selectionStart;
+                        caretPos = userEntry[0].selectionStart;
+                    }
+                    
+                    if (self.autoCompletePrefix !== undefined) {
+                        var myNick = self.irc.state.nick;
                         
-                        if (self.autoCompletePrefix !== undefined) {
-                            var myNick = self.irc.state.nick;
+                        if (self.isChannel(self.autoCompletePrefix)) {
+                            // When string looks like a channel, autocomplete from joined channel list.
+                            var channels = $.grep(self.getJoinedChannels(), function (val) {
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
+                            });
                             
-                            if (self.isChannel(self.autoCompletePrefix)) {
-                                // When string looks like a channel, autocomplete from joined channel list.
-                                var channels = $.grep(self.getJoinedChannels(), function (val) {
-                                    return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
-                                });
+                            self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
                                 
-                                self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
-                                    
-                                // Replace last word with autoCompleteSuggest.
-                                if (self.autoCompleteSuggest !== undefined) {
-                                    var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                    s = s1 + s.substr(caretPos);
-                                    userEntry.val(s);
-        
-                                    // Select suggested portion of autocomplete.
-                                    userEntry[0].selectionStart = s1.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
-                                    userEntry[0].selectionEnd = s1.length;
-                                }
+                            // Replace last word with autoCompleteSuggest.
+                            if (self.autoCompleteSuggest !== undefined) {
+                                var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
+                                s = s1 + s.substr(caretPos);
+                                userEntry.val(s);
+    
+                                // Select suggested portion of autocomplete.
+                                userEntry[0].selectionStart = s1.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
+                                userEntry[0].selectionEnd = s1.length;
                             }
-                            else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
-                                // When a channel is selected, autocomplete that channel's users.
-                                var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
-                                    return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
-                                });
+                        }
+                        else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
+                            // When a channel is selected, autocomplete that channel's users.
+                            var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
+                                return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
+                            });
+                            
+                            self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
                                 
-                                self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
-                                    
-                                // Replace last word with autoCompleteSuggest.
-                                if (self.autoCompleteSuggest !== undefined) {
-                                    var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                    var wordpos = s1.length - self.autoCompleteSuggest.length;
-                                    // If this is the only word on the line, assume it's to address the suggested user.
-                                    if (wordpos === 0) s1 += ': ';
-                                    s = s1 + s.substr(caretPos);
-                                    userEntry.val(s);
-        
-                                    // Select suggested portion of autocomplete.
-                                    userEntry[0].selectionStart = wordpos + self.autoCompletePrefix.length;
-                                    userEntry[0].selectionEnd = s1.length;
-                                }
+                            // Replace last word with autoCompleteSuggest.
+                            if (self.autoCompleteSuggest !== undefined) {
+                                var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
+                                var wordpos = s1.length - self.autoCompleteSuggest.length;
+                                // If this is the only word on the line, assume it's to address the suggested user.
+                                if (wordpos === 0) s1 += ': ';
+                                s = s1 + s.substr(caretPos);
+                                userEntry.val(s);
+    
+                                // Select suggested portion of autocomplete.
+                                userEntry[0].selectionStart = wordpos + self.autoCompletePrefix.length;
+                                userEntry[0].selectionEnd = s1.length;
                             }
                         }
                     }
@@ -1623,17 +1678,21 @@
                 });
                 
             // Setup user entry event handlers.
+            var keydownWasHandled = false;
+            
             self.ircElement.find('.userEntry')
-                .click(function (e) {
-                    // Clicking on user entry assumes changing selection; accept autocomplete.
-                    self.acceptAutoComplete();
-                })
                 .keydown(function (e) {
+                    keydownWasHandled = false;
+
                     if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
                         if (e.keyCode === 13 /* Enter */) {
-                            if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
+                            if (self.autoReplyIndex !== undefined) {
+                                // If presenting an autoreply, accept it.
+                                self.acceptAutoReply();
+                            }
+                            else if (self.autoCompletePrefix !== undefined) {
                                 // If presenting an autocomplete, accept it.
-                                self.acceptAutoComplete();
+                                self.acceptAutoSuggest();
                             }
                             else {
                                 // Send message.
@@ -1646,15 +1705,31 @@
                                 // Reset user entry history index.
                                 self.userEntryHistoryIndex = undefined;
                             }
+                            keydownWasHandled = true;
                             return false;
                         }
                         else if (e.keyCode === 27 /* Escape */) {
-                            self.rejectAutoComplete();
+                            if (self.autoReplyIndex !== undefined) {
+                                self.rejectAutoReply();
+                            }
+                            keydownWasHandled = true;
                             return false;
                         }
+                        else if (e.keyCode == 8 /* Backspace */ || e.keyCode == 46 /* Delete */) {
+                            // Backspace/Delete rejects an autoreply.
+                            if (self.autoReplyIndex !== undefined) {
+                                self.rejectAutoReply();
+                                keydownWasHandled = true;
+                                return false;
+                            }
+                        }
                         else if (e.keyCode === 9 /* Tab */) {
-                            // TODO: Support Shift+Tab to decrement autocomplete.
-                            self.incrementAutoComplete();
+                            // Tab through auto replies if line is empty.
+                            // TODO: Support Shift+Tab to decrement autoreply.
+                            if ($(this).val() == '' || self.autoReplyIndex !== undefined) {
+                                self.incrementAutoReply();
+                            }
+                            keydownWasHandled = true;
                             return false;
                         }
                         else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
@@ -1664,6 +1739,10 @@
                             }
                             
                             if (self.userEntryHistoryIndex !== undefined) {
+                                // Ensure no auto complete is presented.
+                                self.rejectAutoReply();
+                                self.rejectAutoSuggest();
+
                                 if (e.keyCode === 38) {
                                     // Go to next oldest history entry.
                                     self.userEntryHistoryIndex++;
@@ -1686,21 +1765,22 @@
                                 this.selectionEnd = this.selectionStart;
                             }
                             
+                            keydownWasHandled = true;
                             return false;
                         }
                     }
                 })
                 .keypress(function (e) {
-                    // Ignore key codes handled in keyDown event.
-                    if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
-                        if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
-                            e.keyCode === 38 || e.keyCode === 40) {
-                           return false;
-                        }
+                    // Ignore key codes handled in keydown event.
+                    if (keydownWasHandled) {
+                        keydownWasHandled = false;
+                        return false;
                     }
                     
-                    // Typing text will accept a presented autocomplete.
-                    self.acceptAutoComplete();
+                    if (self.autoReplyIndex !== undefined) {
+                        // Typing text will accept a presented autoreply.
+                        self.acceptAutoReply();
+                    }
     
                     // Store current entry in first history element as scratch buffer.
                     self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
@@ -1716,6 +1796,18 @@
                     }
                 }
             );
+            
+            // Setup tooltips.
+            self.ircElement.find('.userEntry').tooltip({
+                items: '.userEntry',
+                show: { effect: 'fade', duration: 250 },
+                position: { my: 'left top', at: 'left bottom' },
+                track: false,
+                open: function (e, ui) {
+                    // Move tooltip div to inside ircElement so that CSS styles apply.
+                    ui.tooltip.appendTo(self.ircElement);
+                }
+            });
             
             // Create chatmore client.
             self.irc = new chatmore(self.ircElement[0], options);

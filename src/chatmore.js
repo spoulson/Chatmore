@@ -428,7 +428,6 @@ function chatmore(element, options) {
                                             },
                                             complete: function () {
                                                 // Schedule next poll.
-                                                if (window.console) console.log(self.options);
                                                 local.pollXhr = undefined;
                                                 if (self.state.isActivated) {
                                                     local.pollHandle = setTimeout(pollFunc, self.options.pollIntervalDelayMs);

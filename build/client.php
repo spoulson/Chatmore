@@ -46,7 +46,8 @@ if (array_key_exists('x', $_GET)) {
     <title>Experimental IRC chat client</title>
     <base href="<?=$scriptPath?>" />
     <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />
+<!--    <link rel="stylesheet" type="text/css" href="jqueryui/default/default.css" />-->
+    <link rel="stylesheet" type="text/css" href="jqueryui/ui-lightness/jquery-ui-1.10.0.custom.min.css" />
 
     <link rel="stylesheet" type="text/css" href="layouts/fullpage/fullpage.css" />
     <style type="text/css">
