@@ -407,7 +407,7 @@ function chatmore(element, options) {
                                                 // Validate data is an array.
                                                 if (typeof(data) === 'object') {
                                                     try {
-                                                        if (window.console) console.debug('msg count: ' + data.length);
+                                                        //if (window.console) console.debug('msg count: ' + data.length);
                                                         local.processMessages.call(self, data);
                                                     }
                                                     catch (e) {

@@ -316,10 +316,12 @@
         for (var i = 0; i < nodes.length; i++) {
             var node = nodes[i];
             var modified = false;
+
+            // Use regex to isolate URL patterns, replace with hyperlink elements.
             var html = $(node).text().replace(linkifyRegex, function (m, url) {
                 modified = true;
                 
-                // Strip trailing symbols that are probably not part of the URL.
+                // Special case: strip trailing symbols that are probably not part of the URL.
                 trailingText = url.match(/[)>,\.;:'"]$/);
                 if (trailingText !== null)
                     url = url.substring(url, url.length - trailingText[0].length);
@@ -337,8 +339,7 @@
             });
             
             if (modified) {
-                var newNode = $('<span/>').append(html);
-                $(node).replaceWith(newNode);
+                $(node).parent().html(html);
             }
         }
     };
@@ -385,8 +386,7 @@
             });
             
             if (modified) {
-                var newNode = $('<span/>').append(html);
-                $(node).replaceWith(newNode);
+                $(node).parent().html(html);
             }
         }
     };
@@ -406,8 +406,7 @@
             });
             
             if (modified) {
-                var newNode = $('<span/>').append(html);
-                $(node).replaceWith(newNode);
+                $(node).parent().html(html);
             }
         }
     };

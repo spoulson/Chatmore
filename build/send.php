@@ -27,6 +27,7 @@ if ($state !== null) {
         $ircbot = new spIrcClient($socketFile);
         
         if ($ircbot->isConnected()) {
+            log::info("_POST: " . var_export($_POST, true));
             $raw = $_POST['msg'];
             if (!empty($raw)) {
                 log::info("Sending message: '$raw'");
