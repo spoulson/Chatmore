@@ -210,8 +210,8 @@
             var channel = element.find('.prefix .channel').text();
             element.closest('.channelMsg,.privateMsg,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
                 .each(function () {
-                    linkifyURLs(self, this);
-                    decorateChannels(self, this);
+                    linkifyURLs(this);
+                    decorateChannels(this);
                     decorateNicks(self, this, channel);
                 });
             
@@ -272,56 +272,44 @@
     };
 
     // Equivalent of find("*"), but only returns text nodes.
-    var findTextNodes = function (node, predicate) {
-        var next;
-        var nodes = [];
-
-        if (node.nodeType === 1) {
-            // Element node.
-            if (node.firstChild) {
-                node = node.firstChild;
-                do {
-                    next = node.nextSibling;
-                    nodes = nodes.concat(findTextNodes(node, predicate));
-                    node = next;
-                } while (node);
-            }
-        }
-        else if (node.nodeType === 3) {
-            // Text node.
-            if (predicate === undefined || predicate(node)) {
-                nodes.push(node);
-            }
-        }
+    // Returns jQuery object.
+    var findTextNodes = function (node) {
+        var textNodes = $();
         
-        return nodes;
+        $(node).contents().each(function () {
+            if (this.nodeType === 3) {
+                textNodes = textNodes.add(this);
+            }
+            else {
+                // Recurse children.
+                textNodes = textNodes.add(findTextNodes(this));
+            }
+        });
+    
+        return textNodes;
     };
 
+    // Filter findTextNodes to only those text nodes that qualify for decoration.
+    // Returns jQuery object.
     var findTextNodesForDecoration = function (el) {
-        return findTextNodes(el, function (node) {
-            // Exclude already decorated elements.
+        return findTextNodes(el).filter(function () {
+            var $node = $(this);
             // Exclude elements tagged with no-decorate class.
-            if ($(node).parent('a,.channel,.nick').length !== 0 ||
-                $(node).parents('.no-decorate').length !== 0)
-                return false;
-            else
-                return true;
+            return $(this).parents('.no-decorate').length === 0;
         });
     };
-            
+    
     // Convert URL patterns into HTML links.
-    var linkifyURLs = function (self, el) {
-        var nodes = findTextNodesForDecoration(el);
-        
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i];
+    var linkifyURLs = function (el) {
+        findTextNodesForDecoration(el).each(function () {
+            var $node = $(this);
             var modified = false;
 
             // Use regex to isolate URL patterns, replace with hyperlink elements.
-            var html = $(node).text().replace(linkifyRegex, function (m, url) {
+            var html = $node.text().replace(linkifyRegex, function (m, url) {
                 modified = true;
                 
-                // Special case: strip trailing symbols that are probably not part of the URL.
+                // Special case: strip trailing symbols that are probably not intended as part of the URL.
                 trailingText = url.match(/[)>,\.;:'"]$/);
                 if (trailingText !== null)
                     url = url.substring(url, url.length - trailingText[0].length);
@@ -330,6 +318,7 @@
                     .append($('<a/>')
                         .attr('href', url)
                         .attr('target', '_blank')
+                        .attr('class', 'no-decorate')
                         .text(url));
                         
                 if (trailingText !== null)
@@ -339,11 +328,20 @@
             });
             
             if (modified) {
-                $(node).parent().html(html);
-            }
-        }
-    };
+                var $prevSibling = $node.prev();
+                var $parent = $node.parent();
+                var $newNode = $('<span>' + html + '</span>');
 
+                $node.remove();
+
+                if ($prevSibling.length)
+                    $prevSibling.after($newNode);
+                else
+                    $parent.prepend($newNode);
+            }
+        });
+    };
+    
     // Decorate nicks found in text with span.
     var decorateNicks = function (self, el, channel) {
         var nicks;
@@ -360,12 +358,10 @@
         }).join('|');
         var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
         
-        var nodes = findTextNodesForDecoration(el);
-        
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i];
+        findTextNodesForDecoration(el).each(function () {
+            var $node = $(this);
             var modified = false;
-            var html = $(node).text().replace(re, function (m, nick) {
+            var html = $node.text().replace(re, function (m, nick) {
                 var colorizeNumber;
                 if (channel !== undefined && self.isChannel(channel)) {
                     // Lookup nick's colorize number for given channel.
@@ -378,37 +374,52 @@
                 modified = true;
 
                 if (colorizeNumber !== undefined) {
-                    return '<span class="nick color' + colorizeNumber + '">' + nick + '</span>';
+                    return '<span class="nick color' + colorizeNumber + ' no-decorate">' + nick + '</span>';
                 }
                 else {
-                    return '<span class="nick">' + nick + '</span>';
+                    return '<span class="nick no-decorate">' + nick + '</span>';
                 }
             });
             
             if (modified) {
-                $(node).parent().html(html);
+                var $prevSibling = $node.prev();
+                var $parent = $node.parent();
+                var $newNode = $('<span>' + html + '</span>');
+
+                $node.remove();
+
+                if ($prevSibling.length)
+                    $prevSibling.after($newNode);
+                else
+                    $parent.prepend($newNode);
             }
-        }
+        });
     };
 
     // Decorate channel-like text with span.
-    var decorateChannels = function (self, el) {
-        var nodes = findTextNodesForDecoration(el);
-        
-        for (var i = 0; i < nodes.length; i++) {
-            var node = nodes[i];
+    var decorateChannels = function (el) {
+        findTextNodesForDecoration(el).each(function () {
+            var $node = $(this);
             var modified = false;
-            
-            var html = $(node).text().replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
+            var html = $node.text().replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
                 modified = true;
                 
-                return text + '<span class="channel">' + channel + '</span>';
+                return text + '<span class="channel no-decorate">' + channel + '</span>';
             });
             
             if (modified) {
-                $(node).parent().html(html);
+                var $prevSibling = $node.prev();
+                var $parent = $node.parent();
+                var $newNode = $('<span>' + html + '</span>');
+
+                $node.remove();
+
+                if ($prevSibling.length)
+                    $prevSibling.after($newNode);
+                else
+                    $parent.prepend($newNode);
             }
-        }
+        });
     };
 
     var getColorizeNumber = function (self, nick, channel) {

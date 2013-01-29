@@ -489,6 +489,7 @@ function chatmore(element, options) {
 
                     // First attempt retry immediately.
                     // Successive attempts delay a moment.
+                    // TODO: Parameterize the delay interval.
                     var retryDelay = resendCount > 0 ? 3000 : 100;
                     setTimeout(function () { sendHandler(resendCount + 1); }, retryDelay);
                 }
