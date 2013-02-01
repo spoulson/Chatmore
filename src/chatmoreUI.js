@@ -77,19 +77,12 @@
                 //
                 ircElement: $(this),                // Chatmore parent jQuery element.
                 irc: undefined,                     // Chatmore client object.
-    
                 options: options,
                 autoJoinChannels: [ ],              // Channels provided at startup.
                 prevState: undefined,
-                msgSenders: [ ],                    // History of private message senders for autoreply.
-                autoCompletePrefix: undefined,      // Autocomplete filter, word typed at first Tab completion.
-                autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion.
-                autoReplyIndex: undefined,          // Autoreply index against msgSenders array.
                 enableAutoReactivate: true,
                 reactivateAttempts: 0,
                 isPendingActivation: false,
-                userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
-                userEntryHistoryIndex: undefined,
                 layoutPlugin: getLayoutPlugin(),    // Selected layout plugin instance.
                 
                 // Client /command definitions.
@@ -519,7 +512,7 @@
                             }
                             else {
                                 self.irc.sendPrivateMsg(meta.target, meta.message);
-                                self.addToMsgSenders(meta.target);
+                                //self.addToMsgSenders(meta.target);
                                 self.writeTmpl('outgoingPrivateMsg', {
                                     msg: {
                                         prefixNick: self.irc.state.nick,
@@ -872,19 +865,6 @@
                     self.layoutPlugin.writeTemplate(self, templateName, data);
                 },
                 
-                addToMsgSenders: function (nick) {
-                    if (self.stricmp(nick, self.irc.state.nick) !== 0) {
-                        self.msgSenders = $.grep(self.msgSenders, function (val) {
-                            // Remove from array, if exists.
-                            return self.stricmp(val, nick) !== 0;
-                        });
-                        self.msgSenders.unshift(nick);
-                        
-                        // Preserve placement of auto complete reply index so that additions to the list don't interfere.
-                        if (self.autoReplyIndex !== undefined) self.autoReplyIndex++;
-                    }
-                },
-    
                 startsWith: function (subject, prefix, comparer) {
                     return subject.length >= prefix.length &&
                         comparer(subject.substr(0, prefix.length), prefix) === 0;
@@ -1024,23 +1004,6 @@
                     return newObj;
                 },
                 
-                // Accept presented autoreply.
-                acceptAutoReply: function () {
-                    if (self.autoReplyIndex !== undefined) {
-                        // Accept autoreply.
-                        self.ircElement.find('.userEntry').each(function () {
-                            // User entry value and caret are already set from incrementAutoReply.
-                            
-                            // Clear autoreply state.
-                            self.autoReplyIndex = undefined;
-
-                            $(this)
-                                .tooltip('option', 'content', '')
-                                .tooltip('close');
-                        });
-                    }
-                },
-                
                 // Accept presented autosuggest.
                 acceptAutoSuggest: function () {
                     if (self.autoCompletePrefix !== undefined) {
@@ -1053,22 +1016,6 @@
                             
                             // Clear autocomplete state.
                             self.autoCompletePrefix = undefined;
-
-                            $(this)
-                                .tooltip('option', 'content', '')
-                                .tooltip('close');
-                        });
-                    }
-                },
-                
-                // Reject presented autoreply.
-                rejectAutoReply: function () {
-                    if (self.autoReplyIndex !== undefined) {
-                        // Reject autoreply.
-                        self.ircElement.find('.userEntry').each(function () {
-                            // Clear user entry and autoreply state.
-                            $(this).val('');
-                            self.autoReplyIndex = undefined;
 
                             $(this)
                                 .tooltip('option', 'content', '')
@@ -1100,33 +1047,6 @@
                         });
                         
                         self.autoCompletePrefix = undefined;
-                    }
-                },
-                
-                // Iterate over autoreply possibilities.
-                incrementAutoReply: function () {
-                    var userEntry = self.ircElement.find('.userEntry');
-                    var s = userEntry.val();
-                        
-                    if (s === '' || self.autoReplyIndex !== undefined) {
-                        // When user entry is blank, suggest autoreply to recent private message senders.
-                        if (self.msgSenders.length) {
-                            if (self.autoReplyIndex === undefined) self.autoReplyIndex = 0;
-                            
-                            // Suggest quick send message to next recent sender.
-                            var recipient = self.msgSenders[self.autoReplyIndex];
-                            var s = '/msg ' + recipient + ' ';
-                            userEntry.val(s);
-                            userEntry[0].selectionStart = userEntry[0].selectionEnd = s.length;
-                            self.autoReplyIndex++;
-                            if (self.autoReplyIndex >= self.msgSenders.length) self.autoReplyIndex = 0;
-                            
-                            // Show autoreply suggestion as tooltip.
-                            userEntry
-                                .tooltip('close')
-                                .tooltip('option', 'content', 'Reply to <span class="nick">' + recipient + '</span>')
-                                .tooltip('open');
-                        }
                     }
                 },
                 
@@ -1388,24 +1308,15 @@
                     if (msg.type === 'recv') {
                         switch (msg.command) {
                         case 'PRIVMSG':
-                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0)
                                 self.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', { msg: msg });
-                                if (!msg.info.isAction) {
-                                    // Add this sender to the history of senders.
-                                    self.addToMsgSenders(msg.prefixNick);
-                                }
-                            }
                             else
                                 self.writeTmpl(msg.info.isAction ? 'incomingChannelAction' : 'incomingChannelMsg', { msg: msg });
                             break;
                         
                         case 'NOTICE':
-                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0)
                                 self.writeTmpl('incomingPrivateNotice', { msg: msg });
-    
-                                // Add this sender to the history of senders.
-                                self.addToMsgSenders(msg.prefixNick);
-                            }
                             else
                                 self.writeTmpl('incomingChannelNotice', { msg: msg });
                             break;
@@ -1677,116 +1588,6 @@
                     self.layoutPlugin.onDeactivatingClient(self);
                 });
                 
-            // Setup user entry event handlers.
-            var keydownWasHandled = false;
-            
-            self.ircElement.find('.userEntry')
-                .keydown(function (e) {
-                    keydownWasHandled = false;
-
-                    if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
-                        if (e.keyCode === 13 /* Enter */) {
-                            if (self.autoReplyIndex !== undefined) {
-                                // If presenting an autoreply, accept it.
-                                self.acceptAutoReply();
-                            }
-                            else if (self.autoCompletePrefix !== undefined) {
-                                // If presenting an autocomplete, accept it.
-                                self.acceptAutoSuggest();
-                            }
-                            else {
-                                // Send message.
-                                // Add new scratch line to user entry history.
-                                self.userEntryHistory.unshift('');
-                            
-                                self.sendLine($(this).val());
-                                $(this).val('');
-                                
-                                // Reset user entry history index.
-                                self.userEntryHistoryIndex = undefined;
-                            }
-                            keydownWasHandled = true;
-                            return false;
-                        }
-                        else if (e.keyCode === 27 /* Escape */) {
-                            if (self.autoReplyIndex !== undefined) {
-                                self.rejectAutoReply();
-                            }
-                            keydownWasHandled = true;
-                            return false;
-                        }
-                        else if (e.keyCode == 8 /* Backspace */ || e.keyCode == 46 /* Delete */) {
-                            // Backspace/Delete rejects an autoreply.
-                            if (self.autoReplyIndex !== undefined) {
-                                self.rejectAutoReply();
-                                keydownWasHandled = true;
-                                return false;
-                            }
-                        }
-                        else if (e.keyCode === 9 /* Tab */) {
-                            // Tab through auto replies if line is empty.
-                            // TODO: Support Shift+Tab to decrement autoreply.
-                            if ($(this).val() == '' || self.autoReplyIndex !== undefined) {
-                                self.incrementAutoReply();
-                            }
-                            keydownWasHandled = true;
-                            return false;
-                        }
-                        else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
-                            if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
-                                // Start browsing history, if any exists.
-                                self.userEntryHistoryIndex = 0;
-                            }
-                            
-                            if (self.userEntryHistoryIndex !== undefined) {
-                                // Ensure no auto complete is presented.
-                                self.rejectAutoReply();
-                                self.rejectAutoSuggest();
-
-                                if (e.keyCode === 38) {
-                                    // Go to next oldest history entry.
-                                    self.userEntryHistoryIndex++;
-                                    if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
-                                        self.userEntryHistoryIndex = 0;
-                                }
-                                else {
-                                    // Go to next newest history entry.
-                                    self.userEntryHistoryIndex--;
-                                    if (self.userEntryHistoryIndex < 0)
-                                        self.userEntryHistoryIndex = self.userEntryHistory.length - 1;
-                                }
-                            
-                                // Display history in user entry.
-                                var entry = self.userEntryHistory[self.userEntryHistoryIndex];
-                                $(this).val(entry);
-        
-                                // Place caret at end of line.
-                                this.selectionStart = entry.length;
-                                this.selectionEnd = this.selectionStart;
-                            }
-                            
-                            keydownWasHandled = true;
-                            return false;
-                        }
-                    }
-                })
-                .keypress(function (e) {
-                    // Ignore key codes handled in keydown event.
-                    if (keydownWasHandled) {
-                        keydownWasHandled = false;
-                        return false;
-                    }
-                    
-                    if (self.autoReplyIndex !== undefined) {
-                        // Typing text will accept a presented autoreply.
-                        self.acceptAutoReply();
-                    }
-    
-                    // Store current entry in first history element as scratch buffer.
-                    self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
-                })
-                .focus();
-    
             // Setup user event handlers.
             $.each([ 'onStateChanged', 'onLocalMessage', 'onProcessingMessage', 'onProcessedMessage', 'onSendingMessage',
                 'onErrorSendingMessage', 'onSentMessage', 'onActivatingClient', 'onDeactivatingClient' ],
@@ -1796,19 +1597,7 @@
                     }
                 }
             );
-            
-            // Setup tooltips.
-            self.ircElement.find('.userEntry').tooltip({
-                items: '.userEntry',
-                show: { effect: 'fade', duration: 250 },
-                position: { my: 'left top', at: 'left bottom' },
-                track: false,
-                open: function (e, ui) {
-                    // Move tooltip div to inside ircElement so that CSS styles apply.
-                    ui.tooltip.appendTo(self.ircElement);
-                }
-            });
-            
+                        
             // Create chatmore client.
             self.irc = new chatmore(self.ircElement[0], options);
             if (options.activateImmediately) self.irc.activateClient();

@@ -4,7 +4,7 @@
     // Private static variables.
     //
     var layout;
-
+    
     // IRC client message templates.
     var templates = {
         title: '<span>{{if messageCount == 1}}A new message has arrived! -- ' +
@@ -186,6 +186,25 @@
     //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring-----------------------------------------------------][anchor]
     var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?\&*([^\s=&#<>]+(=[^\s=&#<>]*)?(&[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi;
 
+    // History of users for autoreply suggestions.
+    var autoReplyList = [ ];
+
+    // Autoreply index against autoReplyList array.
+    var autoReplyIndex = undefined;
+    
+    // Auto complete setTimeout handle.
+    var autoCompleteTimeoutHandle;
+    
+    // Auto complete list of terms.
+    var autoCompleteList = undefined;
+    
+    // Auto complete suggest index against list of terms.
+    var autoCompleteIndex = undefined;
+
+    // User entry history log.  First entry is scratch buffer from last unsent entry.
+    var userEntryHistory = [''];
+    var userEntryHistoryIndex = undefined;
+    
     //
     // Private methods.
     //
@@ -422,6 +441,7 @@
         });
     };
 
+    // Get colorize number associated with nick in channel from state object.
     var getColorizeNumber = function (self, nick, channel) {
         var channelDesc = self.irc.state.channels[channel];
         if (channelDesc === undefined) return;
@@ -430,6 +450,203 @@
             channelDesc.members[nick].colorizeNumber : undefined;
     };
 
+    // Add nick to recent message users list for use with autoreply suggestions.
+    var addToAutoReplyList = function (self, nick) {
+        if (self.stricmp(nick, self.irc.state.nick) !== 0) {
+            autoReplyList = $.grep(autoReplyList, function (val) {
+                // Remove from array, if exists.
+                return self.stricmp(val, nick) !== 0;
+            });
+            autoReplyList.unshift(nick);
+            
+            // Preserve placement of auto complete reply index so that additions to the list don't interfere.
+            if (autoReplyIndex !== undefined) autoReplyIndex++;
+        }
+    };
+
+    // Accept presented autoreply.
+    var acceptAutoReply = function (self) {
+        if (autoReplyIndex !== undefined) {
+            // Accept autoreply.
+            // User entry value and caret are already set from incrementAutoReply.
+            // Clear autoreply state.
+            autoReplyIndex = undefined;
+
+            self.ircElement.find('.userEntry')
+                .tooltip('option', 'content', '')
+                .tooltip('close');
+        }
+    };
+
+    // Reject presented autoreply.
+    var rejectAutoReply = function (self) {
+        if (autoReplyIndex !== undefined) {
+            // Clear user entry and autoreply state.
+            autoReplyIndex = undefined;
+
+            self.ircElement.find('.userEntry')
+                .val('')
+                .tooltip('option', 'content', '')
+                .tooltip('close');
+        }
+    };
+                
+    // Iterate over autoreply possibilities.
+    var incrementAutoReply = function (self) {
+        var $userEntry = self.ircElement.find('.userEntry').first();
+        var s = $userEntry.val();
+            
+        if (s === '' || autoReplyIndex !== undefined) {
+            // When user entry is blank, suggest autoreply from recent users list.
+            if (autoReplyList.length) {
+                if (autoReplyIndex === undefined) autoReplyIndex = 0;
+                
+                // Suggest quick send message to next recent sender.
+                var recipient = autoReplyList[autoReplyIndex];
+                var s = '/msg ' + recipient + ' ';
+                $userEntry.val(s);
+                $userEntry[0].selectionStart = $userEntry[0].selectionEnd = s.length;
+                autoReplyIndex++;
+                if (autoReplyIndex >= autoReplyList.length) autoReplyIndex = 0;
+                
+                // Show autoreply suggestion as tooltip.
+                $userEntry
+                    .tooltip('close')
+                    .tooltip('option', 'content', 'Reply to <span class="nick">' + recipient + '</span>')
+                    .tooltip('open');
+            }
+        }
+    };
+
+    var queueScanAutoComplete = function (self) {
+        if (autoCompleteTimeoutHandle !== undefined) clearTimeout(autoCompleteTimeoutHandle);
+        
+        autoCompleteTimeoutHandle = setTimeout(function () {
+            autoCompleteTimeoutHandle = undefined;
+            scanAutoComplete(self);
+        }, 200);
+    };
+    
+    // Check for keyword at cursor for an autocomplete suggestion.
+    var scanAutoComplete = function (self) {
+        var $userEntry = self.ircElement.find('.userEntry').first();
+        var value = $userEntry.val();
+        var position = $userEntry[0].selectionStart;
+        var matches = [];
+
+        // If cursor is at beginning, cancel autocomplete.
+        if (position > 0) {
+            // Position must be on a word boundary.
+            // If cursor is in the middle of a word or not on a word at all, cancel autosuggest.
+            // Keyword may be bounded by white space or certain punctuation.
+            var lvalue = value.substr(0, position);
+            var keywordMatch = /([^\s,\.\/\\]+)$/.exec(lvalue);
+            var rvalue = value.substr(position);
+            
+            if (keywordMatch !== null && /^([\s,\.\/\\]|$)/.test(rvalue)) {
+                // keyword is valid.
+                var keyword = keywordMatch[1].toLowerCase();
+                
+                // Scan nicks.
+                var channel = self.irc.state.channels[self.irc.target()];
+                if (channel !== undefined) {
+                    $.each(channel.members, function (nick) {
+                        if (keyword === nick.substr(0, keyword.length).toLowerCase()) {
+                            matches.push(nick);
+                        }
+                    });
+                }
+                
+                // Scan channels.
+                $.each(self.irc.state.channels, function (channel) {
+                    if (keyword === channel.substr(0, keyword.length).toLowerCase()) {
+                        matches.push(channel);
+                    }
+                });
+            }
+        }
+
+        if (matches.length === 0) {
+            rejectAutoComplete(self);
+        }
+        else {
+            // Prep match list.
+            matches.sort();
+            if (window.console) {
+                console.log('autoComplete matches:');
+                console.log(matches);
+            }
+            
+            // Show tooltip with first match.
+            autoCompleteList = matches;
+            autoCompleteIndex = 0;
+            
+            $userEntry
+                .tooltip('option', 'content', matches[0])
+                .tooltip('open');
+        }
+    };
+    
+    var incrementAutoComplete = function (self) {
+        if (autoCompleteList !== undefined) {
+            if (autoCompleteIndex < autoCompleteList.length - 1) autoCompleteIndex++;
+            else autoCompleteIndex = 0;
+            
+            self.ircElement.find('.userEntry')
+                .tooltip('close')
+                .tooltip('option', 'content', autoCompleteList[autoCompleteIndex])
+                .tooltip('open');
+        }
+    };
+
+    var decrementAutoComplete = function (self) {
+        if (autoCompleteList !== undefined) {
+            if (autoCompleteIndex > 0) autoCompleteIndex--;
+            else autoCompleteIndex = autoCompleteList.length - 1;
+            
+            self.ircElement.find('.userEntry')
+                .tooltip('close')
+                .tooltip('option', 'content', autoCompleteList[autoCompleteIndex])
+                .tooltip('open');
+        }
+    };
+    
+    var rejectAutoComplete = function (self) {
+        autoCompleteList = undefined;
+        
+        self.ircElement.find('.userEntry')
+            .tooltip('option', 'content', '')
+            .tooltip('close');
+    };
+    
+    var acceptAutoComplete = function (self) {
+        if (autoCompleteList !== undefined) {
+            var $userEntry = self.ircElement.find('.userEntry').first();
+            var value = $userEntry.val();
+            var position = $userEntry[0].selectionStart;
+            var lvalue = value.substr(0, position);
+            var keywordMatch = /([^\s,\.\/\\]+)$/.exec(lvalue);
+            var rvalue = value.substr(position);
+            
+            if (keywordMatch !== null && /^([\s,\.\/\\]|$)/.test(rvalue)) {
+                var keyword = keywordMatch[1];
+                var autoCompleteValue = autoCompleteList[autoCompleteIndex];
+                if (window.console) console.log('Autocomplete replacing "' + keyword + '" with "' + autoCompleteValue + '"');
+                var newLvalue = lvalue.substr(0, lvalue.length - keyword.length);
+                $userEntry.val(newLvalue + autoCompleteValue + rvalue);
+
+                // Adjust cursor position to right of accepted completion.
+                $userEntry[0].selectionStart = $userEntry[0].selectionEnd = $userEntry[0].selectionStart - keyword.length + autoCompleteValue.length;
+
+                autoCompleteList = undefined;
+                
+                $userEntry
+                    .tooltip('option', 'content', '')
+                    .tooltip('close');
+            }
+        }
+    };
+    
     var hoverClickableHandler = function () {
         $(this).addClass('ui-state-hover');
     };
@@ -617,7 +834,7 @@
         warnOnUnload: true,                 // Warn user when attempting to navigate away from page.
 
         initialize: function (self, options) {
-            $(self.ircElement)
+            self.ircElement
                 .addClass('chatmore')
                 .addClass('-fullpage-layout')
                 .addClass('ui-widget')
@@ -682,7 +899,139 @@
                     // Provide popup warning when navigating away from this page.
                     if (layout.warnOnUnload) return 'You are about to navigate away from the Chatmore IRC client, which may disconnect from your session.';
                 });
-                
+            
+            // Setup user entry event handlers.
+            var keydownWasHandled = false;
+
+            self.ircElement.find('.userEntry')
+                .keydown(function (e) {
+                    var $userEntry = $(this);
+                    keydownWasHandled = false;
+
+                    if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
+                        if (e.keyCode === 13 /* Enter */) {
+                            // Send message.
+                            // Add new scratch line to user entry history.
+                            userEntryHistory.unshift('');
+                        
+                            self.sendLine($userEntry.val());
+                            $userEntry.val('');
+                            
+                            // Reset user entry history index.
+                            self.userEntryHistoryIndex = undefined;
+
+                            keydownWasHandled = true;
+                            return false;
+                        }
+                        else if (e.keyCode === 27 /* Escape */) {
+                            if (autoReplyIndex !== undefined) {
+                                rejectAutoReply(self);
+                            }
+                            else {
+                                rejectAutoComplete(self);
+                            }
+                            
+                            keydownWasHandled = true;
+                            return false;
+                        }
+                        else if (e.keyCode == 8 /* Backspace */ || e.keyCode == 46 /* Delete */) {
+                            // Backspace/Delete rejects an autoreply.
+                            if (autoReplyIndex !== undefined) {
+                                rejectAutoReply(self);
+                                
+                                keydownWasHandled = true;
+                                return false;
+                            }
+                                
+                            // Cancel autocomplete suggestion, then rescan on backspace or delete.
+                            queueScanAutoComplete(self);
+                        }
+                        else if (e.keyCode === 9 /* Tab */) {
+                            // Tab through auto replies if line is empty.
+                            if ($userEntry.val() === '' || autoReplyIndex !== undefined) {
+                                incrementAutoReply(self);
+                            }
+                            // Scan for autocomplete if no suggestion is present.
+                            else if (autoCompleteList === undefined) {
+                                queueScanAutoComplete(self);
+                            }
+                            // Accept a presented autocomplete suggestion.
+                            else {
+                                acceptAutoComplete(self);
+                            }
+                            
+                            keydownWasHandled = true;
+                            return false;
+                        }
+                        else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
+                            if (userEntryHistoryIndex === undefined && userEntryHistory.length > 1) {
+                                // Start browsing history, if any exists.
+                                userEntryHistoryIndex = 0;
+                            }
+                            
+                            if (userEntryHistoryIndex !== undefined) {
+                                // Ensure no auto complete is presented.
+                                rejectAutoReply(self);
+                                rejectAutoComplete(self);
+
+                                if (e.keyCode === 38) {
+                                    // Go to next oldest history entry.
+                                    userEntryHistoryIndex++;
+                                    if (userEntryHistoryIndex >= userEntryHistory.length)
+                                        userEntryHistoryIndex = 0;
+                                }
+                                else {
+                                    // Go to next newest history entry.
+                                    userEntryHistoryIndex--;
+                                    if (userEntryHistoryIndex < 0)
+                                        userEntryHistoryIndex = userEntryHistory.length - 1;
+                                }
+                            
+                                // Display history in user entry.
+                                var entry = userEntryHistory[userEntryHistoryIndex];
+                                $userEntry.val(entry);
+        
+                                // Place caret at end of line.
+                                this.selectionStart = entry.length;
+                                this.selectionEnd = this.selectionStart;
+                            }
+                            
+                            keydownWasHandled = true;
+                            return false;
+                        }                    
+                    }
+                })
+                .keypress(function (e) {
+                    var $userEntry = $(this);
+                    
+                    if (keydownWasHandled) {
+                        keydownWasHandled = false;
+                        return false;
+                    }
+
+                    if (autoReplyIndex !== undefined) {
+                        // Typing text will accept a presented autoreply.
+                        acceptAutoReply(self);
+                    }
+
+                    // Store current entry in first history element as scratch buffer.
+                    userEntryHistory[0] = $userEntry.val() + String.fromCharCode(e.which);
+
+                    queueScanAutoComplete(self);
+                })
+                // Setup tooltip.
+                .tooltip({
+                    items: '.userEntry',
+                    show: { effect: 'fade', duration: 250 },
+                    position: { my: 'left top', at: 'left bottom' },
+                    track: false,
+                    open: function (e, ui) {
+                        // Move tooltip div to inside ircElement so that CSS styles apply.
+                        ui.tooltip.appendTo(self.ircElement);
+                    }
+                })
+                .focus();
+            
             layout.resize(self);
         },
         destroy: function () {
@@ -690,6 +1039,15 @@
             $(window).off('.chatmore_default');
         },
         writeTemplate: function (self, templateName, data) {
+            switch (templateName) {
+            case 'outgoingPrivateMsg':
+                // For outgoing private messages to a user, record the target nick in autoreply list.
+                if (!self.isChannel(data.msg.info.target)) {
+                    addToAutoReplyList(self, data.msg.info.target);
+                }
+                break;
+            }
+
             data.self = self;
             data.layout = layout;
             var el = $('<div/>')
@@ -769,6 +1127,24 @@
                     // HTML4: Redirect back with new viewKey.
                     layout.warnOnUnload = false;
                     document.location.search = '?' + toQueryString(query);
+                }
+            }
+            else {
+                switch (msg.command) {
+                case 'PRIVMSG':
+                    if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                        if (!msg.info.isAction) {
+                            // Add this sender to the history of users.
+                            addToAutoReplyList(self, msg.prefixNick);
+                        }
+                    }
+                    break;
+                case 'NOTICE':
+                    if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                        // Add this sender to the history of users.
+                        addToAutoReplyList(self, msg.prefixNick);
+                    }
+                    break;
                 }
             }
         },
