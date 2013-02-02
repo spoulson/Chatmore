@@ -1,3 +1,6 @@
+//
+// Chatmore CLI.
+//
 (function () {
     //
     // Private static variables.
@@ -21,6 +24,8 @@
     //
     // Global chatmore jQuery plugin.
     //
+    // Exports methods defined in globalMethods.
+    // Usage: $.chatmore('method', [arg], ...);
     $.chatmore = function () {
         var method = arguments[0];
         var args = Array.prototype.slice.call(arguments, 1);

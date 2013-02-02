@@ -70,6 +70,12 @@
     padding: 3px;
 }
 
+.chatmore.-fullpage-layout .activeSuggestion {
+    /*border: 1px solid red;
+    padding: -1px;*/
+    text-decoration: underline;
+}
+
 .chatmore.-fullpage-layout .channel {
     color: #000080;
     font-weight: bold;

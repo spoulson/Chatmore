@@ -195,11 +195,25 @@
     // Auto complete setTimeout handle.
     var autoCompleteTimeoutHandle;
     
-    // Auto complete list of terms.
+    // Auto complete list of term objects in the form:
+    // { type: 'nick'|'channel', value: string }
     var autoCompleteList = undefined;
     
     // Auto complete suggest index against list of terms.
     var autoCompleteIndex = undefined;
+    
+    // Auto complete suggest index of value placed in userEntry.
+    var autoCompleteTermIndex = undefined;
+
+    // Current term string in userEntry when autoComplete presents suggestions.
+    var autoCompleteTerm = undefined;
+    
+    // User provided term used for scanning autocomplete suggestions.
+    // This contains the initial search term the user entered when scanAutoComplete() was called.
+    var autoCompleteSpec = undefined;
+    
+    // Starting position of autoCompleteTerm.
+    var autoCompleteTermPosition = undefined;
 
     // User entry history log.  First entry is scratch buffer from last unsent entry.
     var userEntryHistory = [''];
@@ -540,27 +554,29 @@
             // If cursor is in the middle of a word or not on a word at all, cancel autosuggest.
             // Keyword may be bounded by white space or certain punctuation.
             var lvalue = value.substr(0, position);
-            var keywordMatch = /([^\s,\.\/\\]+)$/.exec(lvalue);
+            var termMatch = /([^\s,\.\/\\]+)$/.exec(lvalue);
             var rvalue = value.substr(position);
             
-            if (keywordMatch !== null && /^([\s,\.\/\\]|$)/.test(rvalue)) {
-                // keyword is valid.
-                var keyword = keywordMatch[1].toLowerCase();
+            if (termMatch !== null && /^([\s,\.\/\\]|$)/.test(rvalue)) {
+                // term is valid.
+                autoCompleteSpec = autoCompleteTerm = termMatch[1];
+                autoCompleteTermPosition = position - autoCompleteSpec.length;
+                var term = autoCompleteTerm.toLowerCase();
                 
                 // Scan nicks.
                 var channel = self.irc.state.channels[self.irc.target()];
                 if (channel !== undefined) {
                     $.each(channel.members, function (nick) {
-                        if (keyword === nick.substr(0, keyword.length).toLowerCase()) {
-                            matches.push(nick);
+                        if (term === nick.substr(0, term.length).toLowerCase() && nick !== self.irc.state.nick) {
+                            matches.push({ type: 'nick', value: nick });
                         }
                     });
                 }
                 
                 // Scan channels.
                 $.each(self.irc.state.channels, function (channel) {
-                    if (keyword === channel.substr(0, keyword.length).toLowerCase()) {
-                        matches.push(channel);
+                    if (term === channel.substr(0, term.length).toLowerCase()) {
+                        matches.push({ type: 'channel', value: channel });
                     }
                 });
             }
@@ -571,7 +587,7 @@
         }
         else {
             // Prep match list.
-            matches.sort();
+            matches.sort(function (a, b) { return a.value.localeCompare(b.value) });
             if (window.console) {
                 console.log('autoComplete matches:');
                 console.log(matches);
@@ -580,73 +596,106 @@
             // Show tooltip with first match.
             autoCompleteList = matches;
             autoCompleteIndex = 0;
+            autoCompleteTermIndex = undefined;
+            updateAutoCompleteTooltip(self);
             
-            $userEntry
-                .tooltip('option', 'content', matches[0])
-                .tooltip('open');
+            // Hack to make incrementAutoComplete() pick up the first term on Tab.
+            autoCompleteIndex = -1;
         }
     };
     
-    var incrementAutoComplete = function (self) {
-        if (autoCompleteList !== undefined) {
-            if (autoCompleteIndex < autoCompleteList.length - 1) autoCompleteIndex++;
-            else autoCompleteIndex = 0;
+    var updateAutoCompleteTooltip = function (self) {
+        var $userEntry = self.ircElement.find('.userEntry').first();
+
+        if (autoCompleteList.length > 0) {
+            // Show next 5 suggestions in tooltip.
+            // Decorate suggestion text based on type.
+            var tooltipContentList = [];
+
+            for (var i = 0; i < 5 && i < autoCompleteList.length; i++) {
+                var matchIndex = i + autoCompleteIndex;
+                if (matchIndex >= autoCompleteList.length) matchIndex -= autoCompleteList.length;
+                var match = autoCompleteList[matchIndex];
+                var content = $('<span />').text(match.value).html();
+                
+                if (match.type === 'nick') {
+                    var colorizeNumber = getColorizeNumber(self, match.value, self.irc.target());
+                    content = '<span class="nick color' + colorizeNumber + '">' + content + '</span>';
+                }
+                else if (match.type === 'channel')
+                    content = '<span class="channel">' + content + '</span>';
+                
+                // Identify the 'active' suggestion placed in userEntry.
+                if (autoCompleteTermIndex !== undefined && match.value === autoCompleteList[autoCompleteTermIndex].value)
+                    content = '<span class="activeSuggestion">' + content + '</span>';
+                    
+                tooltipContentList.push(content);
+            }
             
-            self.ircElement.find('.userEntry')
-                .tooltip('close')
-                .tooltip('option', 'content', autoCompleteList[autoCompleteIndex])
+            // Append ellipsis if more suggestions are available.
+            if (autoCompleteList.length > 5) tooltipContentList.push('... (' + (autoCompleteList.length - 5) + ' more)');
+            
+            var tooltipContent = tooltipContentList.join(', ');
+            $userEntry
+                .tooltip('option', 'content', tooltipContent)
                 .tooltip('open');
+        }
+        else {
+            $userEntry
+                .tooltip('option', 'content', '')
+                .tooltip('close');
+        }
+    };
+    
+    var incrementAutoComplete = function (self, step) {
+        if (autoCompleteList !== undefined) {
+            if (step === undefined) step = 1;
+            
+            // Parse out old term from userEntry.
+            var $userEntry = self.ircElement.find('.userEntry').first();
+            var value = $userEntry.val();
+            var lvalue = value.substr(0, autoCompleteTermPosition);
+            var rvalue = value.substr(autoCompleteTermPosition + autoCompleteTerm.length);
+
+            // Get next suggested term.
+            autoCompleteIndex = autoCompleteTermIndex = (autoCompleteIndex + step) % autoCompleteList.length;
+            autoCompleteTerm = autoCompleteList[autoCompleteIndex].value;
+            if (lvalue.length == 0) autoCompleteTerm += ': ';
+
+            // Place term into userEntry.
+            var newValue = lvalue + autoCompleteTerm + rvalue;
+            $userEntry.val(newValue);
+            $userEntry[0].selectionStart = $userEntry[0].selectionEnd = autoCompleteTermPosition + autoCompleteTerm.length;
+
+            // Update tooltip.
+            updateAutoCompleteTooltip(self);
         }
     };
 
-    var decrementAutoComplete = function (self) {
-        if (autoCompleteList !== undefined) {
-            if (autoCompleteIndex > 0) autoCompleteIndex--;
-            else autoCompleteIndex = autoCompleteList.length - 1;
-            
-            self.ircElement.find('.userEntry')
-                .tooltip('close')
-                .tooltip('option', 'content', autoCompleteList[autoCompleteIndex])
-                .tooltip('open');
-        }
-    };
-    
     var rejectAutoComplete = function (self) {
-        autoCompleteList = undefined;
+        var $userEntry = self.ircElement.find('.userEntry').first();
+
+        if (autoCompleteTerm !== undefined) {
+            // Parse out old term from userEntry.
+            var value = $userEntry.val();
+            var lvalue = value.substr(0, autoCompleteTermPosition);
+            var rvalue = value.substr(autoCompleteTermPosition + autoCompleteTerm.length);
+            
+            // Place original spec into userEntry.
+            var newValue = lvalue + autoCompleteSpec + rvalue;
+            $userEntry.val(newValue);
+            $userEntry[0].selectionStart = $userEntry[0].selectionEnd = autoCompleteTermPosition + autoCompleteSpec.length;
+        }
         
-        self.ircElement.find('.userEntry')
+        autoCompleteList = undefined;
+        autoCompleteTerm = undefined;
+        autoCompleteTermPosition = undefined;
+        
+        $userEntry
             .tooltip('option', 'content', '')
             .tooltip('close');
     };
-    
-    var acceptAutoComplete = function (self) {
-        if (autoCompleteList !== undefined) {
-            var $userEntry = self.ircElement.find('.userEntry').first();
-            var value = $userEntry.val();
-            var position = $userEntry[0].selectionStart;
-            var lvalue = value.substr(0, position);
-            var keywordMatch = /([^\s,\.\/\\]+)$/.exec(lvalue);
-            var rvalue = value.substr(position);
-            
-            if (keywordMatch !== null && /^([\s,\.\/\\]|$)/.test(rvalue)) {
-                var keyword = keywordMatch[1];
-                var autoCompleteValue = autoCompleteList[autoCompleteIndex];
-                if (window.console) console.log('Autocomplete replacing "' + keyword + '" with "' + autoCompleteValue + '"');
-                var newLvalue = lvalue.substr(0, lvalue.length - keyword.length);
-                $userEntry.val(newLvalue + autoCompleteValue + rvalue);
 
-                // Adjust cursor position to right of accepted completion.
-                $userEntry[0].selectionStart = $userEntry[0].selectionEnd = $userEntry[0].selectionStart - keyword.length + autoCompleteValue.length;
-
-                autoCompleteList = undefined;
-                
-                $userEntry
-                    .tooltip('option', 'content', '')
-                    .tooltip('close');
-            }
-        }
-    };
-    
     var hoverClickableHandler = function () {
         $(this).addClass('ui-state-hover');
     };
@@ -920,16 +969,20 @@
                             // Reset user entry history index.
                             self.userEntryHistoryIndex = undefined;
 
+                            // Reject any autocomplete suggestions.
+                            if (autoReplyIndex !== undefined)
+                                rejectAutoReply(self);
+                            else
+                                rejectAutoComplete(self);
+                            
                             keydownWasHandled = true;
                             return false;
                         }
                         else if (e.keyCode === 27 /* Escape */) {
-                            if (autoReplyIndex !== undefined) {
+                            if (autoReplyIndex !== undefined)
                                 rejectAutoReply(self);
-                            }
-                            else {
+                            else
                                 rejectAutoComplete(self);
-                            }
                             
                             keydownWasHandled = true;
                             return false;
@@ -953,11 +1006,12 @@
                             }
                             // Scan for autocomplete if no suggestion is present.
                             else if (autoCompleteList === undefined) {
-                                queueScanAutoComplete(self);
+                                scanAutoComplete(self);
+                                incrementAutoComplete(self);
                             }
                             // Accept a presented autocomplete suggestion.
                             else {
-                                acceptAutoComplete(self);
+                                incrementAutoComplete(self);
                             }
                             
                             keydownWasHandled = true;
