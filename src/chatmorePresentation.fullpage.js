@@ -387,7 +387,7 @@
         // Convert array of nicks to regex expression.
         var nickExpr = $.map(nicks, function (nick) {
             // Escape regex symbols.
-            return nick.replace(/([?*|.^$()\[\]{}\\/])/, "\\$1");
+            return nick.replace(/([?*|.^$()\[\]{}\\/])/g, "\\$1");
         }).join('|');
         var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
         
@@ -613,8 +613,7 @@
             var tooltipContentList = [];
 
             for (var i = 0; i < 5 && i < autoCompleteList.length; i++) {
-                var matchIndex = i + autoCompleteIndex;
-                if (matchIndex >= autoCompleteList.length) matchIndex -= autoCompleteList.length;
+                var matchIndex = (i + autoCompleteIndex) % autoCompleteList.length;
                 var match = autoCompleteList[matchIndex];
                 var content = $('<span />').text(match.value).html();
                 

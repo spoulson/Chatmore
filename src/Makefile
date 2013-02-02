@@ -24,12 +24,12 @@ $(OBJ_DIR)/chatmoreState.min.js: chatmoreState.js
 #	cp $< $@
 
 $(OBJ_DIR)/chatmoreCLI.min.js: chatmoreCLI.js
-#	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
-	cp $< $@
+	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
+#	cp $< $@
 
 $(OBJ_DIR)/chatmorePresentation.fullpage.min.js: chatmorePresentation.fullpage.js
-#	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
-	cp $< $@
+	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
+#	cp $< $@
 
 # Combine all Chatmore javascript into one file.
 $(OBJ_DIR)/chatmoreAll.min.js: $(OBJ_DIR)/chatmoreState.min.js $(OBJ_DIR)/chatmore.min.js $(OBJ_DIR)/chatmoreCLI.min.js $(OBJ_DIR)/chatmorePresentation.fullpage.min.js
