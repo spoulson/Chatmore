@@ -34,8 +34,8 @@ SYSTEM REQUIREMENTS
 
 ### Client
  - Browser supporting HTML5.
-   - Tested browsers on Windows: Chrome 13+, Firefox 5+, IE9, Safari 5.1.
-   - Tested browsers on Mac OS X: Chrome 17+, Firefox 9+, Safari 5.1.
+   - Tested browsers on Windows: Chrome 24, Firefox 5, IE9, Safari 5.1.
+   - Tested browsers on Mac OS X: Chrome 24, Firefox 18.0.1, Safari 6.
 
 INSTALLATION
 ------------
