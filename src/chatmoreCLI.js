@@ -134,7 +134,7 @@
                         helpText: 'Revoke channel operator status from a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['deop'].helpUsage;
+                                meta.error = self.cmdDefs.deop.helpUsage;
                                 return false;
                             }
                             
@@ -162,7 +162,7 @@
                         helpText: 'Revoke channel voice status from a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['devoice'].helpUsage;
+                                meta.error = self.cmdDefs.devoice.helpUsage;
                                 return false;
                             }
                             
@@ -238,7 +238,7 @@
                         helpText: 'Join a channel.  Include a key if the channel requires it to join.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['join'].helpUsage;
+                                meta.error = self.cmdDefs.join.helpUsage;
                                 return false;
                             }
                             
@@ -260,7 +260,7 @@
                         helpUsage: 'Usage: /kick &gt;nick&lt; [comment]',
                         helpText: 'Kick user from channel.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['kick'].helpUsage;
+                            var usage = self.cmdDefs.kick.helpUsage;
                             var m = /^(\S+)(\s+(.+))?/.exec(param);
                             if (m === null) {
                                 meta.error = usage;
@@ -292,7 +292,7 @@
                         parseParam: function (param, meta) {
                             if (param === undefined) {
                                 if (self.irc.target() === undefined) {
-                                    meta.error = self.cmdDefs['leave'].helpUsage;
+                                    meta.error = self.cmdDefs.leave.helpUsage;
                                     return false;
                                 }
                                 else {
@@ -343,7 +343,7 @@
                                     }
                                     else {
                                         // Unable to parse parameters.
-                                        meta.error = self.cmdDefs['list'].helpUsage;
+                                        meta.error = self.cmdDefs.list.helpUsage;
                                         return false;
                                     }
                                 }
@@ -375,7 +375,7 @@
                         helpUsage: 'Usage: /me &lt;message&gt;',
                         helpText: 'Send an action message to currently selected channel or user.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -432,7 +432,7 @@
                             'Available channel modes: http://tools.ietf.org/html/rfc2811#section-4'
                         ],
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['mode'].helpUsage;
+                            var usage = self.cmdDefs.mode.helpUsage;
                             var m = /^(\S+)(\s+(\S+(\s+\S+)*))?\s*$/.exec(param);
                             if (m === null) {
                                 meta.error = usage;
@@ -481,7 +481,7 @@
                         helpUsage: 'Usage: /msg &lt;nick|#channel&gt; &lt;message&gt;',
                         helpText: 'Send a private message to a user.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -536,7 +536,7 @@
                         helpText: 'Change your nick.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['nick'].helpUsage;
+                                meta.error = self.cmdDefs.nick.helpUsage;
                                 return false;
                             }
                             
@@ -556,7 +556,7 @@
                         helpUsage: 'Usage: /notice &lt;nick|#channel&gt; &lt;message&gt;',
                         helpText: 'Send a notice to a user or channel.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -610,7 +610,7 @@
                         helpText: 'Grant channel operator status to a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['op'].helpUsage;
+                                meta.error = self.cmdDefs.op.helpUsage;
                                 return false;
                             }
                             
@@ -638,7 +638,7 @@
                         helpText: 'Select a user or channel to send messages.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['query'].helpUsage;
+                                meta.error = self.cmdDefs.query.helpUsage;
                                 return false;
                             }
                             
@@ -750,7 +750,7 @@
                         helpText: 'Grant channel voice status to a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['voice'].helpUsage;
+                                meta.error = self.cmdDefs.voice.helpUsage;
                                 return false;
                             }
                             
@@ -1143,12 +1143,12 @@
             self.layoutPlugin.initialize(self);
     
             // Client command aliases.
-            self.cmdDefs['j'] = self.cmdDefs['join'];
-            self.cmdDefs['k'] = self.cmdDefs['kick'];
-            self.cmdDefs['l'] = self.cmdDefs['leave'];
-            self.cmdDefs['m'] = self.cmdDefs['msg'];
-            self.cmdDefs['n'] = self.cmdDefs['notice'];
-            self.cmdDefs['q'] = self.cmdDefs['query'];
+            self.cmdDefs.j = self.cmdDefs.join;
+            self.cmdDefs.k = self.cmdDefs.kick;
+            self.cmdDefs.l = self.cmdDefs.leave;
+            self.cmdDefs.m = self.cmdDefs.msg;
+            self.cmdDefs.n = self.cmdDefs.notice;
+            self.cmdDefs.q = self.cmdDefs.query;
     
             // Setup chatmore event handlers.
             self.ircElement
@@ -1333,8 +1333,10 @@
                     self.layoutPlugin.onProcessedMessage(self, msg);
                 })
                 .on('stateChanged.chatmore', function (e) {
-                    if (window.console) console.log('UI event: stateChanged');
-                    if (window.console) console.log(self.irc.state);
+                    if (window.console) {
+                        console.log('UI event: stateChanged');
+                        console.log(self.irc.state);
+                    }
                     
                     var state = self.irc.state;
                     
@@ -1494,8 +1496,8 @@
             // Invoke named method against chatmoreUI object.
             var method = arguments[0];
             var args = Array.prototype.slice.call(arguments, 1);
-            var self = $(this).data('chatmore');
-            return self.methods[method].apply(self, args);
+            var chatmoreSelf = $(this).data('chatmore');
+            return chatmoreSelf.methods[method].apply(chatmoreSelf, args);
         }
     };
 })();

@@ -162,9 +162,6 @@
         quit: '{{tmpl "timestamp"}}<span class="QUIT">' +
             '{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${msg.prefixNick}</span> (${msg.info.message})</span>' +
             '</span>',
-        error: '{{tmpl "timestamp"}}<span class="ERROR">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
-            '</span>',
         mode: '{{tmpl "timestamp"}}<span class="MODE">' +
             '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${msg.info.mode}</span>" for ' +
             '{{if self.isChannel(msg.info.target)}}' +
@@ -190,34 +187,34 @@
     var autoReplyList = [ ];
 
     // Autoreply index against autoReplyList array.
-    var autoReplyIndex = undefined;
+    var autoReplyIndex;
     
     // Auto complete setTimeout handle.
     var autoCompleteTimeoutHandle;
     
     // Auto complete list of term objects in the form:
     // { type: 'nick'|'channel', value: string }
-    var autoCompleteList = undefined;
+    var autoCompleteList;
     
     // Auto complete suggest index against list of terms.
-    var autoCompleteIndex = undefined;
+    var autoCompleteIndex;
     
     // Auto complete suggest index of value placed in userEntry.
-    var autoCompleteTermIndex = undefined;
+    var autoCompleteTermIndex;
 
     // Current term string in userEntry when autoComplete presents suggestions.
-    var autoCompleteTerm = undefined;
+    var autoCompleteTerm;
     
     // User provided term used for scanning autocomplete suggestions.
     // This contains the initial search term the user entered when scanAutoComplete() was called.
-    var autoCompleteSpec = undefined;
+    var autoCompleteSpec;
     
     // Starting position of autoCompleteTerm.
-    var autoCompleteTermPosition = undefined;
+    var autoCompleteTermPosition;
 
     // User entry history log.  First entry is scratch buffer from last unsent entry.
     var userEntryHistory = [''];
-    var userEntryHistoryIndex = undefined;
+    var userEntryHistoryIndex;
     
     //
     // Private methods.
@@ -387,7 +384,7 @@
         // Convert array of nicks to regex expression.
         var nickExpr = $.map(nicks, function (nick) {
             // Escape regex symbols.
-            return nick.replace(/([?*|.^$()\[\]{}\\/])/g, "\\$1");
+            return nick.replace(/([?*|.\^$()\[\]{}\\\/])/g, "\\$1");
         }).join('|');
         var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
         
@@ -517,9 +514,9 @@
                 
                 // Suggest quick send message to next recent sender.
                 var recipient = autoReplyList[autoReplyIndex];
-                var s = '/msg ' + recipient + ' ';
-                $userEntry.val(s);
-                $userEntry[0].selectionStart = $userEntry[0].selectionEnd = s.length;
+                var s2 = '/msg ' + recipient + ' ';
+                $userEntry.val(s2);
+                $userEntry[0].selectionStart = $userEntry[0].selectionEnd = s2.length;
                 autoReplyIndex++;
                 if (autoReplyIndex >= autoReplyList.length) autoReplyIndex = 0;
                 
@@ -659,7 +656,7 @@
             // Get next suggested term.
             autoCompleteIndex = autoCompleteTermIndex = (autoCompleteIndex + step) % autoCompleteList.length;
             autoCompleteTerm = autoCompleteList[autoCompleteIndex].value;
-            if (lvalue.length == 0) autoCompleteTerm += ': ';
+            if (lvalue.length === 0) autoCompleteTerm += ': ';
 
             // Place term into userEntry.
             var newValue = lvalue + autoCompleteTerm + rvalue;
@@ -830,7 +827,7 @@
 
     var getChannelsFromHash = function () {
         var channels = document.location.hash.split(',');
-        if (channels[0] == '') return [ ];
+        if (channels[0].length === 0) return [ ];
         else return channels;
     };
     
@@ -1092,13 +1089,11 @@
             $(window).off('.chatmore_default');
         },
         writeTemplate: function (self, templateName, data) {
-            switch (templateName) {
-            case 'outgoingPrivateMsg':
+            if (templateName === 'outgoingPrivateMsg') {
                 // For outgoing private messages to a user, record the target nick in autoreply list.
                 if (!self.isChannel(data.msg.info.target)) {
                     addToAutoReplyList(self, data.msg.info.target);
                 }
-                break;
             }
 
             data.self = self;
@@ -1162,7 +1157,7 @@
                 
                 // Session deleted error during activation.  Generate new viewKey and reactivate.
                 var query = parseQueryString(getQueryString());
-                query['viewKey'] = newViewKey();
+                query.viewKey = newViewKey();
 
                 if (window.history.replaceState) {
                     // HTML5: Restart client with new viewKey without reloading; update URL to reflect viewKey.
@@ -1170,7 +1165,7 @@
                     window.history.replaceState(null, document.title, updatedUrl);
 
                     var options = $.extend({ }, self.options);
-                    options.viewKey = query['viewKey'];
+                    options.viewKey = query.viewKey;
                     options.channels = getChannelsFromHash();
                     $('#chatmore')
                         .chatmore(options)
