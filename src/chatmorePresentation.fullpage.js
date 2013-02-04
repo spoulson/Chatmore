@@ -14,7 +14,7 @@
         timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
         bullet: '&bull;&bull;&bull;',
         notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
-        error: '{{tmpl "timestamp"}}<span class="error">' +
+        error: '{{tmpl "timestamp"}}<span class="ERROR">' +
             '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
             '</span>',
         usage: '{{tmpl "timestamp"}}<span class="usage">' +
