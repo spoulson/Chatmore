@@ -530,12 +530,19 @@
     };
 
     var queueScanAutoComplete = function (self) {
-        if (autoCompleteTimeoutHandle !== undefined) clearTimeout(autoCompleteTimeoutHandle);
+        cancelQueuedScanAutoComplete();
         
         autoCompleteTimeoutHandle = setTimeout(function () {
             autoCompleteTimeoutHandle = undefined;
             scanAutoComplete(self);
         }, 200);
+    };
+    
+    var cancelQueuedScanAutoComplete = function () {
+        if (autoCompleteTimeoutHandle !== undefined) {
+            clearTimeout(autoCompleteTimeoutHandle);
+            autoCompleteTimeoutHandle = undefined;
+        }
     };
     
     // Check for keyword at cursor for an autocomplete suggestion.
@@ -580,7 +587,7 @@
         }
 
         if (matches.length === 0) {
-            rejectAutoComplete(self);
+            clearAutoComplete(self);
         }
         else {
             // Prep match list.
@@ -684,13 +691,29 @@
         }
         
         autoCompleteList = undefined;
-        autoCompleteTerm = undefined;
+        autoCompleteIndex = undefined;
+        autoCompleteTermIndex = undefined;
         autoCompleteTermPosition = undefined;
+        autoCompleteTerm = undefined;
         
         $userEntry
             .tooltip('option', 'content', '')
             .tooltip('close');
     };
+    
+    var clearAutoComplete = function (self) {
+        var $userEntry = self.ircElement.find('.userEntry').first();
+
+        autoCompleteList = undefined;
+        autoCompleteIndex = undefined;
+        autoCompleteTermIndex = undefined;
+        autoCompleteTermPosition = undefined;
+        autoCompleteTerm = undefined;
+        
+        $userEntry
+                .tooltip('option', 'content', '')
+                .tooltip('close');
+    }
 
     var hoverClickableHandler = function () {
         $(this).addClass('ui-state-hover');
@@ -954,6 +977,9 @@
                     keydownWasHandled = false;
 
                     if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
+                        // Cancel pending scanAutoComplete() to prevent typing conflicts.
+                        cancelQueuedScanAutoComplete();
+                        
                         if (e.keyCode === 13 /* Enter */) {
                             // Send message.
                             // Add new scratch line to user entry history.
@@ -965,11 +991,11 @@
                             // Reset user entry history index.
                             self.userEntryHistoryIndex = undefined;
 
-                            // Reject any autocomplete suggestions.
+                            // Clear any autocomplete suggestions.
                             if (autoReplyIndex !== undefined)
                                 rejectAutoReply(self);
                             else
-                                rejectAutoComplete(self);
+                                clearAutoComplete(self);
                             
                             keydownWasHandled = true;
                             return false;
@@ -1022,7 +1048,7 @@
                             if (userEntryHistoryIndex !== undefined) {
                                 // Ensure no auto complete is presented.
                                 rejectAutoReply(self);
-                                rejectAutoComplete(self);
+                                clearAutoComplete(self);
 
                                 if (e.keyCode === 38) {
                                     // Go to next oldest history entry.
