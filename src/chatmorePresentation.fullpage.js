@@ -704,15 +704,19 @@
     var clearAutoComplete = function (self) {
         var $userEntry = self.ircElement.find('.userEntry').first();
 
+        clearAutoCompleteState();
+        
+        $userEntry
+            .tooltip('option', 'content', '')
+            .tooltip('close');
+    }
+
+    var clearAutoCompleteState = function () {
         autoCompleteList = undefined;
         autoCompleteIndex = undefined;
         autoCompleteTermIndex = undefined;
         autoCompleteTermPosition = undefined;
         autoCompleteTerm = undefined;
-        
-        $userEntry
-                .tooltip('option', 'content', '')
-                .tooltip('close');
     }
 
     var hoverClickableHandler = function () {
@@ -1078,12 +1082,12 @@
                     }
                 })
                 .keypress(function (e) {
-                    var $userEntry = $(this);
-                    
                     if (keydownWasHandled) {
                         keydownWasHandled = false;
                         return false;
                     }
+                    
+                    clearAutoCompleteState();
 
                     if (autoReplyIndex !== undefined) {
                         // Typing text will accept a presented autoreply.
@@ -1091,6 +1095,7 @@
                     }
 
                     // Store current entry in first history element as scratch buffer.
+                    var $userEntry = $(this);
                     userEntryHistory[0] = $userEntry.val() + String.fromCharCode(e.which);
 
                     queueScanAutoComplete(self);
