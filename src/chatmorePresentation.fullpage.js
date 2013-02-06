@@ -645,7 +645,7 @@
             //if (autoCompleteList.length > 5) tooltipContentList.push('... (' + (autoCompleteList.length - 5) + ' more)');
             
             var tooltipContent = tooltipContentList.join(',&nbsp;');
-            console.log(tooltipContent);
+
             $userEntry
                 .tooltip('option', 'content', tooltipContent)
                 .tooltip('open');
@@ -1123,7 +1123,9 @@
                         autoCompleteTooltipScrollToTerm = function (termIndex) {
                             var $term = ui.tooltip.find('.term').eq(termIndex).each(function () {
                                 var newScrollLeft = $(this).offset().left - parseInt($(this).css('margin-left')) - parseInt($(this).css('padding-left')) - ui.tooltip.offset().left - parseInt(ui.tooltip.css('padding-left')) + ui.tooltip.scrollLeft();
-                                ui.tooltip.animate({ scrollLeft: newScrollLeft });
+                                ui.tooltip
+                                    .stop()
+                                    .animate({ scrollLeft: newScrollLeft });
                             });
                         };
                     }
