@@ -28,8 +28,8 @@ $(OBJ_DIR)/chatmoreCLI.min.js: chatmoreCLI.js
 #	cp $< $@
 
 $(OBJ_DIR)/chatmorePresentation.fullpage.min.js: chatmorePresentation.fullpage.js
-	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
-#	cp $< $@
+#	$(MINIFY) $(MINIFY_OPTS) -o $@ $<
+	cp $< $@
 
 # Combine all Chatmore javascript into one file.
 $(OBJ_DIR)/chatmoreAll.min.js: $(OBJ_DIR)/chatmoreState.min.js $(OBJ_DIR)/chatmore.min.js $(OBJ_DIR)/chatmoreCLI.min.js $(OBJ_DIR)/chatmorePresentation.fullpage.min.js
@@ -39,7 +39,6 @@ $(OBJ_DIR)/chatmoreAll.min.js: $(OBJ_DIR)/chatmoreState.min.js $(OBJ_DIR)/chatmo
 # Build
 #
 build: $(STATIC_SRC) $(OBJ_DIR) $(OBJ_DIR)/chatmoreAll.min.js
-	rm -rf $(BUILD_DIR)
 	rsync -av . $(BUILD_DIR) --exclude Makefile --exclude $(OBJ_DIR) --exclude chatmoreState.js --exclude chatmore.js --exclude chatmoreCLI.js --exclude chatmorePresentation.fullpage.js
 	rsync -av $(OBJ_DIR)/chatmoreAll.min.js $(BUILD_DIR)
 

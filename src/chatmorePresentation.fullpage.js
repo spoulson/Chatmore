@@ -211,6 +211,10 @@
     
     // Starting position of autoCompleteTerm.
     var autoCompleteTermPosition;
+    
+    // Function generated at runtime when tooltip is displayed.
+    // Usage: autoCompleteTooltipScrollToTerm(termIndex);
+    var autoCompleteTooltipScrollToTerm;
 
     // User entry history log.  First entry is scratch buffer from last unsent entry.
     var userEntryHistory = [''];
@@ -523,7 +527,7 @@
                 // Show autoreply suggestion as tooltip.
                 $userEntry
                     .tooltip('close')
-                    .tooltip('option', 'content', 'Reply to <span class="nick">' + recipient + '</span>')
+                    .tooltip('option', 'content', 'Reply to <span class="activeSuggestion term"><span class="nick">' + recipient + '</span></span>')
                     .tooltip('open');
             }
         }
@@ -616,8 +620,8 @@
             // Decorate suggestion text based on type.
             var tooltipContentList = [];
 
-            for (var i = 0; i < 5 && i < autoCompleteList.length; i++) {
-                var matchIndex = (i + autoCompleteIndex) % autoCompleteList.length;
+            for (var i = 0; /*i < 5 &&*/ i < autoCompleteList.length; i++) {
+                var matchIndex = (i /*+ autoCompleteIndex*/) % autoCompleteList.length;
                 var match = autoCompleteList[matchIndex];
                 var content = $('<span />').text(match.value).html();
                 
@@ -630,18 +634,23 @@
                 
                 // Identify the 'active' suggestion placed in userEntry.
                 if (autoCompleteTermIndex !== undefined && match.value === autoCompleteList[autoCompleteTermIndex].value)
-                    content = '<span class="activeSuggestion">' + content + '</span>';
-                    
+                    content = '<span class="activeSuggestion term">' + content + '</span>';
+                else
+                    content = '<span class="inactiveSuggestion term">' + content + '</span>';
+                
                 tooltipContentList.push(content);
             }
             
             // Append ellipsis if more suggestions are available.
-            if (autoCompleteList.length > 5) tooltipContentList.push('... (' + (autoCompleteList.length - 5) + ' more)');
+            //if (autoCompleteList.length > 5) tooltipContentList.push('... (' + (autoCompleteList.length - 5) + ' more)');
             
-            var tooltipContent = tooltipContentList.join(', ');
+            var tooltipContent = tooltipContentList.join(',&nbsp;');
+            console.log(tooltipContent);
             $userEntry
                 .tooltip('option', 'content', tooltipContent)
                 .tooltip('open');
+
+            autoCompleteTooltipScrollToTerm(autoCompleteTermIndex);
         }
         else {
             $userEntry
@@ -1109,6 +1118,14 @@
                     open: function (e, ui) {
                         // Move tooltip div to inside ircElement so that CSS styles apply.
                         ui.tooltip.appendTo(self.ircElement);
+                        
+                        // Prepare delegate function for scrolling to term index.
+                        autoCompleteTooltipScrollToTerm = function (termIndex) {
+                            var $term = ui.tooltip.find('.term').eq(termIndex).each(function () {
+                                var newScrollLeft = $(this).offset().left - parseInt($(this).css('margin-left')) - parseInt($(this).css('padding-left')) - ui.tooltip.offset().left - parseInt(ui.tooltip.css('padding-left')) + ui.tooltip.scrollLeft();
+                                ui.tooltip.animate({ scrollLeft: newScrollLeft });
+                            });
+                        };
                     }
                 })
                 .focus();

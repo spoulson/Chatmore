@@ -70,10 +70,26 @@
     padding: 3px;
 }
 
+.chatmore.-fullpage-layout .ui-tooltip {
+    overflow: hidden;
+}
+
 .chatmore.-fullpage-layout .activeSuggestion {
-    /*border: 1px solid red;
-    padding: -1px;*/
-    text-decoration: underline;
+    background-color: #F1E7C8;
+    border: 1px solid #e8d7a5;
+    box-shadow: 0 0 10px #e8d7a5;
+    padding: 2px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.chatmore.-fullpage-layout .inactiveSuggestion {
+    box-shadow: 0 0 10px #F1E7C8;
+    padding: 3px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
 }
 
 .chatmore.-fullpage-layout .channel {
