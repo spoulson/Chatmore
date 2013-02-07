@@ -166,7 +166,7 @@ class spIrcSessionDAL_SQLite {
         
         $db = null;
         
-        log::info(sprintf("lookupId(%s) with sessionKey=%s = %s", $viewKey, session_id(), var_export($id, true)));
+        //log::info(sprintf("lookupId(%s) with sessionKey=%s = %s", $viewKey, session_id(), var_export($id, true)));
         return $id;
     }
     

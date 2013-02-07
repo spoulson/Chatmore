@@ -496,7 +496,7 @@ function chatmore(element, options) {
             };
 
             $(element).trigger('sendingMessage.chatmore', [ rawMsg, resendCount ]);
-            
+
             $.ajax('send.php',
                 {
                     async: true,

@@ -537,7 +537,8 @@ class spIrcClient {
         
         switch ($msg['command']) {
         case 'PING':
-            $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
+            log::info('PING msg: ' . var_export($msg, true));
+            $this->sendRawMsg("PONG " . $msg['info']['ping'] . "\r\n");
             break;
         }
         
@@ -647,10 +648,9 @@ class spIrcClient {
 
     // Send raw message.
     // Message line must end with \r\n.
-    public function sendRawMsg($line)
-    {
+    public function sendRawMsg($line) {
         $this->socketSendBuffer .= $line;
-        //log::info("Sent: " . $line);
+        log::info("Sent: " . $line);
     }
     
     public function isChannel($target) {

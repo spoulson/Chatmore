@@ -15,71 +15,71 @@
         bullet: '&bull;&bull;&bull;',
         notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
         error: '{{tmpl "timestamp"}}<span class="ERROR">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
         usage: '{{tmpl "timestamp"}}<span class="usage">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
         help: '{{tmpl "timestamp"}}<span class="help">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
         serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
             '{{tmpl "notePrefix"}} ' +
             '{{if channel}}&lt;<span class="channel">${channel}</span>&gt; {{/if}}' +
             '<span class="message">' +
             '{{if number}}${number} {{/if}}' +
-            '${message}</span>' +
+            '${layout.htmlEncode(message)}</span>' +
             '</span>',
         clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">' +
-            '{{tmpl "notePrefix"}} <span class="message">${message}</span>' +
+            '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
         outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice outgoing">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg outgoing">' +
             '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull;</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg outgoing action">' +
             '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice outgoing">' +
             '<span class="prefix">-<span class="nick">${msg.info.target}</span>-</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice incoming">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg incoming">' +
             '<span class="prefix">&bull;<span class="nick">${msg.prefixNick}</span>&bull;</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg incoming action">' +
             '<span class="prefix">&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice incoming">' +
             '<span class="prefix">-<span class="nick">${msg.prefixNick}</span>-</span> ' +
-            '<span class="message">${msg.info.text}</span>' +
+            '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
         queryOff: '{{tmpl "timestamp"}}<span class="queryMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
@@ -113,7 +113,7 @@
             '{{else}}' +
                 '<span class="nick ${layout.getColorizeCSSClass(self, msg.info.kick.nick, msg.info.kick.channel)}">${msg.info.kick.nick}</span> has been kicked from the channel by <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.kick.channel)}">${msg.prefixNick}</span>' +
             '{{/if}}' +
-            '{{if msg.info.comment !== undefined && msg.info.comment !== msg.prefixNick}}: ${msg.info.comment}{{/if}}</span>' +
+            '{{if msg.info.comment !== undefined && msg.info.comment !== msg.prefixNick}}: ${layout.htmlEncode(msg.info.comment)}{{/if}}</span>' +
             '</span>',
         nick: '{{tmpl "timestamp"}}<span class="NICK">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
@@ -134,7 +134,7 @@
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message">' +
             '{{if msg.info.topic !== undefined}}' +
-                '<span class="no-decorate">The current topic is:</span> <span class="topicMessage">${msg.info.topic}</span>' +
+                '<span class="no-decorate">The current topic is:</span> <span class="topicMessage">${layout.htmlEncode(msg.info.topic)}</span>' +
             '{{else}}' +
                 '<span class="message no-decorate">No topic is set</span>' +
             '{{/if}}' +
@@ -146,7 +146,7 @@
             '{{if msg.info.topic == ""}}' +
                 'has cleared the topic</span>' +
             '{{else}}' +
-                'has changed the topic to: </span><span class="topicMessage">${msg.info.topic}</span>' +
+                'has changed the topic to: </span><span class="topicMessage">${layout.htmlEncode(msg.info.topic)}</span>' +
             '{{/if}}' +
             '</span></span>',
         topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
@@ -173,7 +173,7 @@
             '{{/if}}' +
             '</span>',
         list: '{{tmpl "timestamp"}}<span class="LIST">' +
-            '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${msg.info.topic}</span>' +
+            '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${layout.htmlEncode(msg.info.topic)}</span>' +
             '</span>',
         retryRegistration: '{{tmpl "timestamp"}}<span class="clientMsg">' +
             '{{tmpl "notePrefix"}} <span class="message no-decorate">Retrying registration with nickname <span class="nick">${self.irc.state.nick}</span></span>' +
@@ -316,7 +316,9 @@
             }
             else {
                 // Recurse children.
-                textNodes = textNodes.add(findTextNodes(this));
+                var childNodes = findTextNodes(this);
+                if (childNodes.length > 0)
+                    textNodes = textNodes.add(childNodes);
             }
         });
     
@@ -340,7 +342,7 @@
             var modified = false;
 
             // Use regex to isolate URL patterns, replace with hyperlink elements.
-            var html = $node.text().replace(linkifyRegex, function (m, url) {
+            var html = layout.htmlEncode($node.text()).replace(linkifyRegex, function (m, url) {
                 modified = true;
                 
                 // Special case: strip trailing symbols that are probably not intended as part of the URL.
@@ -395,7 +397,7 @@
         findTextNodesForDecoration(el).each(function () {
             var $node = $(this);
             var modified = false;
-            var html = $node.text().replace(re, function (m, nick) {
+            var html = layout.htmlEncode($node.text()).replace(re, function (m, nick) {
                 var colorizeNumber;
                 if (channel !== undefined && self.isChannel(channel)) {
                     // Lookup nick's colorize number for given channel.
@@ -435,7 +437,7 @@
         findTextNodesForDecoration(el).each(function () {
             var $node = $(this);
             var modified = false;
-            var html = $node.text().replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
+            var html = layout.htmlEncode($node.text()).replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
                 modified = true;
                 
                 return text + '<span class="channel no-decorate">' + channel + '</span>';
@@ -616,14 +618,13 @@
         var $userEntry = self.ircElement.find('.userEntry').first();
 
         if (autoCompleteList.length > 0) {
-            // Show next 5 suggestions in tooltip.
+            // Show all suggestions in tooltip.
             // Decorate suggestion text based on type.
             var tooltipContentList = [];
 
-            for (var i = 0; /*i < 5 &&*/ i < autoCompleteList.length; i++) {
-                var matchIndex = (i /*+ autoCompleteIndex*/) % autoCompleteList.length;
+            for (var matchIndex = 0; matchIndex < autoCompleteList.length; matchIndex++) {
                 var match = autoCompleteList[matchIndex];
-                var content = $('<span />').text(match.value).html();
+                var content = layout.htmlEncode(match.value); //$('<span />').text(match.value).html();
                 
                 if (match.type === 'nick') {
                     var colorizeNumber = getColorizeNumber(self, match.value, self.irc.target());
@@ -640,9 +641,6 @@
                 
                 tooltipContentList.push(content);
             }
-            
-            // Append ellipsis if more suggestions are available.
-            //if (autoCompleteList.length > 5) tooltipContentList.push('... (' + (autoCompleteList.length - 5) + ' more)');
             
             var tooltipContent = tooltipContentList.join(',&nbsp;');
 
@@ -1148,9 +1146,19 @@
 
             data.self = self;
             data.layout = layout;
+            
             var el = $('<div/>')
                 .append($.tmpl(templateName, data));
             return writeLine(self, el.html());
+        },
+        htmlEncode: function (value) {
+            //return $('<div/>').text(value).html();
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
         },
         resize: function (self, width, height) {
             if (width && height) {
