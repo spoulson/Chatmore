@@ -1122,8 +1122,8 @@
                             var $term = ui.tooltip.find('.term').eq(termIndex).each(function () {
                                 var newScrollLeft = $(this).offset().left - parseInt($(this).css('margin-left')) - parseInt($(this).css('padding-left')) - ui.tooltip.offset().left - parseInt(ui.tooltip.css('padding-left')) + ui.tooltip.scrollLeft();
                                 ui.tooltip
-                                    .stop()
-                                    .animate({ scrollLeft: newScrollLeft });
+                                    .stop('chatmore.tooltip', true, true)
+                                    .animate({ scrollLeft: newScrollLeft, queue: 'chatmore.tooltip' });
                             });
                         };
                     }
