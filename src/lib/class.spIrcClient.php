@@ -72,11 +72,10 @@ class spIrcClient {
     // Constructor.
     public function spIrcClient($socketFile) {
         $this->socketFile = $socketFile;
-        $this->connectSocket();
     }
 
     // Check $this->isConnected for success status.
-    private function connectSocket() {
+    public function connectSocket() {
         $this->isConnected = false;
         
         for ($attempt = 0; $attempt < $this->maxConnectAttempts; $attempt++) {
@@ -595,9 +594,9 @@ class spIrcClient {
             log::error("Error while flushing send buffer.  Some data may have been dropped.");
             return false;
         }
-        // else {
-            // log::info('Send buffer flushed.');
-        // }
+        else {
+            log::info('Send buffer flushed.');
+        }
     }
         
     // Send buffered data to socket.

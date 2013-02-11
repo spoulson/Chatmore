@@ -15,8 +15,7 @@ ignore_user_abort(true);
 
 // Parse command line.
 $primarySocketFile = $argv[1];
-$secondarySocketFile = $argv[2];
-list($host, $port) = explode(':', $argv[3], 2);
+list($host, $port) = explode(':', $argv[2], 2);
 if (empty($port)) $port = 6667;
 
 function connectToIrcServer() {
@@ -43,12 +42,11 @@ function cleanup() {
     }
 
     if (file_exists($primarySocketFile)) unlink($primarySocketFile);
-    if (file_exists($secondarySocketFile)) unlink($secondarySocketFile);
 }
 
 log::info("Creating proxy...");
 umask(0);
-$proxy = new spSocketProxy($primarySocketFile, $secondarySocketFile, 1);
+$proxy = new spSocketProxy($primarySocketFile);
 $proxy->setProxySocketFunc(create_function('', 'return connectToIrcServer();'));
 log::info("Done.");
 

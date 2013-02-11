@@ -21,13 +21,14 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 $data = array();
 
 if ($state !== null) {
-    $socketFile = $state->secondarySocketFilename;
+    $socketFile = $state->primarySocketFilename;
     
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile);
+        $ircbot->connectSocket();
         
         if ($ircbot->isConnected()) {
-            log::info("_POST: " . var_export($_POST, true));
+            //log::info("_POST: " . var_export($_POST, true));
             $raw = $_POST['msg'];
             if (!empty($raw)) {
                 log::info("Sending message: '$raw'");

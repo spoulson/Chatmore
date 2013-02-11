@@ -8,7 +8,6 @@ class spIrcSessionModel {
     public $deleted;    // bit
     
     public $primarySocketFilename;
-    public $secondarySocketFilename;
 
     // Modifyable properties:
     // IRC server:port.

@@ -624,7 +624,7 @@
 
             for (var matchIndex = 0; matchIndex < autoCompleteList.length; matchIndex++) {
                 var match = autoCompleteList[matchIndex];
-                var content = layout.htmlEncode(match.value); //$('<span />').text(match.value).html();
+                var content = layout.htmlEncode(match.value);
                 
                 if (match.type === 'nick') {
                     var colorizeNumber = getColorizeNumber(self, match.value, self.irc.target());

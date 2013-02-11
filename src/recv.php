@@ -26,6 +26,7 @@ if ($state !== null && !$state->deleted) {
 
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile);
+        $ircbot->connectSocket();
 
         if ($ircbot->isConnected()) {
             $data = array();

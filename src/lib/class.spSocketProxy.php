@@ -12,10 +12,7 @@ require_once 'class.log.php';
 class spSocketProxy {
     private $primaryDomainSocketFile;
     private $primaryDomainSocket = null;
-    private $secondaryDomainSocketFile;
-    private $secondaryDomainSocket = null;
     private $primaryClientSocket = null;
-    private $secondaryClientSocket = null;
     private $proxySocket = null;
     private $proxySocketFunc = null;
     private $proxySocketInitialized = false;
@@ -30,19 +27,14 @@ class spSocketProxy {
     public $proxyReadBufSize = 262144;
     public $clientReadBufSize = 262144;
     
-    public function spSocketProxy($primaryDomainSocketFile, $secondaryDomainSocketFile) {
+    public function spSocketProxy($primaryDomainSocketFile) {
         $this->primaryDomainSocketFile = $primaryDomainSocketFile;
-        $this->secondaryDomainSocketFile = $secondaryDomainSocketFile;
-        
+
         // Create domain socket file and listen.
         if (file_exists($this->primaryDomainSocketFile)) unlink($this->primaryDomainSocketFile) || die("Error removing stale primary client socket file!");
-        if (file_exists($this->secondaryDomainSocketFile)) unlink($this->secondaryDomainSocketFile) || die("Error removing stale secondary client socket file!");
         $this->primaryDomainSocket = socket_create(AF_UNIX, SOCK_STREAM, 0);
-        $this->secondaryDomainSocket = socket_create(AF_UNIX, SOCK_STREAM, 0);
         socket_bind($this->primaryDomainSocket, $this->primaryDomainSocketFile) || die("Error binding primary domain socket!");
-        socket_bind($this->secondaryDomainSocket, $this->secondaryDomainSocketFile) || die("Error binding secondary domain socket!");
         socket_listen($this->primaryDomainSocket) || die("Error listening to primary domain socket!");
-        socket_listen($this->secondaryDomainSocket) || die("Error listening to secondary domain socket!");
     }
     
     public function setProxySocket($proxySocket) {
@@ -62,7 +54,7 @@ class spSocketProxy {
     // Returns false if client is connected and proxy disconnected.
     public function poll() {
         // If the domain socket closes, quit.  This is too fatal of an error to be worth trying to recover from.
-        if (!$this->isPrimaryDomainSocketConnected() || !$this->isSecondaryDomainSocketConnected()) {
+        if (!$this->isPrimaryDomainSocketConnected()) {
             log::error("poll() aborted; Domain socket is disconnected!");
             return false;
         }
@@ -74,7 +66,7 @@ class spSocketProxy {
         }
 
         // Check all sockets for activity.
-        $rSelect = array($this->primaryDomainSocket, $this->secondaryDomainSocket);
+        $rSelect = array($this->primaryDomainSocket);
         $wSelect = array();
         $eSelect = array();
         if ($this->isProxySocketConnected()) {
@@ -86,14 +78,9 @@ class spSocketProxy {
             $rSelect[] = $this->PrimaryClientSocket;
             if (!empty($this->clientBuffer)) $wSelect[] = $this->PrimaryClientSocket;
         }
-        if ($this->isSecondaryClientSocketConnected()) {
-            // SecondaryClientSocket can only be written to by client.
-            $rSelect[] = $this->SecondaryClientSocket;
-        }
         
         // Wait for a socket to become available.
         $newPrimaryClientSocket = null;
-        $newSecondaryClientSocket = null;
         $select = socket_select($rSelect, $wSelect, $eSelect, 0, $this->pollTimeout * 1000);
         
         if ($select === false) {
@@ -113,13 +100,6 @@ class spSocketProxy {
                     if ($c = @socket_accept($socket)) {
                         //log::info("Accepted primary client connection: $c");
                         $newPrimaryClientSocket = $c;
-                    }
-                }
-                else if ($socket === $this->secondaryDomainSocket) {
-                    // Check for a domain socket connection that we can accept.
-                    if ($c = @socket_accept($socket)) {
-                        //log::info("Accepted secondary client connection: $c");
-                        $newSecondaryClientSocket = $c;
                     }
                 }
                 else if ($socket === $this->proxySocket) {
@@ -173,37 +153,6 @@ class spSocketProxy {
                         socket_shutdown($socket, 2);
                         socket_close($socket);
                         $this->PrimaryClientSocket = null;
-                    }
-                }
-                else if ($socket === $this->SecondaryClientSocket) {
-                    // Data waiting in client socket.
-                    //log::info("rC");
-                    $size = @socket_recv($socket, $buf, $this->clientReadBufSize, 0);
-                    if ($size === false) {
-                        $errno = socket_last_error($socket);
-                        // 11 = no data available.
-                        if ($errno != 11) {
-                            // Error with client, close its connection.
-                            log::error("Error $errno receiving from client, closing client connection: " . socket_strerror($errno));
-                            socket_shutdown($socket, 2);
-                            socket_close($socket);
-                            $this->SecondaryClientSocket = null;
-                        }
-                    }
-                    else if ($size) {
-                        //log::info("client: $buf");
-                        // Reset idle timer when client attempts to write.
-                        $this->clientIdleTime = time();
-
-                        //log::info("Buffering to proxy, size(" . strlen($buf) . ")");
-                        $this->proxyBuffer .= $buf;
-                    }
-                    else {
-                        // Got 0 bytes; assume connection was closed.
-                        //log::info("Client connection was closed.");
-                        socket_shutdown($socket, 2);
-                        socket_close($socket);
-                        $this->SecondaryClientSocket = null;
                     }
                 }
                 else {
@@ -291,24 +240,6 @@ class spSocketProxy {
                 $this->connectProxySocket();
             }
         }
-        if (!empty($newSecondaryClientSocket)) {
-            if ($this->isSecondaryClientSocketConnected()) {
-                log::info('Dropping Secondary client socket connection.');
-                socket_shutdown($this->SecondaryClientSocket, 2);
-                socket_close($this->SecondaryClientSocket);
-            }
-            $this->SecondaryClientSocket = $newSecondaryClientSocket;
-
-            // Reset idle timer when client connects to domain socket.
-            $this->clientIdleTime = time();
-
-            //log::info('Secondary client socket connected.');
-
-            // Connect proxy socket on initial client connection.
-            if (!$this->isProxySocketConnected()) {
-                $this->connectProxySocket();
-            }
-        }
         
         // Check idle timeouts.
         if ($this->proxyIdleTime !== null && (time() - $this->proxyIdleTime) >= $this->proxyIdleTimeout) {
@@ -328,16 +259,8 @@ class spSocketProxy {
         return !empty($this->primaryDomainSocket);
     }
     
-    private function isSecondaryDomainSocketConnected() {
-        return !empty($this->secondaryDomainSocket);
-    }
-
     private function isPrimaryClientSocketConnected() {
         return !empty($this->PrimaryClientSocket);
-    }
-
-    private function isSecondaryClientSocketConnected() {
-        return !empty($this->SecondaryClientSocket);
     }
 
     private function isProxySocketConnected() {
@@ -367,11 +290,6 @@ class spSocketProxy {
             socket_close($this->PrimaryClientSocket);
             $this->PrimaryClientSocket = null;
         }
-        if ($this->isSecondaryClientSocketConnected()) {
-            socket_shutdown($this->SecondaryClientSocket);
-            socket_close($this->SecondaryClientSocket);
-            $this->SecondaryClientSocket = null;
-        }
         
         // Close domain socket.
         if ($this->isPrimaryDomainSocketConnected()) {
@@ -379,12 +297,6 @@ class spSocketProxy {
             socket_close($this->primaryDomainSocket);
             if (file_exists($this->primaryDomainSocketFile)) unlink($this->primaryDomainSocketFile);
             $this->primaryDomainSocket = null;
-        }
-        if ($this->isSecondaryDomainSocketConnected()) {
-            socket_shutdown($this->secondaryDomainSocket);
-            socket_close($this->secondaryDomainSocket);
-            if (file_exists($this->secondaryDomainSocketFile)) unlink($this->secondaryDomainSocketFile);
-            $this->secondaryDomainSocket = null;
         }
         
         log::info('Disconnected.');

@@ -135,27 +135,29 @@ function connect($state) {
     global $ircConfig, $session;
 
     log::info('connect()');
-    //log::info("Primary Socket file: " . $state->primarySocketFilename);
-    //log::info("Secondary Socket file: " . $state->primarySocketFilename);
     if (file_exists($state->primarySocketFilename)) unlink($state->primarySocketFilename);
-    if (file_exists($state->secondarySocketFilename)) unlink($state->secondarySocketFilename);
 
     // Kick off background IRC proxy connection.
-    $cmd = sprintf('php %s lib/ircConnection.php %s %s %s:%d &',
+    $cmd = sprintf('php %s lib/ircConnection.php %s %s:%d &',
        $ircConfig['php_opts'],
        $state->primarySocketFilename,
-       $state->secondarySocketFilename,
        $state->server,
        $state->port);
-    log::info("Instantiating IRC process: $cmd");
-    pclose(popen($cmd, 'r'));
+       /*
+    $cmd = sprintf('/usr/local/bin/socat UNIX-LISTEN:%s,end-close TCP:%s:%d,reuseaddr,keepalive &',
+        $state->primarySocketFilename,
+        $state->server,
+        $state->port);
+        */
+    log::info("Instantiating IRC proxy process: $cmd");
+    $rc = pclose(popen($cmd, 'rb'));
     
     // Wait for socket to be created.  5 second timeout.
     for ($i = 0; $i < 50; $i++) {
         if (file_exists($state->primarySocketFilename)) break;
         usleep(100 * 1000);
     }
-    
+
     if (!file_exists($state->primarySocketFilename)) {
         // Timeout waiting for socket file to be created.
         log::error("Timeout waiting for IRC connection to open.");
