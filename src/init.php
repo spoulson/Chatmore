@@ -135,30 +135,24 @@ function connect($state) {
     global $ircConfig, $session;
 
     log::info('connect()');
-    if (file_exists($state->primarySocketFilename)) unlink($state->primarySocketFilename);
+    if (file_exists($state->socketFilename)) unlink($state->socketFilename);
 
     // Kick off background IRC proxy connection.
     $cmd = sprintf('php %s lib/ircConnection.php %s %s:%d &',
        $ircConfig['php_opts'],
-       $state->primarySocketFilename,
+       $state->socketFilename,
        $state->server,
        $state->port);
-       /*
-    $cmd = sprintf('/usr/local/bin/socat UNIX-LISTEN:%s,end-close TCP:%s:%d,reuseaddr,keepalive &',
-        $state->primarySocketFilename,
-        $state->server,
-        $state->port);
-        */
     log::info("Instantiating IRC proxy process: $cmd");
     $rc = pclose(popen($cmd, 'rb'));
     
     // Wait for socket to be created.  5 second timeout.
     for ($i = 0; $i < 50; $i++) {
-        if (file_exists($state->primarySocketFilename)) break;
+        if (file_exists($state->socketFilename)) break;
         usleep(100 * 1000);
     }
 
-    if (!file_exists($state->primarySocketFilename)) {
+    if (!file_exists($state->socketFilename)) {
         // Timeout waiting for socket file to be created.
         log::error("Timeout waiting for IRC connection to open.");
         @ob_clean();
@@ -181,7 +175,7 @@ function connect($state) {
 function validateSession($state, &$data = array()) {
     log::info("Validate session.");
 
-    $socketFile = $state->primarySocketFilename;
+    $socketFile = $state->socketFilename;
     log::info("Socket file: $socketFile");
 
     // Check if we can connect to domain socket.

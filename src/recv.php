@@ -22,7 +22,7 @@ header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 if ($state !== null && !$state->deleted) {
-    $socketFile = $state->primarySocketFilename;
+    $socketFile = $state->socketFilename;
 
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile);

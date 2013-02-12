@@ -7,7 +7,7 @@ class spIrcSessionModel {
     public $sessionKey; // varchar(25)
     public $deleted;    // bit
     
-    public $primarySocketFilename;
+    public $socketFilename;
 
     // Modifyable properties:
     // IRC server:port.

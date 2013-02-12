@@ -21,7 +21,7 @@ header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 $data = array();
 
 if ($state !== null) {
-    $socketFile = $state->primarySocketFilename;
+    $socketFile = $state->socketFilename;
     
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile);

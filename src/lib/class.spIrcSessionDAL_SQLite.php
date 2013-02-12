@@ -4,7 +4,7 @@ require_once 'class.spIrcSessionModel.php';
 // Data access layer to session state storage with SQLite.
 // Manages a SQLite database.
 class spIrcSessionDAL_SQLite {
-    const SCHEMA_VERSION = 259;
+    const SCHEMA_VERSION = 260;
 
     private $filename;          // SQLite database filename.
     private $isValid = false;   // Has database been validated by validateDatabase()?
@@ -30,7 +30,7 @@ class spIrcSessionDAL_SQLite {
             $model = new spIrcSessionModel();
             $model->viewKey = $viewKey;
             $model->sessionKey = session_id();
-            $model->primarySocketFilename = $ircConfig['socketFilePath'] . '/chatmore_' . $socketId . '.sock';
+            $model->socketFilename = $ircConfig['socket_file_path'] . '/chatmore_' . $socketId . '.sock';
             log::info('state: ' . var_export($model, true));
             $this->id = $this->create($model);
         }
@@ -50,7 +50,7 @@ class spIrcSessionDAL_SQLite {
 
         // Load model fields from database.
         $st = $db->prepare(
-            'SELECT id, viewKey, sessionKey, deleted, server, port, primarySocketFilename ' .
+            'SELECT id, viewKey, sessionKey, deleted, server, port, socketFilename ' .
             'FROM Session ' .
             'WHERE ' .
             '    id = ? AND ' .
@@ -69,7 +69,7 @@ class spIrcSessionDAL_SQLite {
         $model->deleted = $row['deleted'];
         $model->server = $row['server'];
         $model->port = $row['port'];
-        $model->primarySocketFilename = $row['primarySocketFilename'];
+        $model->socketFilename = $row['socketFilename'];
         
         return $model;
     }
@@ -178,14 +178,14 @@ class spIrcSessionDAL_SQLite {
         $modelData = serialize($model);
 
         $st = $db->prepare(
-            'INSERT INTO Session (viewKey, sessionKey, server, port, primarySocketFilename, createdDate, lastModifiedDate) ' .
+            'INSERT INTO Session (viewKey, sessionKey, server, port, socketFilename, createdDate, lastModifiedDate) ' .
             'VALUES (?, ?, ?, ?, ?, datetime(\'now\'), datetime(\'now\'));');
         $st->execute(array(
             $model->viewKey,
 			$model->sessionKey,
             $model->server,
             $model->port,
-            $model->primarySocketFilename));
+            $model->socketFilename));
         log::info('Rows affected: ' . $st->rowCount());
         if ($st->rowCount() > 0) {
             $id = $this->getLastInsertId($db);
@@ -214,7 +214,7 @@ class spIrcSessionDAL_SQLite {
             "    deleted bit default(0) NOT NULL,\n" .
             "    server varchar(255) NULL,\n" .
             "    port int NULL,\n" .
-            "    primarySocketFilename varchar(255) NOT NULL,\n" .
+            "    socketFilename varchar(255) NOT NULL,\n" .
             "    createdDate datetime NOT NULL,\n" .
             "    lastModifiedDate datetime NOT NULL\n" .
             ");\n" .

@@ -34,7 +34,7 @@ $ircConfig = array(
     'port' => null,
     
     // Path to create domain sockets.
-    'socketFilePath' => $tmpDir,
+    'socket_file_path' => $tmpDir,
     
     // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=4M',
