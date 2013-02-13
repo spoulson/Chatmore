@@ -1,3 +1,10 @@
+<?
+// Check querystring for form values.
+$nick = isset($_GET['nick']) ? $_GET['nick'] : '';
+$realname = isset($_GET['realname']) ? $_GET['realname'] : '';
+$server = isset($_GET['server']) ? $_GET['server'] : '';
+$port = isset($_GET['port']) ? $_GET['port'] : '';
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -166,9 +173,32 @@
             });
             
             // Apply default values.
+            <? if (empty($nick)): ?>
+            $('#nickTextbox').val(chatmoreDefaults.nick);
+            <? else: ?>
+            $('#nickTextbox').val(<?=json_encode($nick)?>);
+            <? endif; ?>
+            <? if (empty($realname)): ?>
+            $('#realnameTextbox').val(chatmoreDefaults.realname);
+            <? else: ?>
+            $('#realnameTextbox').val(<?=json_encode($realname)?>);
+            <? endif; ?>
+            <? if (empty($server)): ?>
             $('#serverTextbox').val(chatmoreDefaults.server);
+            <? else: ?>
+            $('#serverTextbox').val(<?=json_encode($server)?>);
+            <? endif; ?>
+            <? if (empty($port)): ?>
             $('#portTextbox').val(chatmoreDefaults.port);
-            $('#channelTextbox').val(chatmoreDefaults.channel);
+            <? else: ?>
+            $('#portTextbox').val(<?=json_encode($port)?>);
+            <? endif; ?>
+
+            if (document.location.hash === '')
+                $('#channelTextbox').val(chatmoreDefaults.channel);
+            else
+                $('#channelTextbox').val(document.location.hash);
+
             $('#viewKey').val(Math.random().toString(36).substring(10));
             validateLaunch();
             
@@ -188,10 +218,10 @@
 	            <table>
 	                <col width="*" />
 	                <col width="148" />
-	                <tr><th id="nickLabel" class="left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick" /></td></tr>
-	                <tr><th class="left">Real name:</th><td><input type="text" name="realname" /></td></tr>
-	                <tr><th id="serverLabel" class="left">Server:</th><td><input type="text" id="serverTextbox" name="server" /></td></tr>
-	                <tr><th id="portLabel" class="left">Port:</th><td><input type="text" id="portTextbox" name="port" /></td></tr>
+	                <tr><th id="nickLabel" class="left">Nickname:</th><td><input type="text" id="nickTextbox" name="nick"/></td></tr>
+	                <tr><th class="left">Real name:</th><td><input type="text" id="realnameTextbox" name="realname"/></td></tr>
+	                <tr><th id="serverLabel" class="left">Server:</th><td><input type="text" id="serverTextbox" name="server"/></td></tr>
+	                <tr><th id="portLabel" class="left">Port:</th><td><input type="text" id="portTextbox" name="port"/></td></tr>
 	                <tr><th id="channelLabel" class="left wrap">Channel:</th><td><input type="text" id="channelTextbox" /></td></tr>
 					<tr><td colspan="2"><span class="helpText">Can provide multiple channels separated by commas.</span></td></tr>
 	                <tr><td colspan="2" style="text-align:right"><input type="submit" id="launchButton" disabled="disabled" value="Launch IRC Session" /></td></tr>
