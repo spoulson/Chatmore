@@ -67,13 +67,18 @@ class spSocketProxy {
         $eSelect = array();
         
         if ($this->isProxySocketConnected()) {
-            $rSelect[] = $this->proxySocket;
+            // Check proxy socket for reads if buffer space is available.
+            if (strlen($this->clientBuffer) < $this->clientReadBufSize)
+                $rSelect[] = $this->proxySocket;
+            // Check proxy socket for writes if data is waiting to send.
             if (!empty($this->proxyBuffer))
                 $wSelect[] = $this->proxySocket;
         }
         if ($this->isClientSocketConnected()) {
-            // ClientSocket doubles as R/W socket.
-            $rSelect[] = $this->clientSocket;
+            // Check client socket for reads if buffer space is available.
+            if (strlen($this->proxyBuffer) < $this->proxyReadBufSize)
+                $rSelect[] = $this->clientSocket;
+            // Check client socket for writes if data is waiting to send.
             if (!empty($this->clientBuffer))
                 $wSelect[] = $this->clientSocket;
         }
@@ -112,7 +117,7 @@ class spSocketProxy {
                         // Reset idle timer when reading from proxy socket.
                         $this->proxyIdleTime = time();
 
-                        $size = @socket_recv($socket, $buf, $this->proxyReadBufSize, 0);
+                        $size = @socket_recv($socket, $buf, $this->clientReadBufSize - strlen($this->clientBuffer), 0);
                         if ($size) {
                             //log::info("proxy: $buf");
                             $this->clientBuffer .= $buf;
@@ -130,7 +135,7 @@ class spSocketProxy {
                 else if ($socket === $this->clientSocket) {
                     // Data waiting in client socket.
                     //log::info("rC");
-                    $size = @socket_recv($socket, $buf, $this->clientReadBufSize, 0);
+                    $size = @socket_recv($socket, $buf, $this->proxyReadBufSize - strlen($this->proxyBuffer), 0);
                     if ($size === false) {
                         $errno = socket_last_error($socket);
                         // 11 = no data available.
