@@ -81,7 +81,7 @@
             $('#nickTextbox')
                 .keypress(function (e) {
                     // non-ASCII keypresses have charCode 0.
-                    if (e.charCode === 0) return;
+                    if (e.charCode === 0 || e.charCode == 13) return;
 
                     validateLaunch();
                     var newNick = $('#nickTextbox').val() + String.fromCharCode(e.charCode);
@@ -103,7 +103,7 @@
                 .keypress(function (e) {
                     // http://en.wikipedia.org/wiki/Hostname#Restrictions_on_valid_host_names
                     // non-ASCII keypresses have charCode 0.
-                    if (e.charCode === 0) return;
+                    if (e.charCode === 0 || e.charCode == 13) return;
                     
                     var newServer = $('#serverTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validateServer(newServer)) return false;
@@ -123,7 +123,7 @@
             $('#portTextbox')
                 .keypress(function (e) {
                     // non-ASCII keypresses have charCode 0.
-                    if (e.charCode === 0) return;
+                    if (e.charCode === 0 || e.charCode == 13) return;
 
                     var newPort = $('#portTextbox').val() + String.fromCharCode(e.charCode);
                     if (!validatePort(newPort)) return false;
