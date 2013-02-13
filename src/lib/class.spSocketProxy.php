@@ -65,14 +65,17 @@ class spSocketProxy {
         $rSelect = array();
         $wSelect = array();
         $eSelect = array();
+        
         if ($this->isProxySocketConnected()) {
             $rSelect[] = $this->proxySocket;
-            if (!empty($this->proxyBuffer)) $wSelect[] = $this->proxySocket;
+            if (!empty($this->proxyBuffer))
+                $wSelect[] = $this->proxySocket;
         }
         if ($this->isClientSocketConnected()) {
             // ClientSocket doubles as R/W socket.
             $rSelect[] = $this->clientSocket;
-            if (!empty($this->clientBuffer)) $wSelect[] = $this->clientSocket;
+            if (!empty($this->clientBuffer))
+                $wSelect[] = $this->clientSocket;
         }
         else {
             // If no client is connected, listen for connection attempts on domain socket.
@@ -90,7 +93,7 @@ class spSocketProxy {
             }
             usleep(250 * 1000);
         }
-        else {
+        else if ($select > 0) {
             // Check for reads.
             foreach ($rSelect as $socket) {
                 $buf = null;
@@ -112,8 +115,8 @@ class spSocketProxy {
                         $size = @socket_recv($socket, $buf, $this->proxyReadBufSize, 0);
                         if ($size) {
                             //log::info("proxy: $buf");
-                            //log::info("Buffering to client, size(" . strlen($buf) . ")");
                             $this->clientBuffer .= $buf;
+                        log::info("Buffering to client, size(" . strlen($buf) . "), buffer size(" . strlen($this->clientBuffer) . ")");
                         }
                         else {
                             // Got 0 bytes; assume connection was closed.
@@ -144,12 +147,12 @@ class spSocketProxy {
                         // Reset idle timer when client attempts to write.
                         $this->clientIdleTime = time();
 
-                        //log::info("Buffering to proxy, size(" . strlen($buf) . ")");
                         $this->proxyBuffer .= $buf;
+                        log::info("Buffering to proxy, size(" . strlen($buf) . "), buffer size(" . strlen($this->proxyBuffer) . ")");
                     }
                     else {
                         // Got 0 bytes; assume connection was closed.
-                        //log::info("Client connection was closed.");
+                        log::info("Client connection was closed.");
                         socket_shutdown($socket, 2);
                         socket_close($socket);
                         $this->clientSocket = null;
@@ -179,8 +182,8 @@ class spSocketProxy {
                         else {
                             if ($size < strlen($this->proxyBuffer)) {
                                 // Not all bytes were sent.  Buffer the remainder.
-                                log::info("sent $size of buffered " . (strlen($this->proxyBuffer) - $size) . " bytes ");
                                 $this->proxyBuffer = substr($this->proxyBuffer, $size);
+                                log::info("Partial send $size, remaining buffer size(" . strlen($this->proxyBuffer) . ")");
                             }
                             else {
                                 $this->proxyBuffer = null;
@@ -205,8 +208,8 @@ class spSocketProxy {
                     else {
                         if ($size < strlen($this->clientBuffer)) {
                             // Not all bytes were sent.  Buffer the remainder.
-                            log::info("sent $size of buffered " . (strlen($this->clientBuffer) - $size) . " bytes ");
                             $this->clientBuffer = substr($this->clientBuffer, $size);
+                            log::info("Partial send $size, remaining buffer size(" . strlen($this->clientBuffer) . ")");
                         }
                         else {
                             $this->clientBuffer = null;
@@ -233,7 +236,7 @@ class spSocketProxy {
             // Reset idle timer when client connects to domain socket.
             $this->clientIdleTime = time();
 
-            //log::info('Client socket connected.');
+            log::info('Client socket connected.');
 
             // Connect proxy socket on initial client connection.
             if (!$this->isProxySocketConnected()) {

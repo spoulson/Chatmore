@@ -536,7 +536,6 @@ class spIrcClient {
         
         switch ($msg['command']) {
         case 'PING':
-            log::info('PING msg: ' . var_export($msg, true));
             $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
             break;
         }
