@@ -136,7 +136,7 @@ class spIrcClient {
         $line = null;
         
         while (true) {
-            // check for line ending in read buffer.
+            // Check for line ending in read buffer.
             $m = null;
             //if (strlen($this->socketReadBuffer)) log::info('socketReadBuffer: ' . $this->socketReadBuffer);
             if (preg_match("/^.*?\r\n/", $this->socketReadBuffer, $m)) {
@@ -162,9 +162,9 @@ class spIrcClient {
                 break;
             }
 
-            // Read more data
+            // Read more data, character by character.
             $buf = null;
-            $size = @socket_recv($this->socket, $buf, $this->socketReadBufferSize, 0);
+            $size = @socket_recv($this->socket, $buf, 1, 0);
             if ($size === false) {
                 // Read error.
                 $errno = socket_last_error($this->socket);
@@ -173,8 +173,10 @@ class spIrcClient {
                 return false;
             }
             else if ($size > 0) {
-                //log::info("socketReadBuffer appended: $buf");
-                $this->socketReadBuffer .= $buf;
+                if (strlen($this->socketReadBuffer) < $this->socketReadBufferSize) {
+                    //log::info("socketReadBuffer appended: $buf");
+                    $this->socketReadBuffer .= $buf;
+                }
             }
             else {
                 log::info('socketReadBuffer got 0 bytes from socket_recv!  Connection dropped?');

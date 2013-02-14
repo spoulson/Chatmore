@@ -57,7 +57,7 @@ if ($state !== null && !$state->deleted) {
                 usleep(0);
             } while (
                 $line !== null && $line !== false &&    // Break if error returned.
-                $messageCount < 500 &&                  // Break if too many messages.  Endless loop?
+                $messageCount < 100 &&                  // Break if too many messages.  Endless loop?
                 $ircbot->isConnected());                // Break if disconnected.
 
             $ircbot->disconnect();

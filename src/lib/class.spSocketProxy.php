@@ -20,8 +20,8 @@ class spSocketProxy {
     public $proxyIdleTimeout = 300;     // in seconds of inactivity from proxy socket.
     public $clientIdleTimeout = 300;    // in seconds of inactivity from client socket.  Must agree with $ircConfig['recv_timeout'] in config.php.
     public $pollTimeout = 100;          // in milliseconds
-    public $proxyReadBufSize = 262144;
-    public $clientReadBufSize = 262144;
+    public $proxyReadBufSize = 65536;
+    public $clientReadBufSize = 65536;
     
     public function spSocketProxy($domainSocketFile) {
         $this->domainSocketFile = $domainSocketFile;
