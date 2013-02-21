@@ -20,8 +20,8 @@ class spSocketProxy {
     public $proxyIdleTimeout = 300;     // in seconds of inactivity from proxy socket.
     public $clientIdleTimeout = 300;    // in seconds of inactivity from client socket.  Must agree with $ircConfig['recv_timeout'] in config.php.
     public $pollTimeout = 100;          // in milliseconds
-    public $proxyReadBufSize = 65536;
-    public $clientReadBufSize = 65536;
+    public $clientBufferSize = 1024;
+    public $proxyBufferSize = 1024;
     
     public function spSocketProxy($domainSocketFile) {
         $this->domainSocketFile = $domainSocketFile;
@@ -68,7 +68,7 @@ class spSocketProxy {
         
         if ($this->isProxySocketConnected()) {
             // Check proxy socket for reads if buffer space is available.
-            if (strlen($this->clientBuffer) < $this->clientReadBufSize)
+            if (strlen($this->clientBuffer) < $this->clientBufferSize)
                 $rSelect[] = $this->proxySocket;
             // Check proxy socket for writes if data is waiting to send.
             if (!empty($this->proxyBuffer))
@@ -76,7 +76,7 @@ class spSocketProxy {
         }
         if ($this->isClientSocketConnected()) {
             // Check client socket for reads if buffer space is available.
-            if (strlen($this->proxyBuffer) < $this->proxyReadBufSize)
+            if (strlen($this->proxyBuffer) < $this->proxyBufferSize)
                 $rSelect[] = $this->clientSocket;
             // Check client socket for writes if data is waiting to send.
             if (!empty($this->clientBuffer))
@@ -117,11 +117,11 @@ class spSocketProxy {
                         // Reset idle timer when reading from proxy socket.
                         $this->proxyIdleTime = time();
 
-                        $size = @socket_recv($socket, $buf, $this->clientReadBufSize - strlen($this->clientBuffer), 0);
+                        $size = @socket_recv($socket, $buf, $this->clientBufferSize - strlen($this->clientBuffer), 0);
                         if ($size) {
                             //log::info("proxy: $buf");
                             $this->clientBuffer .= $buf;
-                        log::info("Buffering to client, size(" . strlen($buf) . "), buffer size(" . strlen($this->clientBuffer) . ")");
+                            log::info("Buffering to client, size(" . strlen($buf) . "), buffer size(" . strlen($this->clientBuffer) . ")");
                         }
                         else {
                             // Got 0 bytes; assume connection was closed.
@@ -135,7 +135,7 @@ class spSocketProxy {
                 else if ($socket === $this->clientSocket) {
                     // Data waiting in client socket.
                     //log::info("rC");
-                    $size = @socket_recv($socket, $buf, $this->proxyReadBufSize - strlen($this->proxyBuffer), 0);
+                    $size = @socket_recv($socket, $buf, $this->proxyBufferSize - strlen($this->proxyBuffer), 0);
                     if ($size === false) {
                         $errno = socket_last_error($socket);
                         // 11 = no data available.
@@ -175,8 +175,9 @@ class spSocketProxy {
                     if ($this->isProxySocketConnected()) {
                         // Proxy socket ready for writing.
                         //log::info("wP");
-                        log::info("Sending " . strlen($this->proxyBuffer) . " bytes to proxy...");
-                        $size = @socket_send($this->proxySocket, $this->proxyBuffer, strlen($this->proxyBuffer), 0);
+                        $send_size = strlen($this->proxyBuffer);
+                        log::info("Sending $send_size bytes to proxy...");
+                        $size = @socket_send($this->proxySocket, $this->proxyBuffer, $send_size, 0);
                         if ($size === false) {
                             // Error with proxy socket!
                             $errno = socket_last_error($this->proxySocket);
@@ -200,26 +201,42 @@ class spSocketProxy {
                 else if ($socket === $this->clientSocket) {
                     // Client socket ready for writing.
                     //log::info("wC");
-                    log::info("Sending " . strlen($this->clientBuffer) . " bytes to client... ");
-                    $size = @socket_send($socket, $this->clientBuffer, strlen($this->clientBuffer), 0);
-                    if ($size === false) {
-                        // Error with client, close its connection.
-                        $errno = socket_last_error($socket);
-                        log::error("Error $errno sending to client, closing client connection: " . socket_strerror($errno));
-                        socket_shutdown($socket, 2);
-                        socket_close($socket);
-                        $this->clientSocket = null;
-                    }
-                    else {
-                        if ($size < strlen($this->clientBuffer)) {
-                            // Not all bytes were sent.  Buffer the remainder.
-                            $this->clientBuffer = substr($this->clientBuffer, $size);
-                            log::info("Partial send $size, remaining buffer size(" . strlen($this->clientBuffer) . ")");
+                    // Send data on EOL boundary.
+                    $send_size = strrpos($this->clientBuffer, "\r\n");
+                    if ($send_size !== false) {
+                        $send_size += 2;
+                        log::info("Sending $send_size bytes to client... ");
+                        $size = @socket_send($socket, $this->clientBuffer, $send_size, 0);
+                        if ($size === false) {
+                            // Error with client, close its connection.
+                            $errno = socket_last_error($socket);
+                            log::error("Error $errno sending to client, closing client connection: " . socket_strerror($errno));
+                            socket_shutdown($socket, 2);
+                            socket_close($socket);
+                            $this->clientSocket = null;
                         }
                         else {
-                            $this->clientBuffer = null;
+                            if ($size < $send_size) {
+                                // Not all bytes were sent.  Buffer the remainder.
+                                $this->clientBuffer = substr($this->clientBuffer, $size);
+                                log::info("Partial send $size, remaining buffer size(" . strlen($this->clientBuffer) . ")");
+                            }
+                            else if ($size < strlen($this->clientBuffer)) {
+                                $this->clientBuffer = substr($this->clientBuffer, $size);
+                            }
+                            else {
+                                $this->clientBuffer = null;
+                            }
+                            //log::info("done");
                         }
-                        //log::info("done");
+                    }
+                    else {
+                        // No EOL found, nothing to send.
+                        if (strlen($this->clientBuffer) === $this->clientBufferSize) {
+                            // If buffer is full and no EOL present, clear buffer to prevent stuck buffer.
+                            $this->clientBuffer = null;
+                            log::error("Client buffer full and no EOL terminator found!  Dropping buffered data.");
+                        }
                     }
                 }
                 else {

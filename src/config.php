@@ -44,6 +44,12 @@ $ircConfig = array(
     // - If the background process dies while the recv thread was running,
     //   the error will not be caught until timeout.
     'recv_timeout' => 500,
+    
+    // Maximum messages retrieved during a poll to recv.php.
+    // Any data remaining in buffer after this limit will be dropped.
+    // To prevent buffer drop, the proxy read buffer size set in spSocketProxy
+    // should be sized to hold no more than this number of messages.
+    'max_recv_messages' => 200,
 
     'debug' => array(
         // Include received raw IRC messages in AJAX responses from recv.php.

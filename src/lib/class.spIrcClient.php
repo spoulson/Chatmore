@@ -128,6 +128,8 @@ class spIrcClient {
         return $line;
     }
     
+    // Can this routine be optimized?
+    // Can use socket_recv with peek flag to locate EOL quicker than character-by-character?
     private function socketReadLine($timeout = 0) {
         // Ping socket and reconnect on error.
         //if (!$this->isSocketAlive()) $this->connectSocket();
@@ -541,7 +543,7 @@ class spIrcClient {
             $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
             break;
         }
-        
+
         $this->flushSendBuffer();
     }
     
@@ -576,27 +578,29 @@ class spIrcClient {
     }
     
     public function flushSendBuffer() {
-        // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
-        $size = null;
-        $errorCount = 0;
-        $sendCount = 0;
-        
-        do {
-            $size = $this->socketSendBuffer();
-            if ($size === false) $errorCount++;
-            $sendCount++;
-        } while ($sendCount < 50 && $errorCount < 5 && ($size === false || $size > 0));
-        
-        if ($size === false) {
-            log::error("Error while flushing send buffer.  Cannot send.");
-            return false;
-        }
-        else if ($size > 0) {
-            log::error("Error while flushing send buffer.  Some data may have been dropped.");
-            return false;
-        }
-        else {
-            log::info('Send buffer flushed.');
+        if (strlen($this->socketSendBuffer) > 0) {
+            // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
+            $size = null;
+            $errorCount = 0;
+            $sendCount = 0;
+            
+            do {
+                $size = $this->socketSendBuffer();
+                if ($size === false) $errorCount++;
+                $sendCount++;
+            } while ($sendCount < 50 && $errorCount < 5 && ($size === false || $size > 0));
+            
+            if ($size === false) {
+                log::error("Error while flushing send buffer.  Cannot send.");
+                return false;
+            }
+            else if ($size > 0) {
+                log::error("Error while flushing send buffer.  Some data may have been dropped.");
+                return false;
+            }
+            else {
+                log::info('Send buffer flushed.');
+            }
         }
     }
         
