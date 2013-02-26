@@ -322,7 +322,12 @@
                         helpUsage: 'Usage: /list [#channel [, #channel ...] ] [server]',
                         helpText: 'Get channel listing.',
                         parseParam: function (param, meta) {
-                            if (param === undefined) {
+                            if (!self.options.enable_list) {
+                                // LIST is disabled.
+                                meta.error = 'Error: /list command is not available.';
+                                return false;
+                            }
+                            else if (param === undefined) {
                                 // No parameters.
                             }
                             else {
