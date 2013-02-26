@@ -220,12 +220,16 @@
     var userEntryHistory = [''];
     var userEntryHistoryIndex;
     
+    // Console message counter.
+    var consoleLineCount = 0;
+    
     //
     // Private methods.
     //
     // Write HTML line to ircConsole.
     var writeLine = function (self, html) {
         layout.messageCount++;
+        consoleLineCount++;
         incrementNotificationMessageCount(self);
 
         var ircContent = self.ircElement.find('.ircConsole .content');
@@ -235,9 +239,12 @@
             // Is the console's scroll within 4 pixels from the bottom?
             var atBottom = layout.isAtBottom(self);
             
-            // Roll off oldest line if at maximum lines.
-            for (var lineCount = ircContent.find('.line').length; lineCount >= self.options.maximumConsoleLines; lineCount--) {
-                ircContent.find('.line').first().remove();
+            // Roll off oldest lines if at maximum lines.  Trigger roll off at threshold of overage.
+            var rollOffCount = Math.max(consoleLineCount - self.options.maximumConsoleLines, 0);
+
+            if (rollOffCount >= 20) {
+                ircContent.find('.line').slice(0,rollOffCount).remove();
+                consoleLineCount -= rollOffCount;
             }
 
             // Auto decorate nicks and channels in message.
