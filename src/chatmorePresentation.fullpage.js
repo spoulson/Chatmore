@@ -940,7 +940,7 @@
                             '<div class="userEntryModeLine">' +
                                 '<div class="activationIndicator"/>' +
                                 '<div class="nickLabel"><span class="nick"/></div>' +
-                                '<div class="targetFragment" style="display:none"><div class="targetLabel"><span class="nick"/><span class="channel"/></div></div>' +
+                                '<div class="targetLabel"><span class="nick"/><span class="channel"/></div>' +
                             '</div>' +
                             '<div class="userEntryLine"><input type="text" class="userEntry" /></div>' +
                         '</div>' +
@@ -1227,7 +1227,7 @@
             });
 
             // Update user mode line.
-            self.ircElement.find('.targetFragment').fadeOut(null, function () {
+            self.ircElement.find('.targetLabel').fadeOut(null, function () {
                 //self.ircElement.find('.targetLabel').text(target);
                 if (target !== undefined && target !== null) {
                     var isChannel = self.isChannel(target);
@@ -1250,7 +1250,7 @@
                                 .text(target);
                     }
                     
-                    self.ircElement.find('.targetFragment').fadeIn();
+                    self.ircElement.find('.targetLabel').fadeIn();
                 }
             })
         },
@@ -1261,7 +1261,7 @@
             if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) !== 0) {
                 // Nick changed.
                 if (window.console) console.log('Nick changed.');
-                var nickLabel = self.ircElement.find('.nickLabel .nick');
+                var nickLabel = self.ircElement.find('.userEntryModeLine .nickLabel .nick');
                 nickLabel.fadeOut(null, function () {
                     nickLabel.text(state.nick);
                     nickLabel.fadeIn();
@@ -1269,7 +1269,7 @@
             }
 
             refreshSideBar(self);
-            setHashWithChannels(self.irc.state.getChannels());
+            setHashWithChannels(state.getChannels());
         },
         onLocalMessage: function (self, message, type, data) { },
         onProcessingMessage: function (self, msg) { },
