@@ -23,7 +23,7 @@ if ($state->deleted) {
     $data[] =
         array(
             'type' => spIrcClient::CLMSG_TYPE_SERVER,
-            'message' => 'Session has been deleted.',
+            'message' => 'Session is unavailable.',
             'code' => spIrcClient::CLMSG_SESSION_UNAVAILABLE
         );
     @ob_clean();
