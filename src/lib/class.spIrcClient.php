@@ -51,6 +51,7 @@ class spIrcClient {
     const RPL_TIME = 391;
 
     const ERR_NOSUCHCHANNEL = 403;
+    const ERR_ERRONEUSNICKNAME = 432;
     const ERR_NICKNAMEINUSE = 433;
     const ERR_NOTREGISTERED = 451;
     const ERR_NOCHANMODES = 477;
@@ -487,7 +488,16 @@ class spIrcClient {
             if (!preg_match("/([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
+            );
+            break;
+            
+        case self::ERR_ERRONEUSNICKNAME:
+            if (!preg_match("/(\S+)\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'nick' => $msgParams[1],
+                'targetNick' => $msgParams[2],
+                'message' => $msgParams[3]
             );
             break;
             
@@ -495,7 +505,7 @@ class spIrcClient {
             if (!preg_match("/(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'nick' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
             );
             break;
 
@@ -503,7 +513,7 @@ class spIrcClient {
             if (!preg_match("/(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'command' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
             );
             break;
             

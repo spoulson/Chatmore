@@ -33,6 +33,10 @@
     color: #551A8B;
 }
 
+.chatmore.-fullpage-layout .ircConsole .content a:hover {
+    box-shadow: 0 0 10px #909090;
+}
+
 .chatmore.-fullpage-layout .activationIndicator {
     width: 16px;
     height: 16px;
@@ -58,6 +62,12 @@
     height: 20px;
 }
 
+.chatmore.-fullpage-layout .userEntryModeLine .nickLabel {
+    overflow: hidden;
+    display: block;
+    float: left;
+}
+
 .chatmore.-fullpage-layout .userEntryModeLine .targetLabel {
     display: block;
     float: left;
@@ -68,12 +78,6 @@
 
 .chatmore.-fullpage-layout .userEntryLine {
     clear: both;
-}
-
-.chatmore.-fullpage-layout .nickLabel {
-    overflow: hidden;
-    display: block;
-    float: left;
 }
 
 .chatmore.-fullpage-layout .userEntry {
@@ -127,6 +131,13 @@
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
+}
+
+.chatmore.-fullpage-layout .nick:hover, .chatmore.-fullpage-layout .nick:active,
+.chatmore.-fullpage-layout .channel:hover, .chatmore.-fullpage-layout .channel:active {
+    border: 1px solid #fcf1ba;
+    margin: -1px;
+    box-shadow: 6px 6px 10px #909090;
 }
 
 .chatmore.-fullpage-layout .nick.color0 {
@@ -255,13 +266,6 @@
 
 .chatmore.-fullpage-layout .nick.color31 {
     color: #808080;
-}
-
-.chatmore.-fullpage-layout .nick:hover, .chatmore.-fullpage-layout .nick:active,
-.chatmore.-fullpage-layout .channel:hover, .chatmore.-fullpage-layout .channel:active {
-    border: 1px solid #fcf1ba;
-    margin: -1px;
-    box-shadow: 6px 6px 10px #909090;
 }
 
 .chatmore.-fullpage-layout .mode {

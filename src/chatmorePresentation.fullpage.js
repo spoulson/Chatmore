@@ -939,14 +939,17 @@
                         '<div class="userEntrySection ui-widget-content ui-corner-bl">' +
                             '<div class="userEntryModeLine">' +
                                 '<div class="activationIndicator"/>' +
-                                '<div class="nickLabel nick"/>' +
-                                '<div class="targetFragment" style="display:none"><div class="targetLabel"/></div>' +
+                                '<div class="nickLabel"><span class="nick"/></div>' +
+                                '<div class="targetFragment" style="display:none"><div class="targetLabel"><span class="nick"/><span class="channel"/></div></div>' +
                             '</div>' +
                             '<div class="userEntryLine"><input type="text" class="userEntry" /></div>' +
                         '</div>' +
                     '</div>' +
                     '<div class="sideBar ui-widget ui-widget-content ui-corner-right"><ul class="channelList"/></div>'
                 ));
+                
+            self.ircElement.find('.nick,.channel')
+                .hover(hoverClickableHandler, leaveClickableHandler);
             
             alignUI(self);
             compileTemplates(self);
@@ -1217,8 +1220,54 @@
         //
         // Event handlers.
         //
+        onQueryTarget: function (self, target, prevTarget) {
+            self.writeTmpl(target === undefined ? 'queryOff' : 'query', {
+                target: target,
+                prevTarget: prevTarget
+            });
+
+            // Update user mode line.
+            self.ircElement.find('.targetFragment').fadeOut(null, function () {
+                //self.ircElement.find('.targetLabel').text(target);
+                if (target !== undefined && target !== null) {
+                    var isChannel = self.isChannel(target);
+                    if (self.isChannel(target)) {
+                        self.ircElement.find('.targetLabel')
+                            .find('.nick')
+                                .hide()
+                            .end()
+                            .find('.channel')
+                                .show()
+                                .text(target);
+                    }
+                    else {
+                        self.ircElement.find('.targetLabel')
+                            .find('.channel')
+                                .hide()
+                            .end()
+                            .find('.nick')
+                                .show()
+                                .text(target);
+                    }
+                    
+                    self.ircElement.find('.targetFragment').fadeIn();
+                }
+            })
+        },
         onStateChanged: function (self) {
             //if (window.console) console.log('Plugin event: stateChanged');
+            var state = self.irc.state;
+            
+            if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) !== 0) {
+                // Nick changed.
+                if (window.console) console.log('Nick changed.');
+                var nickLabel = self.ircElement.find('.nickLabel .nick');
+                nickLabel.fadeOut(null, function () {
+                    nickLabel.text(state.nick);
+                    nickLabel.fadeIn();
+                });
+            }
+
             refreshSideBar(self);
             setHashWithChannels(self.irc.state.getChannels());
         },

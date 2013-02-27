@@ -932,23 +932,7 @@
                     if (target !== prevTarget) {
                         self.irc.target(target);
     
-                        self.writeTmpl(target === undefined ? 'queryOff' : 'query', {
-                            target: target,
-                            prevTarget: prevTarget
-                        });
-    
-                        // Update user mode line.
-                        self.ircElement.find('.targetFragment').fadeOut(null, function () {
-                            self.ircElement.find('.targetLabel').text(target);
-                            if (target !== undefined && target !== null) {
-                                var isChannel = self.isChannel(target);
-                                self.ircElement.find('.targetLabel')
-                                    .removeClass(isChannel ? 'nick' : 'channel')
-                                    .addClass(isChannel ? 'channel' : 'nick');
-        
-                                self.ircElement.find('.targetFragment').fadeIn();
-                            }
-                        });
+                        self.layoutPlugin.onQueryTarget(self, target, prevTarget);
                     }
                 },
                 
@@ -1344,17 +1328,7 @@
                     }
                     
                     var state = self.irc.state;
-                    
-                    if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) !== 0) {
-                        // Nick changed.
-                        if (window.console) console.log('Nick changed.');
-                        var nickLabel = self.ircElement.find('.nickLabel');
-                        nickLabel.fadeOut(null, function () {
-                            nickLabel.text(state.nick);
-                            nickLabel.fadeIn();
-                        });
-                    }
-    
+
                     // Auto-query first channel if selected user/channel is no longer available.
                     var target = self.irc.target();
                     if (target !== undefined) {
