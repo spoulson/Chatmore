@@ -533,6 +533,9 @@
                 autoReplyIndex++;
                 if (autoReplyIndex >= autoReplyList.length) autoReplyIndex = 0;
                 
+                // Take this opportunity to store current entry in first history element as scratch buffer.
+                userEntryHistory[0] = $userEntry.val();
+
                 // Show autoreply suggestion as tooltip.
                 $userEntry
                     .tooltip('close')
@@ -564,6 +567,9 @@
         var value = $userEntry.val();
         var position = $userEntry[0].selectionStart;
         var matches = [];
+
+        // Take this opportunity to store current entry in first history element as scratch buffer.
+        userEntryHistory[0] = value;
 
         // If cursor is at beginning, cancel autocomplete.
         if (position > 0) {
@@ -683,6 +689,9 @@
             var newValue = lvalue + autoCompleteTerm + rvalue;
             $userEntry.val(newValue);
             $userEntry[0].selectionStart = $userEntry[0].selectionEnd = autoCompleteTermPosition + autoCompleteTerm.length;
+
+            // Take this opportunity to store current entry in first history element as scratch buffer.
+            userEntryHistory[0] = $userEntry.val();
 
             // Update tooltip.
             updateAutoCompleteTooltip(self);
@@ -1000,6 +1009,10 @@
                         
                         if (e.keyCode === 13 /* Enter */) {
                             // Send message.
+
+                            // Take this opportunity to store current entry in first history element as scratch buffer.
+                            userEntryHistory[0] = $userEntry.val();
+
                             // Add new scratch line to user entry history.
                             userEntryHistory.unshift('');
                         
@@ -1049,7 +1062,7 @@
                                 scanAutoComplete(self);
                                 incrementAutoComplete(self);
                             }
-                            // Accept a presented autocomplete suggestion.
+                            // Increment next autocomplete suggestion.
                             else {
                                 incrementAutoComplete(self);
                             }
@@ -1107,10 +1120,6 @@
                         // Typing text will accept a presented autoreply.
                         acceptAutoReply(self);
                     }
-
-                    // Store current entry in first history element as scratch buffer.
-                    var $userEntry = $(this);
-                    userEntryHistory[0] = $userEntry.val() + String.fromCharCode(e.which);
 
                     queueScanAutoComplete(self);
                 })

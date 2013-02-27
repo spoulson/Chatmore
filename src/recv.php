@@ -54,7 +54,7 @@ if ($state !== null && !$state->deleted) {
                 
                 $timeout = 0;   // Only block socket_select for the first iteration.
                 $messageCount++;
-                //usleep(0);
+                usleep(0);
             } while (
                 $line !== null && $line !== false &&    // Break if error returned.
                 $messageCount < $ircConfig['max_recv_messages'] && // Break if too many messages.
