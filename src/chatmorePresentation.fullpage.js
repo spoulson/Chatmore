@@ -14,74 +14,74 @@
         timestamp: '<span class="timestamp" title="${self.getLongTimestamp()}">[${self.getShortTimestamp()}]&nbsp;</span>',
         bullet: '&bull;&bull;&bull;',
         notePrefix: '<span class="prefix">{{tmpl "bullet"}}</span>',
-        error: '{{tmpl "timestamp"}}<span class="ERROR">' +
+        error: '{{tmpl "timestamp"}}<span class="msg ERROR">' +
             '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
-        usage: '{{tmpl "timestamp"}}<span class="usage">' +
+        usage: '{{tmpl "timestamp"}}<span class="msg usage">' +
             '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
-        help: '{{tmpl "timestamp"}}<span class="help">' +
+        help: '{{tmpl "timestamp"}}<span class="msg help">' +
             '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
-        serverMsg: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+        serverMsg: '{{tmpl "timestamp"}}<span class="msg serverMsg">' +
             '{{tmpl "notePrefix"}} ' +
             '{{if channel}}&lt;<span class="channel">${channel}</span>&gt; {{/if}}' +
             '<span class="message">' +
             '{{if number}}${number} {{/if}}' +
             '${layout.htmlEncode(message)}</span>' +
             '</span>',
-        clientMsg: '{{tmpl "timestamp"}}<span class="clientMsg">' +
+        clientMsg: '{{tmpl "timestamp"}}<span class="msg clientMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">${layout.htmlEncode(message)}</span>' +
             '</span>',
-        outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+        outgoingChannelMsg: '{{tmpl "timestamp"}}<span class="msg channelMsg">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
+        outgoingChannelAction: '{{tmpl "timestamp"}}<span class="msg channelMsg action">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice outgoing">' +
+        outgoingChannelNotice: '{{tmpl "timestamp"}}<span class="msg channelNotice outgoing">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg outgoing">' +
+        outgoingPrivateMsg: '{{tmpl "timestamp"}}<span class="msg privateMsg outgoing">' +
             '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull;</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg outgoing action">' +
+        outgoingPrivateAction: '{{tmpl "timestamp"}}<span class="msg privateMsg outgoing action">' +
             '<span class="prefix">&bull;<span class="nick">${msg.info.target}</span>&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice outgoing">' +
+        outgoingPrivateNotice: '{{tmpl "timestamp"}}<span class="msg privateNotice outgoing">' +
             '<span class="prefix">-<span class="nick">${msg.info.target}</span>-</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingChannelMsg: '{{tmpl "timestamp"}}<span class="channelMsg">' +
+        incomingChannelMsg: '{{tmpl "timestamp"}}<span class="msg channelMsg">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>&gt;</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingChannelAction: '{{tmpl "timestamp"}}<span class="channelMsg action">' +
+        incomingChannelAction: '{{tmpl "timestamp"}}<span class="msg channelMsg action">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.target}</span>&gt; &bull; <span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span></span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="channelNotice incoming">' +
+        incomingChannelNotice: '{{tmpl "timestamp"}}<span class="msg channelNotice incoming">' +
             '<span class="prefix">-<span class="channel">${msg.info.target}</span>:<span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.target)}">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="privateMsg incoming">' +
+        incomingPrivateMsg: '{{tmpl "timestamp"}}<span class="msg privateMsg incoming">' +
             '<span class="prefix">&bull;<span class="nick">${msg.prefixNick}</span>&bull;</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="privateMsg incoming action">' +
+        incomingPrivateAction: '{{tmpl "timestamp"}}<span class="msg privateMsg incoming action">' +
             '<span class="prefix">&bull; <span class="nick">${msg.prefixNick}</span></span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="privateNotice incoming">' +
+        incomingPrivateNotice: '{{tmpl "timestamp"}}<span class="msg privateNotice incoming">' +
             '<span class="prefix">-<span class="nick">${msg.prefixNick}</span>-</span> ' +
             '<span class="message">${layout.htmlEncode(msg.info.text)}</span>' +
             '</span>',
-        queryOff: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+        queryOff: '{{tmpl "timestamp"}}<span class="msg queryMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
             '{{if self.isChannel(prevTarget)}}' +
                 'You are no longer talking on channel <span class="channel">${prevTarget}</span>' +
@@ -89,7 +89,7 @@
                 'Ending conversation with <span class="nick">${prevTarget}</span>' +
             '{{/if}}' +
             '</span></span>',
-        query: '{{tmpl "timestamp"}}<span class="queryMsg">' +
+        query: '{{tmpl "timestamp"}}<span class="msg queryMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
             '{{if self.isChannel(target)}}' +
                 'You are now talking on channel <span class="channel">${target}</span>' +
@@ -97,15 +97,15 @@
                 'Starting conversation with <span class="nick">${target}</span>' +
             '{{/if}}' +
             '</span></span>',
-        join: '{{tmpl "timestamp"}}<span class="JOIN">' +
+        join: '{{tmpl "timestamp"}}<span class="msg JOIN">' +
             '<span class="prefix">&lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> (${msg.prefixUser}@${msg.prefixHost}) has joined the channel</span>' +
             '</span>',
-        leave: '{{tmpl "timestamp"}}<span class="PART">' +
+        leave: '{{tmpl "timestamp"}}<span class="msg PART">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> has left the channel{{if !!msg.info.comment}}: ${msg.info.comment}{{/if}}</span>' +
             '</span>',
-        kick: '{{tmpl "timestamp"}}<span class="KICK">' +
+        kick: '{{tmpl "timestamp"}}<span class="msg KICK">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.kick.channel}</span>&gt;</span> ' +
             '<span class="message">' +
             '{{if self.stricmp(self.irc.state.nick, msg.info.kick.nick) === 0}}' +
@@ -115,7 +115,7 @@
             '{{/if}}' +
             '{{if msg.info.comment !== undefined && msg.info.comment !== msg.prefixNick}}: ${layout.htmlEncode(msg.info.comment)}{{/if}}</span>' +
             '</span>',
-        nick: '{{tmpl "timestamp"}}<span class="NICK">' +
+        nick: '{{tmpl "timestamp"}}<span class="msg NICK">' +
             '{{tmpl "notePrefix"}} <span class="message">' +
             '{{if self.stricmp(self.irc.state.nick, msg.prefixNick) === 0}}' +
                 'Nick changed to <span class="nick">${msg.info.nick}</span>' +
@@ -123,14 +123,14 @@
                 '<span class="nick">${msg.prefixNick}</span> is now known as <span class="nick">${msg.info.nick}</span>' +
             '{{/if}}' +
             '</span></span>',
-        nickInUse: '{{tmpl "timestamp"}}<span class="serverMsg">' +
+        nickInUse: '{{tmpl "timestamp"}}<span class="msg serverMsg">' +
             '{{tmpl "notePrefix"}} <span class="message">Nickname <span class="nick">${msg.info.nick}</span> is already in use.</span>' +
             '</span>',
-        notopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+        notopic: '{{tmpl "timestamp"}}<span class="msg TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message no-decorate">No topic is set</span>' +
             '</span>',
-        topic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+        topic: '{{tmpl "timestamp"}}<span class="msg TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message">' +
             '{{if msg.info.topic !== undefined}}' +
@@ -140,7 +140,7 @@
             '{{/if}}' +
             '</span>' +
             '</span>',
-        changeTopic: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+        changeTopic: '{{tmpl "timestamp"}}<span class="msg TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message"><span class="no-decorate"><span class="nick ${layout.getColorizeCSSClass(self, msg.prefixNick, msg.info.channel)}">${msg.prefixNick}</span> ' +
             '{{if msg.info.topic == ""}}' +
@@ -149,20 +149,20 @@
                 'has changed the topic to: </span><span class="topicMessage">${layout.htmlEncode(msg.info.topic)}</span>' +
             '{{/if}}' +
             '</span></span>',
-        topicSetBy: '{{tmpl "timestamp"}}<span class="TOPIC">' +
+        topicSetBy: '{{tmpl "timestamp"}}<span class="msg TOPIC">' +
             '<span class="prefix">{{tmpl "bullet"}} &lt;<span class="channel">${msg.info.channel}</span>&gt;</span> ' +
             '<span class="message no-decorate">Topic set by <span class="nick ${layout.getColorizeCSSClass(self, msg.info.nick, msg.info.channel)}">${msg.info.nick}</span> on <span class="time">${self.formatTime(msg.info.time)}</span></span>' +
             '</span>',
-        who: '{{tmpl "timestamp"}}<span class="WHO">' +
+        who: '{{tmpl "timestamp"}}<span class="msg WHO">' +
             '{{tmpl "notePrefix"}} <span class="message">WHO for <span class="nick ${layout.getColorizeCSSClass(self, msg.info.nick, msg.info.channel)}">${msg.info.nick}</span>: "${msg.info.realname}" ${msg.info.user}@${msg.info.host} on server ${msg.info.server}' +
             '</span>',
-        serverTime: '{{tmpl "timestamp"}}<span class="TIME">' +
+        serverTime: '{{tmpl "timestamp"}}<span class="msg TIME">' +
             '{{tmpl "notePrefix"}} <span class="message">Server time for <span class="server">${msg.info.server}</span>: <span class="time">${msg.info.timeString}</span></span>' +
             '</span>',
-        quit: '{{tmpl "timestamp"}}<span class="QUIT">' +
+        quit: '{{tmpl "timestamp"}}<span class="msg QUIT">' +
             '{{tmpl "notePrefix"}} <span class="message">Signoff: <span class="nick">${msg.prefixNick}</span> (${msg.info.message})</span>' +
             '</span>',
-        mode: '{{tmpl "timestamp"}}<span class="MODE">' +
+        mode: '{{tmpl "timestamp"}}<span class="msg MODE">' +
             '{{tmpl "notePrefix"}} <span class="message">Mode change "<span class="modeString">${msg.info.mode}</span>" for ' +
             '{{if self.isChannel(msg.info.target)}}' +
                 'channel <span class="channel">${msg.info.target}</span> ' +
@@ -172,10 +172,10 @@
                 'by <span class="nick">${msg.prefixNick}</span></span>' +
             '{{/if}}' +
             '</span>',
-        list: '{{tmpl "timestamp"}}<span class="LIST">' +
+        list: '{{tmpl "timestamp"}}<span class="msg LIST">' +
             '{{tmpl "notePrefix"}} <span class="message"><span class="no-decorate"><span class="channel">${msg.info.channel}</span> (${msg.info.memberCount}): </span>${layout.htmlEncode(msg.info.topic)}</span>' +
             '</span>',
-        retryRegistration: '{{tmpl "timestamp"}}<span class="clientMsg">' +
+        retryRegistration: '{{tmpl "timestamp"}}<span class="msg clientMsg">' +
             '{{tmpl "notePrefix"}} <span class="message no-decorate">Retrying registration with nickname <span class="nick">${self.irc.state.nick}</span></span>' +
             '</span>'
     };
