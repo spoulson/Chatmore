@@ -17,5 +17,5 @@ var chatmoreDefaults = {
     pollIntervalDelayMs: 1000,
     
     // Enable /list client command.
-    enable_list: true
+    enableList: false
 };

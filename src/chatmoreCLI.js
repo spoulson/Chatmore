@@ -1,6 +1,25 @@
-//
-// Chatmore CLI.
-//
+/*
+Chatmore CLI jQuery plugin.
+- Parse and execute client commands.
+- Defers to layout plugin for rendering.
+
+$('#chatmore').chatmore(options);
+
+options is array containing any of options accepted by chatmore.js, and in addition: {
+    reactivateAttempts: 6,  // Max attempts to reactivate on error.
+    reactivateDelay: 10,    // Delay in seconds between reactivation attemps.
+    quitMessage: 'Chatmore IRC client', // Default message sent when user quits.
+    layout: string,         // Layout name for rendering.  default: 'default' or first layout in registry.
+    enableList: false,      // true to enable /LIST client command.
+    activateImmediately: true, // Activate immediately after instantiation.
+    maximumConsoleLines: 20000 // Maximum lines in console before roll off.
+}
+
+Layout plugins:
+- Including a layout plugin <script> will automatically register it for selection in the 'layout' option.
+- Layout plugins must be included after this script.
+
+*/
 (function () {
     //
     // Private static variables.
@@ -42,7 +61,7 @@
             var userOptions = arguments.length > 0 ? arguments[0] : { };
             
             // Parse options.
-            var options = {
+            var options = { // defaults:
                 port: 6667,
                 title: document.title,
                 viewKey: '',
@@ -50,7 +69,9 @@
                 quitMessage: 'Chatmore IRC client',
                 reactivateAttempts: 6,
                 reactivateDelay: 10,
-                layout: undefined                   // Layout name.  Undefined will pick 'default' or first layout in registry.
+                layout: undefined, // Layout name.  Undefined will pick 'default' or first layout in registry.
+                enableList: false,
+                maximumConsoleLines: 20000
             };
             $.extend(options, userOptions);
             if (isEmpty(options.realname)) options.realname = options.nick;
@@ -322,7 +343,7 @@
                         helpUsage: 'Usage: /list [#channel [, #channel ...] ] [server]',
                         helpText: 'Get channel listing.',
                         parseParam: function (param, meta) {
-                            if (!self.options.enable_list) {
+                            if (!self.options.enableList) {
                                 // LIST is disabled.
                                 meta.error = 'Error: /list command is not available.';
                                 return false;
