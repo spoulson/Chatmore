@@ -349,7 +349,6 @@
             var modified = false;
 
             // Use regex to isolate URL patterns, replace with hyperlink elements.
-            if (window.console) console.log('node text: ' + $node.text());
             var html = layout.htmlEncode($node.text()).replace(linkifyRegex, function (m, url) {
                 modified = true;
                 
@@ -374,7 +373,6 @@
             });
             
             if (modified) {
-                if (window.console) console.log('node html linkified: ' + html);
                 var $prevSibling = $node.prev();
                 var $parent = $node.parent();
                 var $newNode = $('<span>' + html + '</span>');
@@ -1027,7 +1025,7 @@
                             $userEntry.val('');
                             
                             // Reset user entry history index.
-                            self.userEntryHistoryIndex = undefined;
+                            userEntryHistoryIndex = undefined;
 
                             // Clear any autocomplete suggestions.
                             if (autoReplyIndex !== undefined)
