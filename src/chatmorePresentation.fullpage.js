@@ -180,8 +180,8 @@
             '</span>'
     };
 
-    //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring-----------------------------------------------------][anchor]
-    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?\&*([^\s=&#<>]+(=[^\s=&#<>]*)?(&[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi;
+    //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring---------------------------------------------------------------][anchor]
+    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?(\&amp;)*([^\s=&#<>]+(=[^\s=&#<>]*)?(&amp;[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi;
 
     // History of users for autoreply suggestions.
     var autoReplyList = [ ];
@@ -349,6 +349,7 @@
             var modified = false;
 
             // Use regex to isolate URL patterns, replace with hyperlink elements.
+            if (window.console) console.log('node text: ' + $node.text());
             var html = layout.htmlEncode($node.text()).replace(linkifyRegex, function (m, url) {
                 modified = true;
                 
@@ -356,6 +357,8 @@
                 trailingText = url.match(/[)>,\.;:'"]$/);
                 if (trailingText !== null)
                     url = url.substring(url, url.length - trailingText[0].length);
+                url = layout.htmlDecode(url);
+                if (window.console) console.log('linkify url: ' + url);
                 
                 var n = $('<div/>')
                     .append($('<a/>')
@@ -371,6 +374,7 @@
             });
             
             if (modified) {
+                if (window.console) console.log('node html linkified: ' + html);
                 var $prevSibling = $node.prev();
                 var $parent = $node.parent();
                 var $newNode = $('<span>' + html + '</span>');
@@ -1178,6 +1182,14 @@
                 .replace(/'/g, '&apos;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
+        },
+        htmlDecode: function (value) {
+            return String(value)
+                .replace('&quot;', '"')
+                .replace('&apos;', "'")
+                .replace('&lt;', '<')
+                .replace('&gt;', '>')
+                .replace('&amp;', '&');
         },
         resize: function (self, width, height) {
             if (width && height) {
