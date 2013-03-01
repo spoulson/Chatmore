@@ -436,11 +436,11 @@
     background-color: #eaeaf2;
     border: 1px solid #dcdce9;
     margin: -1px;
-    padding: 2px;
+    padding-right: 10px;
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
-    box-shadow: 0 0 20px /*#9090e0;*/#dcdce9;
+    box-shadow: 0 0 15px #dcdce9;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .ERROR .message {
