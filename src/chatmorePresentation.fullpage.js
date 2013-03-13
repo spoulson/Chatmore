@@ -181,7 +181,7 @@
     };
 
     //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring---------------------------------------------------------------][anchor]
-    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?(\&amp;)*([^\s=&#<>]+(=[^\s=&#<>]*)?(&amp;[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/gi;
+    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?(\&amp;)*([^\s=&#<>]+(=[^\s=&#<>]*)?(&amp;[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/i;
 
     // History of users for autoreply suggestions.
     var autoReplyList = [ ];
@@ -249,7 +249,7 @@
 
             // Auto decorate nicks and channels in message.
             var channel = element.find('.prefix .channel').text();
-            element.closest('.channelMsg,.privateMsg,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
+            element.closest('.channelMsg,.privateMsg,.channelNotice,.privateNotice,.TOPIC,.LIST,.serverMsg,.clientMsg').find('.message')
                 .each(function () {
                     linkifyURLs(this);
                     decorateChannels(this);
@@ -346,37 +346,45 @@
     var linkifyURLs = function (el) {
         findTextNodesForDecoration(el).each(function () {
             var $node = $(this);
+            var $newNode = $();
             var modified = false;
 
-            // Use regex to isolate URL patterns, replace with hyperlink elements.
-            var html = layout.htmlEncode($node.text()).replace(linkifyRegex, function (m, url) {
-                modified = true;
+            // Scan for URL substring.
+            // Extract prefix text and linkified URL and add to $newNode array.
+            // Repeat loop with remaining text.
+            var text = $node.text();
+            while (text.length > 0) {
+                var linkMatch = text.match(linkifyRegex);
+                if (linkMatch !== null) {
+                    var prefix = text.substr(0, linkMatch.index);
+                    $newNode = $newNode.add($('<span/>').text(prefix));
                 
-                // Special case: strip trailing symbols that are probably not intended as part of the URL.
-                trailingText = url.match(/[)>,\.;:'"]$/);
-                if (trailingText !== null)
-                    url = url.substring(url, url.length - trailingText[0].length);
-                url = layout.htmlDecode(url);
-                if (window.console) console.log('linkify url: ' + url);
-                
-                var n = $('<div/>')
-                    .append($('<a/>')
+                    // Special case: strip trailing symbols that are probably not intended as part of the URL.
+                    var url = linkMatch[0];
+                    var trailingText = url.match(/[)>,\.;:'"]+$/);
+                    if (trailingText !== null) url = url.substr(0, url.length - trailingText[0].length);
+                    $newNode = $newNode.add($('<a/>')
                         .attr('href', url)
                         .attr('target', '_blank')
                         .attr('class', 'no-decorate')
-                        .text(url));
-                        
-                if (trailingText !== null)
-                    n.append(document.createTextNode(trailingText[0]));
+                        .text(url)
+                    );
+
+                    text = text.substr(linkMatch.index + url.length);
                 
-                return n.html();
-            });
-            
+                    modified = true;
+                }
+                else {
+                    // No links.
+                    $newNode = $newNode.add($('<span/>').text(text));
+                    text = '';
+                }
+            }
+
             if (modified) {
                 var $prevSibling = $node.prev();
                 var $parent = $node.parent();
-                var $newNode = $('<span>' + html + '</span>');
-
+  
                 $node.remove();
 
                 if ($prevSibling.length)
