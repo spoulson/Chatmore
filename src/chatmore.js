@@ -231,6 +231,7 @@ function chatmore(element, options) {
                 // Check if state has been changed, raise stateChanged event.
                 if (self.state.isModified) {
                     $(element).trigger('stateChanged.chatmore');
+                    self.state.lastModificationTime = new Date().getTime();
                     self.state.isModified = false;
                 }
             });

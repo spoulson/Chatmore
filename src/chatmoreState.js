@@ -41,6 +41,9 @@ function chatmoreState() {
     state.channels = {};
     state.users = {};
     
+    // Epoch time of last state modification.
+    state.lastModificationTime = undefined;
+    
     // Epoch time of last message from recv.php.
     state.lastRecvTime = undefined;
     state.messageCount = 0;

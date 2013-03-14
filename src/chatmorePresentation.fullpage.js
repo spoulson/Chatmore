@@ -180,9 +180,12 @@
             '</span>'
     };
 
-    //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring---------------------------------------------------------------][anchor]
-    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?(\&amp;)*([^\s=&#<>]+(=[^\s=&#<>]*)?(&amp;[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/i;
+    //                  [-scheme---------][-hostname------------][-port][-path----------][-querystring-------------------------------------------------------][anchor]
+    var linkifyRegex = /\b([a-z]{2,8}:\/\/([\w\-_]+(\.[\w\-_]+)*)(:\d+)?(\/[^\s\?\/<>]*)*(\?(\&)*([^\s=&#<>]+(=[^\s=&#<>]*)?(&[^\s=&#<>]+(=[^\s=&#<>]*)?)*)?)?(#\S+)?)/i;
 
+    // Channel recognition regex.
+    var channelRegex = /(^|[\s,:\cg])(#[^\s,:\cg]+)\b/;
+    
     // History of users for autoreply suggestions.
     var autoReplyList = [ ];
 
@@ -375,7 +378,7 @@
                     modified = true;
                 }
                 else {
-                    // No links.
+                    // No matches.
                     $newNode = $newNode.add($('<span/>').text(text));
                     text = '';
                 }
@@ -397,47 +400,71 @@
     
     // Decorate nicks found in text with span.
     var decorateNicks = function (self, el, channel) {
-        var nicks;
-        if (self.irc.state !== undefined) {
-            nicks = $.map(self.irc.state.users, function (val, key) { return key; });
-        }
+        // Generate nick regex on demand if state has changed.
+        // Store cached nick decoration parameters in function properties.
+        // Update if state changes timestamp.
+        if (decorateNicks.regex === undefined || decorateNicks.timestamp < self.irc.state.lastModificationTime) {
+            decorateNicks.timestamp = self.irc.state.lastModificationTime;
+            decorateNicks.nicks = [ ];
+            
+            if (self.irc.state !== undefined) {
+                decorateNicks.nicks = $.map(self.irc.state.users, function (val, key) { return key; });
+            }
 
-        if (nicks === undefined || nicks.length === 0) return;
+            // If no nicks are known, do no work.
+            if (decorateNicks.nicks === undefined || decorateNicks.nicks.length === 0) return;
         
-        // Convert array of nicks to regex expression.
-        var nickExpr = $.map(nicks, function (nick) {
-            // Escape regex symbols.
-            return nick.replace(/([?*|.\^$()\[\]{}\\\/])/g, "\\$1");
-        }).join('|');
-        var re = new RegExp("\\b(" + nickExpr + ")\\b", 'ig');
+            // Convert array of nicks to regex pattern.
+            var nickExpr = $.map(decorateNicks.nicks, function (nick) {
+                // Escape regex symbols.
+                return nick.replace(/([?*|.\^$()\[\]{}\\\/])/g, "\\$1");
+            }).join('|');
+            decorateNicks.regex = new RegExp("\\b(" + nickExpr + ")\\b", 'i');
+        }
         
         findTextNodesForDecoration(el).each(function () {
             var $node = $(this);
+            var $newNode = $();
             var modified = false;
-            var html = layout.htmlEncode($node.text()).replace(re, function (m, nick) {
-                var colorizeNumber;
-                if (channel !== undefined && self.isChannel(channel)) {
-                    // Lookup nick's colorize number for given channel.
-                    if (self.irc.state.channels[channel] !== undefined &&
-                        self.irc.state.channels[channel].members[nick] !== undefined) {
-                        colorizeNumber = self.irc.state.channels[channel].members[nick].colorizeNumber;
-                    }
-                }
-                
-                modified = true;
+            
+            // Scan for known nick substrings.
+            // Extract prefix text and decorated nick element and add to $newNode array.
+            // Repeat loop with remaining text.
+            var text = $node.text();
+            while (text.length > 0) {
+                var linkMatch = text.match(decorateNicks.regex);
+                if (linkMatch !== null) {
+                    var prefix = text.substr(0, linkMatch.index);
+                    var nick = linkMatch[0];
+                    var $nickNode = $('<span/>')
+                            .addClass('nick no-decorate')
+                            .text(nick);
 
-                if (colorizeNumber !== undefined) {
-                    return '<span class="nick color' + colorizeNumber + ' no-decorate">' + nick + '</span>';
+                    // Lookup nick's colorize number for given channel.
+                    if (channel !== undefined &&
+                        self.isChannel(channel) &&
+                        self.irc.state.channels[channel] !== undefined &&
+                        self.irc.state.channels[channel].members[nick] !== undefined) {
+                        $nickNode.addClass('color' + self.irc.state.channels[channel].members[nick].colorizeNumber);
+                    }
+                    
+                    $newNode = $newNode
+                        .add($('<span/>').text(prefix))
+                        .add($nickNode);
+
+                    text = text.substr(linkMatch.index + nick.length);
+                    modified = true;
                 }
                 else {
-                    return '<span class="nick no-decorate">' + nick + '</span>';
+                    // No matches.
+                    $newNode = $newNode.add($('<span/>').text(text));
+                    text = '';
                 }
-            });
-            
+            }
+
             if (modified) {
                 var $prevSibling = $node.prev();
                 var $parent = $node.parent();
-                var $newNode = $('<span>' + html + '</span>');
 
                 $node.remove();
 
@@ -448,22 +475,51 @@
             }
         });
     };
-
+    
     // Decorate channel-like text with span.
     var decorateChannels = function (el) {
         findTextNodesForDecoration(el).each(function () {
             var $node = $(this);
+            var $newNode = $();
             var modified = false;
+            
+            // Scan for known channel substrings.
+            // Extract prefix text and decorated channel element and add to $newNode array.
+            // Repeat loop with remaining text.
+            var text = $node.text();
+            while (text.length > 0) {
+                var linkMatch = text.match(channelRegex);
+                if (linkMatch !== null) {
+                    var prefix = text.substr(0, linkMatch.index);
+                    var channel = linkMatch[0];
+                    
+                    $newNode = $newNode
+                        .add($('<span/>').text(prefix))
+                        .add($('<span/>')
+                            .addClass('channel no-decorate')
+                            .text(channel)
+                        );
+                        
+                    text = text.substr(linkMatch.index + channel.length);
+                    modified = true
+                }
+                else {
+                    // No matches.
+                    $newNode = $newNode.add($('<span/>').text(text));
+                    text = '';
+                }
+            }
+            
+            /*
             var html = layout.htmlEncode($node.text()).replace(/(^|[\s,:\cg])(#[^\s,:\cg]+)\b/g, function (m, text, channel) {
                 modified = true;
                 
                 return text + '<span class="channel no-decorate">' + channel + '</span>';
             });
-            
+            */
             if (modified) {
                 var $prevSibling = $node.prev();
                 var $parent = $node.parent();
-                var $newNode = $('<span>' + html + '</span>');
 
                 $node.remove();
 
