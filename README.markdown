@@ -1,7 +1,7 @@
 Chatmore web-based IRC client
 =============================
 
-Release 2012-03-14  
+Release 2013-03-15  
 Github repo: https://github.com/spoulson/Chatmore  
 Shawn Poulson, http://explodingcoder.com
 
@@ -63,6 +63,8 @@ http://server/chatmore/client.php?server=irc.example.com&port=6667&nick=yournick
 
 If nick is omitted, use randomly generated nick.  
 If #channel is provided, join the channel(s) automatically.
+
+These querystring parameters will also work on the index.php landing page to show the values as defaults in the connection form fields.
 
 KNOWN ISSUES
 ------------
