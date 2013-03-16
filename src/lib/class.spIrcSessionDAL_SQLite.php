@@ -96,7 +96,7 @@ class spIrcSessionDAL_SQLite {
             'SET ' .
             '    server = ?, ' .
             '    port = ?, ' .
-            '    lastAccessedDate = datetime(\'now\') ' .
+            '    lastModifiedDate = datetime(\'now\') ' .
             'WHERE ' .
             '    id = ? AND ' .
             '    sessionKey = ?;');
