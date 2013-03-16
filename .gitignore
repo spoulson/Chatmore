@@ -1,6 +1,5 @@
-build/tmp/*.db
-build/tmp/*.log
-build.tmp/*.sock
+.DS_Store
+build/
 src/obj/*
 src/tmp/*.db
 src/tmp/*.log

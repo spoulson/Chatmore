@@ -1,3 +1,25 @@
+/*
+Chatmore CLI jQuery plugin.
+- Parse and execute client commands.
+- Defers to layout plugin for rendering.
+
+$('#chatmore').chatmore(options);
+
+options is array containing any of options accepted by chatmore.js, and in addition: {
+    reactivateAttempts: 6,  // Max attempts to reactivate on error.
+    reactivateDelay: 10,    // Delay in seconds between reactivation attemps.
+    quitMessage: 'Chatmore IRC client', // Default message sent when user quits.
+    layout: string,         // Layout name for rendering.  default: 'default' or first layout in registry.
+    enableList: false,      // true to enable /LIST client command.
+    activateImmediately: true, // Activate immediately after instantiation.
+    maximumConsoleLines: 20000 // Maximum lines in console before roll off.
+}
+
+Layout plugins:
+- Including a layout plugin <script> will automatically register it for selection in the 'layout' option.
+- Layout plugins must be included after this script.
+
+*/
 (function () {
     //
     // Private static variables.
@@ -21,6 +43,8 @@
     //
     // Global chatmore jQuery plugin.
     //
+    // Exports methods defined in globalMethods.
+    // Usage: $.chatmore('method', [arg], ...);
     $.chatmore = function () {
         var method = arguments[0];
         var args = Array.prototype.slice.call(arguments, 1);
@@ -37,7 +61,7 @@
             var userOptions = arguments.length > 0 ? arguments[0] : { };
             
             // Parse options.
-            var options = {
+            var options = { // defaults:
                 port: 6667,
                 title: document.title,
                 viewKey: '',
@@ -45,13 +69,15 @@
                 quitMessage: 'Chatmore IRC client',
                 reactivateAttempts: 6,
                 reactivateDelay: 10,
-                layout: undefined                   // Layout name.  Undefined will pick 'default' or first layout in registry.
+                layout: undefined, // Layout name.  Undefined will pick 'default' or first layout in registry.
+                enableList: false,
+                maximumConsoleLines: 20000
             };
             $.extend(options, userOptions);
             if (isEmpty(options.realname)) options.realname = options.nick;
             if (typeof(options.channel) === 'object') autoJoinChannels = options.channel;
             else if (!isEmpty(options.channel)) autoJoinChannels.push(options.channel);
-    
+                
             var getLayoutPlugin = function () {
                 if (options.layout === undefined) {
                     if ('default' in layouts) {
@@ -77,19 +103,12 @@
                 //
                 ircElement: $(this),                // Chatmore parent jQuery element.
                 irc: undefined,                     // Chatmore client object.
-    
                 options: options,
                 autoJoinChannels: [ ],              // Channels provided at startup.
                 prevState: undefined,
-                msgSenders: [ ],                    // History of private message senders for autocomplete.
-                autoCompleteReplyIndex: undefined,  // Autocomplete index against msgSenders array when replying to message senders.
-                autoCompletePrefix: undefined,      // Autocomplete filter, word typed at first Tab completion.
-                autoCompleteSuggest: undefined,     // Suggestion given from last Tab completion
                 enableAutoReactivate: true,
                 reactivateAttempts: 0,
                 isPendingActivation: false,
-                userEntryHistory: [''],             // User entry history log.  First entry is scratch buffer from last unsent entry.
-                userEntryHistoryIndex: undefined,
                 layoutPlugin: getLayoutPlugin(),    // Selected layout plugin instance.
                 
                 // Client /command definitions.
@@ -136,7 +155,7 @@
                         helpText: 'Revoke channel operator status from a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['deop'].helpUsage;
+                                meta.error = self.cmdDefs.deop.helpUsage;
                                 return false;
                             }
                             
@@ -164,7 +183,7 @@
                         helpText: 'Revoke channel voice status from a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['devoice'].helpUsage;
+                                meta.error = self.cmdDefs.devoice.helpUsage;
                                 return false;
                             }
                             
@@ -240,7 +259,7 @@
                         helpText: 'Join a channel.  Include a key if the channel requires it to join.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['join'].helpUsage;
+                                meta.error = self.cmdDefs.join.helpUsage;
                                 return false;
                             }
                             
@@ -262,7 +281,7 @@
                         helpUsage: 'Usage: /kick &gt;nick&lt; [comment]',
                         helpText: 'Kick user from channel.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['kick'].helpUsage;
+                            var usage = self.cmdDefs.kick.helpUsage;
                             var m = /^(\S+)(\s+(.+))?/.exec(param);
                             if (m === null) {
                                 meta.error = usage;
@@ -294,7 +313,7 @@
                         parseParam: function (param, meta) {
                             if (param === undefined) {
                                 if (self.irc.target() === undefined) {
-                                    meta.error = self.cmdDefs['leave'].helpUsage;
+                                    meta.error = self.cmdDefs.leave.helpUsage;
                                     return false;
                                 }
                                 else {
@@ -324,7 +343,12 @@
                         helpUsage: 'Usage: /list [#channel [, #channel ...] ] [server]',
                         helpText: 'Get channel listing.',
                         parseParam: function (param, meta) {
-                            if (param === undefined) {
+                            if (!self.options.enableList) {
+                                // LIST is disabled.
+                                meta.error = 'Error: /list command is not available.';
+                                return false;
+                            }
+                            else if (param === undefined) {
                                 // No parameters.
                             }
                             else {
@@ -345,7 +369,7 @@
                                     }
                                     else {
                                         // Unable to parse parameters.
-                                        meta.error = self.cmdDefs['list'].helpUsage;
+                                        meta.error = self.cmdDefs.list.helpUsage;
                                         return false;
                                     }
                                 }
@@ -377,7 +401,7 @@
                         helpUsage: 'Usage: /me &lt;message&gt;',
                         helpText: 'Send an action message to currently selected channel or user.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -434,7 +458,7 @@
                             'Available channel modes: http://tools.ietf.org/html/rfc2811#section-4'
                         ],
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['mode'].helpUsage;
+                            var usage = self.cmdDefs.mode.helpUsage;
                             var m = /^(\S+)(\s+(\S+(\s+\S+)*))?\s*$/.exec(param);
                             if (m === null) {
                                 meta.error = usage;
@@ -483,7 +507,7 @@
                         helpUsage: 'Usage: /msg &lt;nick|#channel&gt; &lt;message&gt;',
                         helpText: 'Send a private message to a user.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -519,7 +543,7 @@
                             }
                             else {
                                 self.irc.sendPrivateMsg(meta.target, meta.message);
-                                self.addToMsgSenders(meta.target);
+                                //self.addToMsgSenders(meta.target);
                                 self.writeTmpl('outgoingPrivateMsg', {
                                     msg: {
                                         prefixNick: self.irc.state.nick,
@@ -538,7 +562,7 @@
                         helpText: 'Change your nick.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['nick'].helpUsage;
+                                meta.error = self.cmdDefs.nick.helpUsage;
                                 return false;
                             }
                             
@@ -558,7 +582,7 @@
                         helpUsage: 'Usage: /notice &lt;nick|#channel&gt; &lt;message&gt;',
                         helpText: 'Send a notice to a user or channel.',
                         parseParam: function (param, meta) {
-                            var usage = self.cmdDefs['msg'].helpUsage;
+                            var usage = self.cmdDefs.msg.helpUsage;
                             
                             if (param === undefined) {
                                 meta.error = usage;
@@ -612,7 +636,7 @@
                         helpText: 'Grant channel operator status to a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['op'].helpUsage;
+                                meta.error = self.cmdDefs.op.helpUsage;
                                 return false;
                             }
                             
@@ -640,7 +664,7 @@
                         helpText: 'Select a user or channel to send messages.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['query'].helpUsage;
+                                meta.error = self.cmdDefs.query.helpUsage;
                                 return false;
                             }
                             
@@ -752,7 +776,7 @@
                         helpText: 'Grant channel voice status to a user.',
                         parseParam: function (param, meta) {
                             if (param === undefined) {
-                                meta.error = self.cmdDefs['voice'].helpUsage;
+                                meta.error = self.cmdDefs.voice.helpUsage;
                                 return false;
                             }
                             
@@ -872,19 +896,6 @@
                     self.layoutPlugin.writeTemplate(self, templateName, data);
                 },
                 
-                addToMsgSenders: function (nick) {
-                    if (self.stricmp(nick, self.irc.state.nick) !== 0) {
-                        self.msgSenders = $.grep(self.msgSenders, function (val) {
-                            // Remove from array, if exists.
-                            return self.stricmp(val, nick) !== 0;
-                        });
-                        self.msgSenders.unshift(nick);
-                        
-                        // Preserve placement of auto complete reply index so that additions to the list don't interfere.
-                        if (self.autoCompleteReplyIndex !== undefined) self.autoCompleteReplyIndex++;
-                    }
-                },
-    
                 startsWith: function (subject, prefix, comparer) {
                     return subject.length >= prefix.length &&
                         comparer(subject.substr(0, prefix.length), prefix) === 0;
@@ -942,23 +953,7 @@
                     if (target !== prevTarget) {
                         self.irc.target(target);
     
-                        self.writeTmpl(target === undefined ? 'queryOff' : 'query', {
-                            target: target,
-                            prevTarget: prevTarget
-                        });
-    
-                        // Update user mode line.
-                        self.ircElement.find('.targetFragment').fadeOut(null, function () {
-                            self.ircElement.find('.targetLabel').text(target);
-                            if (target !== undefined && target !== null) {
-                                var isChannel = self.isChannel(target);
-                                self.ircElement.find('.targetLabel')
-                                    .removeClass(isChannel ? 'nick' : 'channel')
-                                    .addClass(isChannel ? 'channel' : 'nick');
-        
-                                self.ircElement.find('.targetFragment').fadeIn();
-                            }
-                        });
+                        self.layoutPlugin.onQueryTarget(self, target, prevTarget);
                     }
                 },
                 
@@ -1022,130 +1017,6 @@
                         newObj[key] = (obj[key] && typeof obj[key] === "object") ? self.clone(obj[key]) : obj[key];
                     }
                     return newObj;
-                },
-                
-                acceptAutoComplete: function () {
-                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
-                        self.ircElement.find('.userEntry').each(function () {
-                            // Move caret to end of selection.
-                            this.selectionStart = this.selectionEnd;
-            
-                            // Clear autocomplete state.
-                            self.autoCompleteReplyIndex = undefined;
-                            self.autoCompletePrefix = undefined;
-                        });
-                    }
-                },
-                
-                rejectAutoComplete: function () {
-                    if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
-                        self.ircElement.find('.userEntry').each(function () {
-                            // Remove autocomplete suggestion.
-                            var s = $(this).val();
-                            var s1 = this.selectionStart > 1 ? s.substr(0, this.selectionStart) : '';
-                            var s2 = this.selectionEnd < s.length ? s.substr(this.selectionEnd) : '';
-                            var caretPos = this.selectionStart;
-                            
-                            $(this).val(s1 + s2);
-                            this.selectionStart = caretPos;
-                            this.selectionEnd = caretPos;
-                        });
-                        
-                        self.autoCompleteReplyIndex = undefined;
-                        self.autoCompletePrefix = undefined;
-                    }
-                },
-                
-                incrementAutoComplete: function () {
-                    var userEntry = self.ircElement.find('.userEntry');
-                    var s = userEntry.val();
-                        
-                    if (s === '' || self.autoCompleteReplyIndex !== undefined) {
-                        // When user entry is blank, autocomplete as reply to recent private message senders.
-                        if (self.msgSenders.length) {
-                            if (self.autoCompleteReplyIndex === undefined) self.autoCompleteReplyIndex = 0;
-                            
-                            // Quick send message to next recent sender.
-                            var s = '/msg ' + self.msgSenders[self.autoCompleteReplyIndex] + ' ';
-                            userEntry.val(s);
-                            userEntry[0].selectionStart = 0;
-                            userEntry[0].selectionEnd = s.length;
-                            
-                            self.autoCompleteReplyIndex++;
-                            if (self.autoCompleteReplyIndex >= self.msgSenders.length) self.autoCompleteReplyIndex = 0;
-                        }
-                    }
-                    else {
-                        // Autocomplete.
-                        var caretPos = userEntry[0].selectionEnd;
-                        if (self.autoCompletePrefix === undefined) {
-                            // Advance caret to end of word.
-                            var m1 = s.substr(caretPos).match(/^\S+/);
-                            if (m1 !== null) caretPos += m1[0].length;
-                            
-                            // Get last word of user entry, up to the caret position.
-                            var m2 = /\S+$/.exec(s.substr(0, caretPos));
-                            if (m2 !== null) {
-                                self.autoCompletePrefix = m2[0];
-                                self.autoCompleteSuggest = undefined;
-                            }
-                        }
-                        else {
-                            // Delete selected text from last suggestion.
-                            var s1 = '';
-                            if (userEntry[0].selectionStart > 0) s1 += s.substr(0, userEntry[0].selectionStart);
-                            if (userEntry[0].selectionEnd < s.length) s1 += s.substr(userEntry[0].selectionEnd);
-                            s = s1;
-                            userEntry[0].selectionEnd = userEntry[0].selectionStart;
-                            caretPos = userEntry[0].selectionStart;
-                        }
-                        
-                        if (self.autoCompletePrefix !== undefined) {
-                            var myNick = self.irc.state.nick;
-                            
-                            if (self.isChannel(self.autoCompletePrefix)) {
-                                // When string looks like a channel, autocomplete from joined channel list.
-                                var channels = $.grep(self.getJoinedChannels(), function (val) {
-                                    return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
-                                });
-                                
-                                self.autoCompleteSuggest = self.getNextMatch(channels, self.autoCompleteSuggest, self.stricmp);
-                                    
-                                // Replace last word with autoCompleteSuggest.
-                                if (self.autoCompleteSuggest !== undefined) {
-                                    var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                    s = s1 + s.substr(caretPos);
-                                    userEntry.val(s);
-        
-                                    // Select suggested portion of autocomplete.
-                                    userEntry[0].selectionStart = s1.length - self.autoCompleteSuggest.length + self.autoCompletePrefix.length;
-                                    userEntry[0].selectionEnd = s1.length;
-                                }
-                            }
-                            else if (self.irc.target() !== undefined && self.isChannel(self.irc.target())) {
-                                // When a channel is selected, autocomplete that channel's users.
-                                var nicks = $.grep(self.getChannelMembers(self.irc.target()), function (val) {
-                                    return self.startsWith(val, self.autoCompletePrefix, self.stricmp) && self.stricmp(val, myNick) !== 0;
-                                });
-                                
-                                self.autoCompleteSuggest = self.getNextMatch(nicks, self.autoCompleteSuggest, self.stricmp);
-                                    
-                                // Replace last word with autoCompleteSuggest.
-                                if (self.autoCompleteSuggest !== undefined) {
-                                    var s1 = s.substr(0, caretPos).replace(/(\S+)$/, self.autoCompleteSuggest);
-                                    var wordpos = s1.length - self.autoCompleteSuggest.length;
-                                    // If this is the only word on the line, assume it's to address the suggested user.
-                                    if (wordpos === 0) s1 += ': ';
-                                    s = s1 + s.substr(caretPos);
-                                    userEntry.val(s);
-        
-                                    // Select suggested portion of autocomplete.
-                                    userEntry[0].selectionStart = wordpos + self.autoCompletePrefix.length;
-                                    userEntry[0].selectionEnd = s1.length;
-                                }
-                            }
-                        }
-                    }
                 },
                 
                 //
@@ -1282,12 +1153,12 @@
             self.layoutPlugin.initialize(self);
     
             // Client command aliases.
-            self.cmdDefs['j'] = self.cmdDefs['join'];
-            self.cmdDefs['k'] = self.cmdDefs['kick'];
-            self.cmdDefs['l'] = self.cmdDefs['leave'];
-            self.cmdDefs['m'] = self.cmdDefs['msg'];
-            self.cmdDefs['n'] = self.cmdDefs['notice'];
-            self.cmdDefs['q'] = self.cmdDefs['query'];
+            self.cmdDefs.j = self.cmdDefs.join;
+            self.cmdDefs.k = self.cmdDefs.kick;
+            self.cmdDefs.l = self.cmdDefs.leave;
+            self.cmdDefs.m = self.cmdDefs.msg;
+            self.cmdDefs.n = self.cmdDefs.notice;
+            self.cmdDefs.q = self.cmdDefs.query;
     
             // Setup chatmore event handlers.
             self.ircElement
@@ -1333,24 +1204,15 @@
                     if (msg.type === 'recv') {
                         switch (msg.command) {
                         case 'PRIVMSG':
-                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0)
                                 self.writeTmpl(msg.info.isAction ? 'incomingPrivateAction' : 'incomingPrivateMsg', { msg: msg });
-                                if (!msg.info.isAction) {
-                                    // Add this sender to the history of senders.
-                                    self.addToMsgSenders(msg.prefixNick);
-                                }
-                            }
                             else
                                 self.writeTmpl(msg.info.isAction ? 'incomingChannelAction' : 'incomingChannelMsg', { msg: msg });
                             break;
                         
                         case 'NOTICE':
-                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0) {
+                            if (self.stricmp(msg.info.target, self.irc.state.nick) === 0)
                                 self.writeTmpl('incomingPrivateNotice', { msg: msg });
-    
-                                // Add this sender to the history of senders.
-                                self.addToMsgSenders(msg.prefixNick);
-                            }
                             else
                                 self.writeTmpl('incomingChannelNotice', { msg: msg });
                             break;
@@ -1481,21 +1343,13 @@
                     self.layoutPlugin.onProcessedMessage(self, msg);
                 })
                 .on('stateChanged.chatmore', function (e) {
-                    if (window.console) console.log('UI event: stateChanged');
-                    if (window.console) console.log(self.irc.state);
+                    if (window.console) {
+                        console.log('UI event: stateChanged');
+                        console.log(self.irc.state);
+                    }
                     
                     var state = self.irc.state;
-                    
-                    if (self.prevState === undefined || self.stricmp(state.nick, self.prevState.nick) !== 0) {
-                        // Nick changed.
-                        if (window.console) console.log('Nick changed.');
-                        var nickLabel = self.ircElement.find('.nickLabel');
-                        nickLabel.fadeOut(null, function () {
-                            nickLabel.text(state.nick);
-                            nickLabel.fadeIn();
-                        });
-                    }
-    
+
                     // Auto-query first channel if selected user/channel is no longer available.
                     var target = self.irc.target();
                     if (target !== undefined) {
@@ -1622,91 +1476,6 @@
                     self.layoutPlugin.onDeactivatingClient(self);
                 });
                 
-            // Setup user entry event handlers.
-            self.ircElement.find('.userEntry')
-                .click(function (e) {
-                    // Clicking on user entry assumes changing selection; accept autocomplete.
-                    self.acceptAutoComplete();
-                })
-                .keydown(function (e) {
-                    if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
-                        if (e.keyCode === 13 /* Enter */) {
-                            if (self.autoCompleteReplyIndex !== undefined || self.autoCompletePrefix !== undefined) {
-                                // If presenting an autocomplete, accept it.
-                                self.acceptAutoComplete();
-                            }
-                            else {
-                                // Send message.
-                                // Add new scratch line to user entry history.
-                                self.userEntryHistory.unshift('');
-                            
-                                self.sendLine($(this).val());
-                                $(this).val('');
-                                
-                                // Reset user entry history index.
-                                self.userEntryHistoryIndex = undefined;
-                            }
-                            return false;
-                        }
-                        else if (e.keyCode === 27 /* Escape */) {
-                            self.rejectAutoComplete();
-                            return false;
-                        }
-                        else if (e.keyCode === 9 /* Tab */) {
-                            // TODO: Support Shift+Tab to decrement autocomplete.
-                            self.incrementAutoComplete();
-                            return false;
-                        }
-                        else if (e.keyCode === 38 /* Arrow up */ || e.keyCode === 40 /* Arrow down */) {
-                            if (self.userEntryHistoryIndex === undefined && self.userEntryHistory.length > 1) {
-                                // Start browsing history, if any exists.
-                                self.userEntryHistoryIndex = 0;
-                            }
-                            
-                            if (self.userEntryHistoryIndex !== undefined) {
-                                if (e.keyCode === 38) {
-                                    // Go to next oldest history entry.
-                                    self.userEntryHistoryIndex++;
-                                    if (self.userEntryHistoryIndex >= self.userEntryHistory.length)
-                                        self.userEntryHistoryIndex = 0;
-                                }
-                                else {
-                                    // Go to next newest history entry.
-                                    self.userEntryHistoryIndex--;
-                                    if (self.userEntryHistoryIndex < 0)
-                                        self.userEntryHistoryIndex = self.userEntryHistory.length - 1;
-                                }
-                            
-                                // Display history in user entry.
-                                var entry = self.userEntryHistory[self.userEntryHistoryIndex];
-                                $(this).val(entry);
-        
-                                // Place caret at end of line.
-                                this.selectionStart = entry.length;
-                                this.selectionEnd = this.selectionStart;
-                            }
-                            
-                            return false;
-                        }
-                    }
-                })
-                .keypress(function (e) {
-                    // Ignore key codes handled in keyDown event.
-                    if (!e.altKey && !e.ctrlKey && !e.shiftKey) {
-                        if (e.keyCode === 13 || e.keyCode === 27 || e.keyCode === 9 ||
-                            e.keyCode === 38 || e.keyCode === 40) {
-                           return false;
-                        }
-                    }
-                    
-                    // Typing text will accept a presented autocomplete.
-                    self.acceptAutoComplete();
-    
-                    // Store current entry in first history element as scratch buffer.
-                    self.userEntryHistory[0] = $(this).val() + String.fromCharCode(e.which);
-                })
-                .focus();
-    
             // Setup user event handlers.
             $.each([ 'onStateChanged', 'onLocalMessage', 'onProcessingMessage', 'onProcessedMessage', 'onSendingMessage',
                 'onErrorSendingMessage', 'onSentMessage', 'onActivatingClient', 'onDeactivatingClient' ],
@@ -1716,9 +1485,9 @@
                     }
                 }
             );
-            
+                        
             // Create chatmore client.
-            self.irc = new chatmore(self.ircElement[0], options.viewKey, options.server, options.port, options.nick, options.realname);
+            self.irc = new chatmore(self.ircElement[0], options);
             if (options.activateImmediately) self.irc.activateClient();
             
             return self.ircElement;
@@ -1727,8 +1496,8 @@
             // Invoke named method against chatmoreUI object.
             var method = arguments[0];
             var args = Array.prototype.slice.call(arguments, 1);
-            var self = $(this).data('chatmore');
-            return self.methods[method].apply(self, args);
+            var chatmoreSelf = $(this).data('chatmore');
+            return chatmoreSelf.methods[method].apply(chatmoreSelf, args);
         }
     };
 })();

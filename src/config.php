@@ -34,7 +34,7 @@ $ircConfig = array(
     'port' => null,
     
     // Path to create domain sockets.
-    'socketFilePath' => $tmpDir,
+    'socket_file_path' => $tmpDir,
     
     // PHP command line options for launching the background process.
     'php_opts' => '-d memory_limit=4M',
@@ -43,7 +43,13 @@ $ircConfig = array(
     // - Higher timeout means less frequent client reconnections.
     // - If the background process dies while the recv thread was running,
     //   the error will not be caught until timeout.
-    'recv_timeout' => 30 * 1000,
+    'recv_timeout' => 500,
+    
+    // Maximum messages retrieved during a poll to recv.php.
+    // Any data remaining in buffer after this limit will be dropped.
+    // To prevent buffer drop, the proxy read buffer size set in spSocketProxy
+    // should be sized to hold no more than this number of messages.
+    'max_recv_messages' => 200,
 
     'debug' => array(
         // Include received raw IRC messages in AJAX responses from recv.php.

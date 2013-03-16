@@ -7,12 +7,16 @@ class spIrcSessionModel {
     public $sessionKey; // varchar(25)
     public $deleted;    // bit
     
-    public $primarySocketFilename;
-    public $secondarySocketFilename;
+    public $socketFilename;
 
     // Modifyable properties:
     // IRC server:port.
     public $server;
     public $port;
+
+    // Epoch times.
+    public $createdDate;
+    public $lastAccessedDate;
+    public $lastModifiedDate;
 }
 ?>

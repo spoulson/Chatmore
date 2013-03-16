@@ -22,10 +22,11 @@ header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 if ($state !== null && !$state->deleted) {
-    $socketFile = $state->primarySocketFilename;
+    $socketFile = $state->socketFilename;
 
     if (file_exists($socketFile)) {
         $ircbot = new spIrcClient($socketFile);
+        $ircbot->connectSocket();
 
         if ($ircbot->isConnected()) {
             $data = array();
@@ -56,7 +57,7 @@ if ($state !== null && !$state->deleted) {
                 usleep(0);
             } while (
                 $line !== null && $line !== false &&    // Break if error returned.
-                $messageCount < 500 &&                  // Break if too many messages.  Endless loop?
+                $messageCount < $ircConfig['max_recv_messages'] && // Break if too many messages.
                 $ircbot->isConnected());                // Break if disconnected.
 
             $ircbot->disconnect();

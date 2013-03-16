@@ -20,6 +20,31 @@
     white-space: pre-wrap;
 }
 
+.chatmore.-fullpage-layout .ircConsole .content a {
+    padding: 2px;
+    margin: -2px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content a:link,
+.chatmore.-fullpage-layout .ircConsole .content a:hover {
+    color: #0000EE;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content a:active {
+    color: #EE0000;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content a:visited {
+    color: #551A8B;
+}
+
+.chatmore.-fullpage-layout .ircConsole .content a:hover {
+    box-shadow: 0 0 20px #909090;
+}
+
 .chatmore.-fullpage-layout .activationIndicator {
     width: 16px;
     height: 16px;
@@ -45,6 +70,12 @@
     height: 20px;
 }
 
+.chatmore.-fullpage-layout .userEntryModeLine .nickLabel {
+    overflow: hidden;
+    display: block;
+    float: left;
+}
+
 .chatmore.-fullpage-layout .userEntryModeLine .targetLabel {
     display: block;
     float: left;
@@ -57,17 +88,33 @@
     clear: both;
 }
 
-.chatmore.-fullpage-layout .nickLabel {
-    overflow: hidden;
-    display: block;
-    float: left;
-}
-
 .chatmore.-fullpage-layout .userEntry {
     background-color: #f8f8f8;
     border: 1px solid #666;
     color: black;
     padding: 3px;
+}
+
+.chatmore.-fullpage-layout .ui-tooltip {
+    overflow: hidden;
+}
+
+.chatmore.-fullpage-layout .activeSuggestion {
+    background-color: #F1E7C8;
+    border: 1px solid #e8d7a5;
+    box-shadow: 0 0 10px #e8d7a5;
+    padding: 2px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.chatmore.-fullpage-layout .inactiveSuggestion {
+    box-shadow: 0 0 10px #F1E7C8;
+    padding: 3px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
 }
 
 .chatmore.-fullpage-layout .channel {
@@ -76,6 +123,10 @@
     background-color: transparent;
     border: 0;
     cursor: pointer;
+    padding: 2px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
 }
 
 .chatmore.-fullpage-layout .nick {
@@ -83,6 +134,18 @@
     font-weight: bold;
     background-color: transparent;
     border: 0;
+    cursor: pointer;
+    padding: 2px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
+.chatmore.-fullpage-layout .nick:hover, .chatmore.-fullpage-layout .nick:active,
+.chatmore.-fullpage-layout .channel:hover, .chatmore.-fullpage-layout .channel:active {
+    border: 1px solid #fcf1ba;
+    margin: -1px;
+    box-shadow: 3px 3px 20px #909090;
 }
 
 .chatmore.-fullpage-layout .nick.color0 {
@@ -213,10 +276,6 @@
     color: #808080;
 }
 
-.chatmore.-fullpage-layout .nick:hover, .chatmore.-fullpage-layout .nick:active {
-    cursor: pointer;
-}
-
 .chatmore.-fullpage-layout .mode {
     color: #0000ff;
 }
@@ -303,8 +362,11 @@
     font: 0.8em monospace;
 }
 
-.chatmore.-fullpage-layout .ircConsole .content .line {
+.chatmore.-fullpage-layout .ircConsole .content .msg {
     color: black;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .prefix {
@@ -315,16 +377,25 @@
     color: #003030;
 }
 
+.chatmore.-fullpage-layout .ircConsole .content .privateMsg,
+.chatmore.-fullpage-layout .ircConsole .content .privateNotice {
+    box-shadow: 6px 6px 10px #909090;
+}
+
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg.outgoing,
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.outgoing {
     background-color: #FFFFC7;
     padding-right: 10px;
+    border: 1px solid #ffffb2;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg.incoming,
 .chatmore.-fullpage-layout .ircConsole .content .privateNotice.incoming {
     background-color: #F1E7C8;
     padding-right: 10px;
+    font-weight: bold;
+    color: #202020;
+    border: 1px solid #ecdfb5;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .privateMsg .prefix,
@@ -363,6 +434,13 @@
 
 .chatmore.-fullpage-layout .ircConsole .content .nickHighlight {
     background-color: #eaeaf2;
+    border: 1px solid #dcdce9;
+    margin: -1px;
+    padding-right: 10px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    box-shadow: 0 0 15px #dcdce9;
 }
 
 .chatmore.-fullpage-layout .ircConsole .content .ERROR .message {

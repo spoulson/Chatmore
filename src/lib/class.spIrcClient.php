@@ -51,6 +51,7 @@ class spIrcClient {
     const RPL_TIME = 391;
 
     const ERR_NOSUCHCHANNEL = 403;
+    const ERR_ERRONEUSNICKNAME = 432;
     const ERR_NICKNAMEINUSE = 433;
     const ERR_NOTREGISTERED = 451;
     const ERR_NOCHANMODES = 477;
@@ -72,11 +73,10 @@ class spIrcClient {
     // Constructor.
     public function spIrcClient($socketFile) {
         $this->socketFile = $socketFile;
-        $this->connectSocket();
     }
 
     // Check $this->isConnected for success status.
-    private function connectSocket() {
+    public function connectSocket() {
         $this->isConnected = false;
         
         for ($attempt = 0; $attempt < $this->maxConnectAttempts; $attempt++) {
@@ -129,6 +129,8 @@ class spIrcClient {
         return $line;
     }
     
+    // Can this routine be optimized?
+    // Can use socket_recv with peek flag to locate EOL quicker than character-by-character?
     private function socketReadLine($timeout = 0) {
         // Ping socket and reconnect on error.
         //if (!$this->isSocketAlive()) $this->connectSocket();
@@ -137,7 +139,7 @@ class spIrcClient {
         $line = null;
         
         while (true) {
-            // check for line ending in read buffer.
+            // Check for line ending in read buffer.
             $m = null;
             //if (strlen($this->socketReadBuffer)) log::info('socketReadBuffer: ' . $this->socketReadBuffer);
             if (preg_match("/^.*?\r\n/", $this->socketReadBuffer, $m)) {
@@ -163,9 +165,9 @@ class spIrcClient {
                 break;
             }
 
-            // Read more data
+            // Read more data, character by character.
             $buf = null;
-            $size = @socket_recv($this->socket, $buf, $this->socketReadBufferSize, 0);
+            $size = @socket_recv($this->socket, $buf, 1, 0);
             if ($size === false) {
                 // Read error.
                 $errno = socket_last_error($this->socket);
@@ -174,8 +176,10 @@ class spIrcClient {
                 return false;
             }
             else if ($size > 0) {
-                //log::info("socketReadBuffer appended: $buf");
-                $this->socketReadBuffer .= $buf;
+                if (strlen($this->socketReadBuffer) < $this->socketReadBufferSize) {
+                    //log::info("socketReadBuffer appended: $buf");
+                    $this->socketReadBuffer .= $buf;
+                }
             }
             else {
                 log::info('socketReadBuffer got 0 bytes from socket_recv!  Connection dropped?');
@@ -484,7 +488,16 @@ class spIrcClient {
             if (!preg_match("/([#&+!][^\s,:\cg]+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'channel' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
+            );
+            break;
+            
+        case self::ERR_ERRONEUSNICKNAME:
+            if (!preg_match("/(\S+)\s+(\S+)\s+:(.+)/", $params, $msgParams)) return false;
+            $msg['info'] = array(
+                'nick' => $msgParams[1],
+                'targetNick' => $msgParams[2],
+                'message' => $msgParams[3]
             );
             break;
             
@@ -492,7 +505,7 @@ class spIrcClient {
             if (!preg_match("/(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'nick' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
             );
             break;
 
@@ -500,7 +513,7 @@ class spIrcClient {
             if (!preg_match("/(\S+)\s+:(.+)/", $params, $msgParams)) return false;
             $msg['info'] = array(
                 'command' => $msgParams[1],
-                'error' => $msgParams[2]
+                'message' => $msgParams[2]
             );
             break;
             
@@ -540,7 +553,7 @@ class spIrcClient {
             $this->sendRawMsg("PONG :" . $msg['info']['ping'] . "\r\n");
             break;
         }
-        
+
         $this->flushSendBuffer();
     }
     
@@ -575,28 +588,30 @@ class spIrcClient {
     }
     
     public function flushSendBuffer() {
-        // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
-        $size = null;
-        $errorCount = 0;
-        $sendCount = 0;
-        
-        do {
-            $size = $this->socketSendBuffer();
-            if ($size === false) $errorCount++;
-            $sendCount++;
-        } while ($sendCount < 50 && $errorCount < 5 && ($size === false || $size > 0));
-        
-        if ($size === false) {
-            log::error("Error while flushing send buffer.  Cannot send.");
-            return false;
+        if (strlen($this->socketSendBuffer) > 0) {
+            // Send buffer until empty, with up to 5 error retries.  Give up after 50 send attempts.
+            $size = null;
+            $errorCount = 0;
+            $sendCount = 0;
+            
+            do {
+                $size = $this->socketSendBuffer();
+                if ($size === false) $errorCount++;
+                $sendCount++;
+            } while ($sendCount < 50 && $errorCount < 5 && ($size === false || $size > 0));
+            
+            if ($size === false) {
+                log::error("Error while flushing send buffer.  Cannot send.");
+                return false;
+            }
+            else if ($size > 0) {
+                log::error("Error while flushing send buffer.  Some data may have been dropped.");
+                return false;
+            }
+            else {
+                log::info('Send buffer flushed.');
+            }
         }
-        else if ($size > 0) {
-            log::error("Error while flushing send buffer.  Some data may have been dropped.");
-            return false;
-        }
-        // else {
-            // log::info('Send buffer flushed.');
-        // }
     }
         
     // Send buffered data to socket.
@@ -647,10 +662,9 @@ class spIrcClient {
 
     // Send raw message.
     // Message line must end with \r\n.
-    public function sendRawMsg($line)
-    {
+    public function sendRawMsg($line) {
         $this->socketSendBuffer .= $line;
-        //log::info("Sent: " . $line);
+        log::info("Sent: " . $line);
     }
     
     public function isChannel($target) {
