@@ -13,5 +13,10 @@ class spIrcSessionModel {
     // IRC server:port.
     public $server;
     public $port;
+
+    // Epoch times.
+    public $createdDate;
+    public $lastAccessedDate;
+    public $lastModifiedDate;
 }
 ?>
