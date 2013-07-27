@@ -44,6 +44,8 @@ FEATURES
  - Nicknames are given a unique color.
  - Doubleclick a channel or nickname to /join or /query for chatting.
 
+### Supports independent chat sessions in separate browser tabs.
+
 SYSTEM REQUIREMENTS
 -------------------
 ### Server
