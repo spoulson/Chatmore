@@ -25,6 +25,25 @@ INTRODUCTION
 ### Why did you build this with PHP?
  - Other languages could be easier, better, faster, and more gooder.  However, half decent PHP web hosting is dirt cheap.
 
+FEATURES
+--------
+![Screenshot](http://i.imgur.com/14LWANvl.png)
+
+### Tab Completion
+ - Tab to reply to users who recently private messaged you.
+ - As you type, nickname or channel autosuggestions may appear.  Tab to select one.
+![Auto reply tab completion](http://i.imgur.com/1pXYLGJ.png)
+![Autosuggest tab completion](http://i.imgur.com/fezDuz8.png)
+
+### Show messages you missed
+ - While the chat window does not have focus, incoming messages are highlighted.  When you return to the window, it's clear where you left off.
+ - Title bar shows message count.
+
+### Channel and nickname highlighting
+ - Anywhere a channel or known nickname appears, it will be highlighted.
+ - Nicknames are given a unique color.
+ - Doubleclick a channel or nickname to /join or /query for chatting.
+
 SYSTEM REQUIREMENTS
 -------------------
 ### Server
@@ -39,8 +58,8 @@ SYSTEM REQUIREMENTS
 
 INSTALLATION
 ------------
-# cd src
-# make
+\# cd src  
+\# make  
 - Copy build/* files to a web hosted directory.
 - Customize settings in config.php, if necessary.
 - In a browser, access the directory's associated URL.
